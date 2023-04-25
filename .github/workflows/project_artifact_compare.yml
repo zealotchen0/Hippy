@@ -88,9 +88,11 @@ jobs:
     - name: Build
       if: ${{ matrix.ref }}
       run: |
+        pushd examples/ios-demo
+        pod install
         xcodebuild build \
           -destination 'generic/platform=iOS' \
-          -workspace 'Hippy.xcworkspace' \
+          -workspace 'HippyDemo.xcworkspace' \
           -scheme 'HippyLibrary' \
           -configuration 'Release' \
           CODE_SIGN_IDENTITY="" \
