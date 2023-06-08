@@ -27,6 +27,7 @@ import com.tencent.mtt.hippy.HippyEngine.*
 import com.tencent.mtt.hippy.HippyEngineManagerImpl
 import com.tencent.mtt.hippy.adapter.DefaultLogAdapter
 import com.tencent.mtt.hippy.adapter.exception.HippyExceptionHandlerAdapter
+import com.tencent.mtt.hippy.adapter.monitor.DefaultEngineMonitorAdapter
 import com.tencent.mtt.hippy.common.HippyJsException
 import com.tencent.mtt.hippy.common.HippyMap
 import com.tencent.mtt.hippy.utils.LogUtils
@@ -55,6 +56,7 @@ class HippyEngineWrapper {
         initParams.debugMode = isDebugMode
         initParams.enableLog = true
         initParams.logAdapter = DefaultLogAdapter()
+        initParams.engineMonitor = DefaultEngineMonitorAdapter();
         when(driverMode) {
             PageConfiguration.DriverMode.JS_REACT -> {
                 initParams.coreJSAssetsPath = "react/vendor.android.js"

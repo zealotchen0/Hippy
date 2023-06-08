@@ -573,6 +573,7 @@ public abstract class HippyEngineManagerImpl extends HippyEngineManager implemen
         if (mCurrentState != EngineState.INITING) {
             mCurrentState = EngineState.ONRESTART;
         }
+
         DomManager domManager = null;
         if (onReLoad && mEngineContext != null) {
             if (mDebugMode) {

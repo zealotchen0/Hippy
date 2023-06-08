@@ -31,7 +31,7 @@ public class DefaultEngineMonitorAdapter implements HippyEngineMonitorAdapter {
 
     private static final String TAG = "DefaultEngineMonitorAdapter";
 
-    protected void printGroupTime(@NonNull MonitorGroup monitorGroup) {
+    protected void printGroupTime(@NonNull MonitorGroup monitorGroup, String type) {
         ArrayList<MonitorPoint> monitorPoints = monitorGroup.getMonitorPoints();
         if (monitorPoints != null) {
             for (MonitorPoint monitorPoint : monitorPoints) {
@@ -40,13 +40,13 @@ public class DefaultEngineMonitorAdapter implements HippyEngineMonitorAdapter {
                                 + "ms");
             }
         }
-        LogUtils.i(TAG, "total time: " + monitorGroup.totalTime);
+        LogUtils.i(TAG, type + " total time: " + monitorGroup.totalTime);
     }
 
     @Override
     public void onEngineInitialized(EngineInitStatus statusCode, @NonNull MonitorGroup monitorGroup) {
         LogUtils.i(TAG, "engine initialization completed with result: " + statusCode);
-        printGroupTime(monitorGroup);
+        printGroupTime(monitorGroup, "js 框架加载耗时");
     }
 
     @Override
@@ -54,7 +54,7 @@ public class DefaultEngineMonitorAdapter implements HippyEngineMonitorAdapter {
             @NonNull MonitorGroup monitorGroup) {
         LogUtils.i(TAG,
                 componentName + " load module completed with result: " + statusCode);
-        printGroupTime(monitorGroup);
+        printGroupTime(monitorGroup, "js bundle加载耗时");
     }
 
     @Override
@@ -62,7 +62,7 @@ public class DefaultEngineMonitorAdapter implements HippyEngineMonitorAdapter {
             @NonNull MonitorGroup monitorGroup) {
         LogUtils.i(TAG,
                 componentName + " load instance completed with first view added");
-        printGroupTime(monitorGroup);
+        printGroupTime(monitorGroup, "首屏渲染耗时");
     }
 
     @Override
