@@ -62,7 +62,7 @@ jobs:
       id: get_size
       run: |
         if [[ "${{ matrix.ref }}" ]]; then
-          echo "${{ matrix.source }}=$(ls -l ./framework/android/build/outputs/aar/android-sdk-release.aar | awk '{print $5}')" >> $GITHUB_OUTPUT
+          echo "${{ matrix.source }}=$(ls -l ./framework/android/build/outputs/aar/android-sdk.aar | awk '{print $5}')" >> $GITHUB_OUTPUT
         else
           echo "${{ matrix.source }}=-1" >> $GITHUB_OUTPUT
         fi
