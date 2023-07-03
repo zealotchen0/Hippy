@@ -167,7 +167,7 @@ jobs:
         env:
           COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
         run: |
-          pod trunk push hippy.podspec --allow-warnings --use-libraries --verbose --skip-import-validation --no-subspecs
+          pod trunk push hippy.podspec --allow-warnings --use-libraries --verbose --skip-import-validation
 
   js_release:
     if: github.event.inputs.is_release_for_js == 'true'
