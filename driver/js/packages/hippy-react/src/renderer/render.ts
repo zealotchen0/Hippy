@@ -29,7 +29,7 @@ import {
   eventHandlerType,
   nativeEventMap,
 } from '../utils/node';
-import { deepCopy, isDev, isTraceEnabled, trace, warn } from '../utils';
+import { deepCopy, isDev, trace, warn } from '../utils';
 
 const componentName = ['%c[native]%c', 'color: red', 'color: auto'];
 
@@ -113,9 +113,7 @@ function handleEventListeners(eventNodes: HippyTypes.EventNode[] = [], sceneBuil
  * @param {string} nodeType
  */
 function printNodesOperation(printedNodes: HippyTypes.PrintedNode[], nodeType: string): void {
-  if (isTraceEnabled()) {
-    trace(...componentName, nodeType, printedNodes);
-  }
+  trace(...componentName, nodeType, printedNodes);
 }
 
 /**

@@ -20,6 +20,7 @@
 
 import document from '../renderer/document-node';
 import { unCacheNodeOnIdle } from '../util/node';
+import { trace } from '../util';
 import { setAttrs } from './modules/attrs';
 import { setStyle } from './modules/style';
 import { setClass } from './modules/class';
@@ -59,13 +60,18 @@ function createComment(text) {
   return document.createComment(text);
 }
 
+let isFirstInsert = false;
 function insertBefore(pNode, newNode, referenceNode) {
+  if (!isFirstInsert) {
+    trace('insertBefore start: ', new Date().getTime());
+  }
   if (pNode.childNodes.indexOf(newNode) >= 0) {
     // move it if the node has existed
     pNode.moveChild(newNode, referenceNode);
   } else {
     pNode.insertBefore(newNode, referenceNode);
   }
+  isFirstInsert = true;
 }
 
 function removeChild(node, child) {

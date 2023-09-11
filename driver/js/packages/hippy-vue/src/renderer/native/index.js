@@ -38,7 +38,6 @@ import {
   isFunction,
   convertImageLocalPath,
   deepCopy,
-  isTraceEnabled,
   getBeforeRenderToNative,
 } from '../../util';
 import {
@@ -132,9 +131,7 @@ let cssMap;
  * @param {string} nodeType
  */
 function printNodeOperation(printedNodes, nodeType) {
-  if (isTraceEnabled()) {
-    trace(...LOG_TYPE, nodeType, printedNodes);
-  }
+  trace(...LOG_TYPE, nodeType, printedNodes);
 }
 
 function endBatch(app) {
@@ -150,7 +147,11 @@ function endBatch(app) {
       rootViewId,
     },
   } = app;
+  const endBatchStart = new Date().getTime();
+  trace(...LOG_TYPE, 'endBatch start: ', endBatchStart, 'batchNodes length: ', batchNodes.length);
   $nextTick(() => {
+    const endBatchDelay = new Date().getTime();
+    trace(...LOG_TYPE, 'endBatch nextTick delay: ', endBatchDelay - endBatchStart, 'batchNodes length: ', batchNodes.length);
     const chunks = chunkNodes(batchNodes);
     const sceneBuilder = new global.Hippy.SceneBuilder(rootViewId);
     chunks.forEach((chunk) => {
@@ -177,6 +178,7 @@ function endBatch(app) {
       }
     });
     sceneBuilder.build();
+    trace(...LOG_TYPE, 'endBatch nextTick cost: ', new Date().getTime() - endBatchDelay, 'batchNodes length: ', batchNodes.length);
     batchIdle = true;
     batchNodes = [];
   });
@@ -192,6 +194,8 @@ function getCssMap() {
      *  Here is a secret startup option: beforeStyleLoadHook.
      *  Usage for process the styles while styles loading.
      */
+    const getCssMapStart = new Date().getTime();
+    trace(...LOG_TYPE, 'getCssMap start: ', getCssMapStart);
     const cssRules = fromAstNodes(global[GLOBAL_STYLE_NAME]);
     if (cssMap) {
       cssMap.append(cssRules);
@@ -199,6 +203,7 @@ function getCssMap() {
       cssMap = new SelectorsMap(cssRules);
     }
     global[GLOBAL_STYLE_NAME] = undefined;
+    trace(...LOG_TYPE, 'getCssMap cost: ', new Date().getTime() - getCssMapStart);
   }
 
   if (global[GLOBAL_DISPOSE_STYLE_NAME]) {
@@ -335,6 +340,7 @@ function parseViewComponent(targetNode, nativeNode, style) {
  * @returns {{}}
  */
 function getElemCss(element) {
+  const getElemCssStart = new Date().getTime();
   const style = Object.create(null);
   try {
     getCssMap().query(element).selectors.forEach((matchedSelector) => {
@@ -345,6 +351,11 @@ function getElemCss(element) {
     });
   } catch (err) {
     console.error('getDomCss Error:', err);
+  }
+  const getElemCssEnd = new Date().getTime();
+  const getElemCssCost = getElemCssEnd - getElemCssStart;
+  if (getElemCssCost > 30) {
+    trace(...LOG_TYPE, 'getElemCssCost > 10ms: ', getElemCssCost, element);
   }
   return style;
 }

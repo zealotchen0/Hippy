@@ -60,6 +60,7 @@ function Promise(fn) {
   if (typeof fn !== 'function') {
     throw new TypeError('Promise constructor\'s argument is not a function');
   }
+  console.log('promise resolve post: ', new Date().getTime(), fn);
   this._deferredState = 0;
   this._state = 0;
   this._value = null;
@@ -72,6 +73,7 @@ Promise._onReject = null;
 Promise._noop = noop;
 
 Promise.prototype.then = function(onFulfilled, onRejected) {
+  console.log('promise resolve succuss: ', new Date().getTime(), onFulfilled);
   if (this.constructor !== Promise) {
     return safeThen(this, onFulfilled, onRejected);
   }

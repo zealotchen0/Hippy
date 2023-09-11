@@ -26,8 +26,14 @@
 const timer = internalBinding('TimerModule');
 
 global.setTimeout = function (cb, sleepTime) {
+  console.log('setTimeout post start: ', new Date().getTime(), cb);
   const args = Array.prototype.slice.call(arguments, 2);
-  return timer.SetTimeout(() => cb.apply(null, args), sleepTime);
+  return timer.SetTimeout(() => {
+    const setTimeoutStart = new Date().getTime();
+    console.log('setTimeout run start: ', setTimeoutStart, cb);
+    cb.apply(null, args);
+    console.log('setTimeout run cost: ', new Date().getTime() - setTimeoutStart, cb);
+  }, sleepTime);
 };
 
 global.clearTimeout = (timerId) => {
@@ -47,20 +53,18 @@ global.clearInterval = (timerId) => {
   }
 };
 
-global.requestIdleCallback = (cb, opt) => {
-  return timer.RequestIdleCallback((param) => {
-    const now = Date.now();
-    const timeRemaining = param.timeRemaining;
-    cb({
-      didTimeout: param.didTimeout,
-      timeRemaining: () => {
-        let time = timeRemaining - (Date.now() - now);
-        time = time < 0 ? 0 : time;
-        return time;
-      }
-    });
-  }, opt);
-};
+global.requestIdleCallback = (cb, opt) => timer.RequestIdleCallback((param) => {
+  const now = Date.now();
+  const { timeRemaining } = param;
+  cb({
+    didTimeout: param.didTimeout,
+    timeRemaining: () => {
+      let time = timeRemaining - (Date.now() - now);
+      time = time < 0 ? 0 : time;
+      return time;
+    },
+  });
+}, opt);
 
 global.cancelIdleCallback = (timerId) => {
   if (Number.isInteger(timerId) && timerId > 0) {
