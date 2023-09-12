@@ -67,19 +67,13 @@ Hippy.bridge.callNativeWithPromise = (...callArguments) => {
     if (callModuleMethod.type === 'promise') {
       return callModuleMethod.apply(NativeModule, paramList);
     }
-    console.log('callNativeWithPromise resolve post: ', nativeModuleName, nativeMethodName, new Date().getTime(), callModuleMethod);
     return new Promise((resolve, reject) => {
       if (needReject(nativeModuleName, nativeMethodName)) {
         paramList.push(reject);
       }
       paramList.push(resolve);
       callModuleMethod.apply(NativeModule, paramList);
-    }).then(() => {
-      console.log('callNativeWithPromise resolve success: ', nativeModuleName, nativeMethodName, new Date().getTime(), callModuleMethod);
-    })
-      .catch(() => {
-        console.log('callNativeWithPromise resolve error: ', nativeModuleName, nativeMethodName, new Date().getTime(), callModuleMethod);
-      });
+    });
   }
   return Promise.reject(new ReferenceError(`callNativeWithPromise Native ${nativeModuleName}.${nativeMethodName}() not found`));
 };
