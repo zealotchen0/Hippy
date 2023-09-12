@@ -95,9 +95,7 @@ function isDev() {
 }
 
 function isTraceEnabled() {
-  return !(!isDev()
-    || (process && process.release)
-    || (_Vue && _Vue.config.silent));
+  return true;
 }
 
 function trace(...context) {

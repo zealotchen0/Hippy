@@ -130,6 +130,7 @@ Vue.prototype.$start = function $start(afterCallback, beforeCallback) {
     Vue.component(entry.meta.component.name, entry.meta.component);
   });
 
+  trace('register loadinstance function: ', new Date().getTime());
   // Register the entry point into Hippy
   // The callback will be executed when Native trigger loadInstance
   // or runApplication event.
@@ -137,6 +138,7 @@ Vue.prototype.$start = function $start(afterCallback, beforeCallback) {
     const { __instanceId__: rootViewId } = superProps;
     this.$options.$superProps = superProps;
     this.$options.rootViewId = rootViewId;
+    trace('loadinstance start: ', new Date().getTime());
     trace(...componentName, 'Start', this.$options.appName, 'with rootViewId', rootViewId, superProps);
     // Destroy the old instance and set the new one when restart the app
     if (this.$el) {

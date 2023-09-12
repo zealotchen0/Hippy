@@ -102,7 +102,11 @@ function endBatch(app) {
     },
   } = app;
   UIManagerModule.startBatch();
+  const endBatchStart = new Date().getTime();
+  trace('endBatch start: ', endBatchStart, 'batchNodes length: ', batchNodes.length);
   $nextTick(() => {
+    const endBatchDelay = new Date().getTime();
+    trace('endBatch nextTick delay: ', endBatchDelay - endBatchStart, 'batchNodes length: ', batchNodes.length);
     const chunks = chunkNodes(batchNodes);
     chunks.forEach((chunk) => {
       switch (chunk.type) {
@@ -137,6 +141,7 @@ function endBatch(app) {
     UIManagerModule.endBatch();
     batchIdle = true;
     batchNodes = [];
+    trace('endBatch nextTick cost: ', new Date().getTime() - endBatchDelay, 'batchNodes length: ', batchNodes.length);
   });
 }
 
@@ -150,6 +155,8 @@ function getCssMap() {
      *  Here is a secret startup option: beforeStyleLoadHook.
      *  Usage for process the styles while styles loading.
      */
+    const getCssMapStart = new Date().getTime();
+    trace('getCssMap start: ', getCssMapStart);
     const cssRules = fromAstNodes(global[GLOBAL_STYLE_NAME]);
     if (cssMap) {
       cssMap.append(cssRules);
@@ -157,6 +164,7 @@ function getCssMap() {
       cssMap = new SelectorsMap(cssRules);
     }
     global[GLOBAL_STYLE_NAME] = undefined;
+    trace('getCssMap cost: ', new Date().getTime() - getCssMapStart);
   }
 
   if (global[GLOBAL_DISPOSE_STYLE_NAME]) {
@@ -301,6 +309,7 @@ function parseViewComponent(targetNode, nativeNode, style) {
  * @returns {{}}
  */
 function getElemCss(element) {
+  const getElemCssStart = new Date().getTime();
   const style = Object.create(null);
   try {
     getCssMap().query(element).selectors.forEach((matchedSelector) => {
@@ -311,6 +320,11 @@ function getElemCss(element) {
     });
   } catch (err) {
     console.error('getDomCss Error:', err);
+  }
+  const getElemCssEnd = new Date().getTime();
+  const getElemCssCost = getElemCssEnd - getElemCssStart;
+  if (getElemCssCost > 30) {
+    trace('getElemCssCost > 10ms: ', getElemCssCost, element);
   }
   return style;
 };
