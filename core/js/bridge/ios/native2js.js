@@ -49,7 +49,9 @@ __fbBatchedBridge.__invokeCallback = (cbID, args) => {
   if (args && args.length > 1 && (args[0] === null || args[0] === undefined)) {
     args.splice(0, 1);
   }
+  global.ConsoleModule?.log('promise onSuccess start: ', cbID);
   callback(...args);
+  global.ConsoleModule?.log('promise onSuccess end: ', cbID);
 };
 
 __fbBatchedBridge.callFunctionReturnFlushedQueue = (module, method, args) => {

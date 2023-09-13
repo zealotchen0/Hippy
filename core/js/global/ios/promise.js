@@ -64,6 +64,7 @@ function Promise(fn) {
   this._state = 0;
   this._value = null;
   this._deferreds = null;
+  global.ConsoleModule?.log('promise resolve post', "" + fn);
   if (fn === noop) return;
   doResolve(fn, this);
 }
@@ -72,6 +73,7 @@ Promise._onReject = null;
 Promise._noop = noop;
 
 Promise.prototype.then = function(onFulfilled, onRejected) {
+  global.ConsoleModule?.log('promise resolve success', "" + onFulfilled);
   if (this.constructor !== Promise) {
     return safeThen(this, onFulfilled, onRejected);
   }

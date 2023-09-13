@@ -26,8 +26,14 @@
 const timer = internalBinding('TimerModule');
 
 global.setTimeout = function (cb, sleepTime) {
+  global.ConsoleModule?.log('setTimeout post start: ', new Date().getTime(), `${cb}`);
   const args = Array.prototype.slice.call(arguments, 2);
-  return timer.SetTimeout(() => cb.apply(null, args), sleepTime);
+  return timer.SetTimeout(() => {
+    const setTimeoutStart = new Date().getTime();
+    global.ConsoleModule?.log('setTimeout run start: ', setTimeoutStart, cb.toString());
+    cb.apply(null, args);
+    global.ConsoleModule?.log('setTimeout run cost: ', new Date().getTime() - setTimeoutStart, `${cb}`);
+  }, sleepTime);
 };
 
 global.clearTimeout = (timerId) => {
