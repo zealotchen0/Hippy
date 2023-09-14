@@ -45,7 +45,11 @@ __hpBatchedBridge.__invokeCallback = (cbID, args) => {
   if (args && args.length > 1 && (args[0] === null || args[0] === undefined)) {
     args.splice(0, 1);
   }
+  // __GLOBAL__.Log[new Date().getTime()] = `promise onSuccess start: ${cbID}`;
+  global.ConsoleModule?.log('promise onSuccess start: ', cbID);
   callback(...args);
+  // __GLOBAL__.Log[new Date().getTime()] = `promise onSuccess end: ${cbID}`;
+  global.ConsoleModule?.log('promise onSuccess end: ', cbID);
 };
 
 __hpBatchedBridge.callFunctionReturnFlushedQueue = (module, method, args) => {

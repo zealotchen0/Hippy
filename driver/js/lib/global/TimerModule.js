@@ -26,13 +26,16 @@
 const timer = internalBinding('TimerModule');
 
 global.setTimeout = function (cb, sleepTime) {
-  console.log('setTimeout post start: ', new Date().getTime(), cb);
+  // __GLOBAL__.Log[new Date().getTime()] = `setTimeout post start: ${cb}`;
+  global.ConsoleModule?.log('setTimeout post start: ', new Date().getTime(), `${cb}`);
   const args = Array.prototype.slice.call(arguments, 2);
   return timer.SetTimeout(() => {
     const setTimeoutStart = new Date().getTime();
-    console.log('setTimeout run start: ', setTimeoutStart, cb);
+    // __GLOBAL__.Log[new Date().getTime()] = `setTimeout run start: ${cb}`;
+    global.ConsoleModule?.log('setTimeout run start: ', setTimeoutStart, cb.toString());
     cb.apply(null, args);
-    console.log('setTimeout run cost: ', new Date().getTime() - setTimeoutStart, cb);
+    // __GLOBAL__.Log[new Date().getTime()] = `setTimeout run end: ${cb}`;
+    global.ConsoleModule?.log('setTimeout run cost: ', new Date().getTime() - setTimeoutStart, `${cb}`);
   }, sleepTime);
 };
 

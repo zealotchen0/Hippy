@@ -60,18 +60,16 @@ function createComment(text) {
   return document.createComment(text);
 }
 
-let isFirstInsert = false;
 function insertBefore(pNode, newNode, referenceNode) {
-  if (!isFirstInsert) {
-    trace('insertBefore start: ', new Date().getTime());
-  }
+  const insertStartTime = new Date().getTime();
+  trace('insertBefore start nodeId:', newNode.nodeId, insertStartTime);
   if (pNode.childNodes.indexOf(newNode) >= 0) {
     // move it if the node has existed
     pNode.moveChild(newNode, referenceNode);
   } else {
     pNode.insertBefore(newNode, referenceNode);
   }
-  isFirstInsert = true;
+  trace('insertBefore const nodeId:', newNode.nodeId, new Date().getTime() - insertStartTime);
 }
 
 function removeChild(node, child) {

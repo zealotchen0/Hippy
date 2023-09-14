@@ -78,6 +78,8 @@ __GLOBAL__.enqueueNativeCall = (moduleID, methodID, params, onSuccess, onFail) =
     if (onSuccess) {
       params.push(__GLOBAL__._callbackID);
     }
+    // __GLOBAL__.Log[new Date().getTime()] = `promise onSuccess post: ${__GLOBAL__._callbackID}${onSuccess}`;
+    global.ConsoleModule?.log('promise onSuccess post: ', __GLOBAL__._callbackID, `${onSuccess}`);
     __GLOBAL__._callbacks[__GLOBAL__._callbackID] = onSuccess;
     __GLOBAL__._callbackID += 1;
 
