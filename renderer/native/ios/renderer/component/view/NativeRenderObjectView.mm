@@ -219,6 +219,9 @@ NSString *const NativeRenderShadowViewDiffTag = @"NativeRenderShadowViewDiffTag"
 }
 
 - (void)insertNativeRenderSubview:(NativeRenderObjectView *)subview atIndex:(NSInteger)atIndex {
+    if (!subview) {
+        return;
+    }
     if (atIndex <= [_objectSubviews count]) {
         [_objectSubviews insertObject:subview atIndex:atIndex];
     }

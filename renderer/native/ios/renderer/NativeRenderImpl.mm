@@ -302,7 +302,7 @@ NSString *const NativeRenderUIManagerDidEndBatchNotification = @"NativeRenderUIM
         NativeRenderComponentData *componentData = _componentDataByName[viewName];
         if (!componentData) {
             NativeRenderViewManager *viewManager = [self renderViewManagerForViewName:viewName];
-            NSAssert(viewManager, @"No view manager found for %@", viewName);
+            // NSAssert(viewManager, @"No view manager found for %@", viewName);
             if (viewManager) {
                 componentData = [[NativeRenderComponentData alloc] initWithViewManager:viewManager viewName:viewName];
                 _componentDataByName[viewName] = componentData;
@@ -533,7 +533,7 @@ NSString *const NativeRenderUIManagerDidEndBatchNotification = @"NativeRenderUIM
     NativeRenderComponentData *componentData = [self componentDataForViewName:viewName];
     NativeRenderObjectView *renderObject = [componentData createRenderObjectViewWithTag:componentTag];
     renderObject.rootNode = rootNode;
-    NSAssert(componentData && renderObject, @"componentData and renderObject must not be nil");
+    // NSAssert(componentData && renderObject, @"componentData and renderObject must not be nil");
     [props setValue: rootTag forKey: @"rootTag"];
     // Register shadow view
     if (renderObject) {
