@@ -86,7 +86,7 @@ LogMessage::~LogMessage() {
   }
 
   if (severity_ >= TDF_LOG_FATAL) {
-    abort();
+   // abort();
   }
 }
 
