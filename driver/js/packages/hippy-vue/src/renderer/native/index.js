@@ -177,6 +177,7 @@ function endBatch(app) {
           break;
         case NODE_OPERATION_TYPES.updateEvent:
           handleEventListeners(chunk.eventNodes, sceneBuilder);
+          break;
         default:
       }
     });
