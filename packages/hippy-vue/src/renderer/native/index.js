@@ -105,8 +105,9 @@ function endBatch(app) {
   const endBatchStart = new Date().getTime();
   trace('endBatch start: ', endBatchStart, 'batchNodes length: ', batchNodes.length);
   $nextTick(() => {
+    const random = Math.random();
     const endBatchDelay = new Date().getTime();
-    trace('endBatch nextTick delay: ', endBatchDelay - endBatchStart, 'batchNodes length: ', batchNodes.length);
+    trace('endBatch nextTick delay: ', endBatchDelay - endBatchStart, 'batchNodes length: ', batchNodes.length, random);
     const chunks = chunkNodes(batchNodes);
     chunks.forEach((chunk) => {
       switch (chunk.type) {
@@ -140,8 +141,8 @@ function endBatch(app) {
     });
     UIManagerModule.endBatch();
     batchIdle = true;
+    trace('endBatch nextTick cost: ', new Date().getTime() - endBatchDelay, 'batchNodes length: ', batchNodes.length, random);
     batchNodes = [];
-    trace('endBatch nextTick cost: ', new Date().getTime() - endBatchDelay, 'batchNodes length: ', batchNodes.length);
   });
 }
 
