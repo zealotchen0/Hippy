@@ -151,8 +151,9 @@ function endBatch(app) {
   const endBatchStart = new Date().getTime();
   trace(...LOG_TYPE, 'endBatch start: ', endBatchStart, 'batchNodes length: ', batchNodes.length);
   $nextTick(() => {
+    const random = Math.random();
     const endBatchDelay = new Date().getTime();
-    trace(...LOG_TYPE, 'endBatch nextTick delay: ', endBatchDelay - endBatchStart, 'batchNodes length: ', batchNodes.length);
+    trace(...LOG_TYPE, 'endBatch nextTick delay: ', endBatchDelay - endBatchStart, 'batchNodes length: ', batchNodes.length, random);
     const chunks = chunkNodes(batchNodes);
     const sceneBuilder = new global.Hippy.SceneBuilder(rootViewId);
     chunks.forEach((chunk) => {
@@ -182,7 +183,7 @@ function endBatch(app) {
       }
     });
     sceneBuilder.build();
-    trace(...LOG_TYPE, 'endBatch nextTick cost: ', new Date().getTime() - endBatchDelay, 'batchNodes length: ', batchNodes.length);
+    trace(...LOG_TYPE, 'endBatch nextTick cost: ', new Date().getTime() - endBatchDelay, 'batchNodes length: ', batchNodes.length, random);
     batchIdle = true;
     batchNodes = [];
   });
