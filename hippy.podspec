@@ -75,7 +75,7 @@ Pod::Spec.new do |s|
     footstone.libraries = 'c++'
     footstone.source_files = ['modules/footstone/**/*.{h,cc}']
     footstone.public_header_files = ['modules/footstone/**/*.h']
-    footstone.exclude_files = ['modules/footstone/include/footstone/platform/adr', 'modules/footstone/src/platform/adr']
+    footstone.exclude_files = ['modules/footstone/include/footstone/platform/adr', 'modules/footstone/src/platform/adr', 'modules/footstone/include/footstone/platform/ohos', 'modules/footstone/src/platform/ohos']
     footstone.header_mappings_dir = 'modules/footstone/'
     if use_frameworks
       header_search_paths = "#{framework_header_path}" + " #{framework_header_path}/include"
