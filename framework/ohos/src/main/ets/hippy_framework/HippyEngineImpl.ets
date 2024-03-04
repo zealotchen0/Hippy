@@ -40,10 +40,12 @@ import { HippyException } from '../support/common/HippyException';
 import { HippyResourceLoader } from './adapter/http/HippyResourceLoader';
 import { HippyAPIProvider } from './HippyAPIProvider';
 import { HRRenderViewCreator } from '../renderer_native/components/HippyRenderRegisterMap';
+import { HippyGlobalConfigs } from './HippyGlobalConfigs';
+import { TimeMonitor } from '../support/utils/TimeMonitor';
 
 export class HippyEngineImpl implements HippyEngine, FrameworkProxy {
   private libHippy: HippyLibrary
-  private resourceManager: resmgr.ResourceManager
+  private resourceManager: resmgr.ResourceManager | null = null
 
   private providers: Array<HippyAPIProvider> | null
 
@@ -53,13 +55,34 @@ export class HippyEngineImpl implements HippyEngine, FrameworkProxy {
   public nativeRenderProvider: NativeRenderProvider | null = null
   public nativeRenderer: NativeRenderer | null = null
 
+  public mGlobalConfigs: HippyGlobalConfigs
+
   constructor(params: EngineInitParams) {
     this.libHippy = params.libHippy
-    this.resourceManager = params.context.resourceManager
+    if (params.context) {
+      this.resourceManager = params.context.resourceManager
+    }
     this.providers = params.providers
     this.vfsManager = new VfsManager(this.libHippy)
     const resourceLoader = new HippyResourceLoader()
     this.vfsManager.addProcessorAtFirst(new DefaultProcessor(resourceLoader))
+    this.mGlobalConfigs = new HippyGlobalConfigs(params)
+
+
+    this.mCoreBundleLoader = coreBundleLoader;
+    this.mPreloadBundleLoader = preloadBundleLoader;
+    // TODO
+    // this.mProviders = params.providers;
+    // this.mProcessors = params.processors;
+    this.mDebugMode = params.debugMode;
+    this.mServerBundleName = params.debugMode ? params.debugBundleName : "";
+    this.enableV8Serialization = params.enableV8Serialization;
+    this.mServerHost = params.debugServerHost;
+    this.mRemoteServerUrl = params.remoteServerUrl;
+    this.mGroupId = params.groupId;
+    this.mThirdPartyAdapter = params.thirdPartyAdapter;
+    this.v8InitParams = params.v8InitParams;
+    this.mMonitor = new TimeMonitor();
   }
 
   initEngine(initCallbak: HippyEngineInitCallback): void {
@@ -88,7 +111,7 @@ export class HippyEngineImpl implements HippyEngine, FrameworkProxy {
     this.domMgr.attachToRoot(rootNodeId)
     this.jsDriver = new JsDriver(this.libHippy)
     this.jsDriver.initialize(this.domMgr.instanceId, this.vfsManager.instanceId, (result: number, reason: string) => {
-      if (!this.jsDriver || !this.domMgr || !this.vfsManager) {
+      if (!this.jsDriver || !this.domMgr || !this.vfsManager || !this.resourceManager) {
         return
       }
       hilog.info(0x0000, 'hippy', 'jsDriver initialize callback, instanceId: %{public}d', this.jsDriver.instanceId);
@@ -147,7 +170,7 @@ export class HippyEngineImpl implements HippyEngine, FrameworkProxy {
   }
 
   loadJsModule() {
-    if (!this.jsDriver || !this.vfsManager) {
+    if (!this.jsDriver || !this.vfsManager || !this.resourceManager) {
       return
     }
     this.jsDriver.runScriptFromUri("asset:/vue2/index.android.js",

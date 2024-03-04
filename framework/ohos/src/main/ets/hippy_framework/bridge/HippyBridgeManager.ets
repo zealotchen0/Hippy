@@ -19,5 +19,26 @@
  */
 
 export interface HippyBridgeManager {
+  void initBridge(Callback<Boolean> callback);
 
+  void runBundle(int id, HippyBundleLoader loader);
+
+  void loadInstance(String name, int id, HippyMap params);
+
+  void resumeInstance(int id);
+
+  void pauseInstance(int id);
+
+  void destroyInstance(int id);
+
+  void execCallback(Object params, BridgeTransferType transferType);
+
+  void destroyBridge(boolean isReload);
+
+  void destroy();
+
+  void callJavaScriptModule(String mName, String name, Object params,
+  BridgeTransferType transferType);
+
+  HippyThirdPartyAdapter getThirdPartyAdapter();
 }
