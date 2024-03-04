@@ -19,5 +19,33 @@
  */
 
 export interface HippyBridge {
+  URI_SCHEME_ASSETS: string;
+  URI_SCHEME_FILE: string;
 
+  initJSBridge(gobalConfig: string, callback: NativeCallback, groupId: number);
+
+  runScriptFromUri(uri: string, assetManager: AssetManager, canUseCodeCache: boolean,
+  codeCacheTag: string, callback: NativeCallback): boolean;
+
+  onDestroy();
+
+  destroy(callback: NativeCallback, isReload: boolean);
+
+  callFunction1(functionId: number, callback: NativeCallback, buffer: ByteBuffer);
+
+  callFunction2(functionId: number, callback: NativeCallback, buffer: byte[]);
+
+  callFunction3(functionId: number, callback: NativeCallback, buffer: byte[], offset: number,
+   length: number);
+
+  getV8RuntimeId(): number;
+}
+
+export interface BridgeCallback {
+
+  callNatives(moduleName: string, moduleFunc: string, callId: string, params: ByteBuffer);
+
+  reportException(message: string, stackTrace: string);
+
+  reportException(e: Throwable);
 }
