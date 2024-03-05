@@ -80,7 +80,6 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
   constructor(params: EngineInitParams) {
     this.libHippy = params.libHippy
     this.libHippy = params.libHippy
-    // this.resourceManager = params.context.resourceManager
     this.providers = params.providers
     this.vfsManager = new VfsManager(this.libHippy)
     const resourceLoader = new HippyResourceLoader()
@@ -100,6 +99,7 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
     if (!params.context) {
       return
     }
+    this.resourceManager = params.context.resourceManager
     // create core bundle loader
     let coreBundleLoader: HippyBundleLoader | null = null;
     if (!TextUtils.isEmpty(params.coreJSAssetsPath)) {
