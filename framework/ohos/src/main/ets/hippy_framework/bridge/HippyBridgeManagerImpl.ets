@@ -26,9 +26,131 @@ import { Serializer } from '../serialization/Serializer';
 import { HippyBundleLoader } from './bundleloader/HippyBundleLoader';
 import { HippyBridgeManager } from './HippyBridgeManager';
 
+export enum BridgeState {
+  UNINITIALIZED = 0,
+  INITIALIZED = 1,
+  DESTROYED = 2,
+}
+
 export class HippyBridgeManagerImpl implements HippyBridgeManager {
+  // Bridge 状态
+  public static MSG_CODE_INIT_BRIDGE = 10;
+  public static MSG_CODE_RUN_BUNDLE = 11;
+  public static MSG_CODE_CALL_FUNCTION = 12;
+  public static MSG_CODE_DESTROY_BRIDGE = 13;
+  public static MSG_CODE_ON_BRIDGE_DESTROYED = 14;
+  // Instance 状态
+  public static FUNCTION_ACTION_LOAD_INSTANCE = 1;
+  public static FUNCTION_ACTION_RESUME_INSTANCE = 2;
+  public static FUNCTION_ACTION_PAUSE_INSTANCE = 3;
+  public static FUNCTION_ACTION_DESTROY_INSTANCE = 4;
+  public static FUNCTION_ACTION_CALLBACK = 5;
+  public static FUNCTION_ACTION_CALL_JS_MODULE = 6;
+  public static FUNCTION_ACTION_ON_WEBSOCKET_MESSAGE = 7;
+  // Bridge状态定义
+  public static BRIDGE_TYPE_SINGLE_THREAD = 2;
+  public static BRIDGE_TYPE_NORMAL = 1;
+  // 销毁状态
+  public static DESTROY_CLOSE = 0;
+  public static DESTROY_RELOAD = 1;
+
+  public mContext: HippyEngineContext;
+  public mCoreBundleLoader: HippyBundleLoader;
+  public mEnableV8Serialization: boolean;
+  public mIsDevModule: boolean;
+  public mDebugServerHost: string;
+  public mGroupId: number;
+  public mThirdPartyAdapter: HippyThirdPartyAdapter;
+  public mV8InitParams: V8InitParams;
+  public mJsDriver: JsDriver;
+
+  public constructor(
+    context: HippyEngineContext,
+    coreBundleLoader: HippyBundleLoader,
+    enableV8Serialization: boolean,
+    isDevModule: boolean,
+    debugServerHost: string,
+    groupId: number,
+    thirdPartyAdapter: HippyThirdPartyAdapter,
+    v8InitParams: V8InitParams,
+    jsDriver: JsDriver) {
+
+    this.mContext = context;
+    this.mCoreBundleLoader = coreBundleLoader;
+    this.mGroupId = groupId;
+    this.mThirdPartyAdapter = thirdPartyAdapter;
+    this.mEnableV8Serialization = enableV8Serialization;
+    this.mHippyBridge = new HippyBridgeImpl(
+      context,
+      this,
+      enableV8Serialization,
+      isDevModule,
+      debugServerHost,
+      v8InitParams,
+      jsDriver);
+    if (enableV8Serialization) {
+      // compatibleSerializer = new Serializer();
+      // recommendSerializer = new com.tencent.mtt.hippy.serialization.recommend.Serializer();
+    } else {
+      // mStringBuilder = new StringBuilder(1024);
+    }
+  }
+
   initBridge(): void {
-    throw new Error('Method not implemented.');
+    this.mHippyBridge.initJSBridge(getGlobalConfigs(), new NativeCallback(mHandler) {
+      @Override
+      public void Call(long result, Message message, String action,
+      String reason) {
+        if (result != 0 || mBridgeState == BridgeState.DESTROYED) {
+          String info =
+            "initJSBridge error: result " + result + ", reason "
+              + reason + ", bridge state " + mBridgeState;
+          reportException(new Throwable(info));
+          return;
+        }
+        long runtimeId = mHippyBridge.getV8RuntimeId();
+        if (mContext != null) {
+          mContext.onRuntimeInitialized();
+        }
+        if (enableTurbo()) {
+          mTurboModuleManager = new TurboModuleManager(mContext);
+          mTurboModuleManager.install(runtimeId);
+        }
+        if (mThirdPartyAdapter != null) {
+          mThirdPartyAdapter.onRuntimeInit(runtimeId);
+        }
+        if (mCoreBundleLoader != null) {
+          final TimeMonitor timeMonitor = mContext.getMonitor();
+          timeMonitor.startPoint(MonitorGroupType.ENGINE_INITIALIZE,
+            TimeMonitor.MONITOR_POINT_LOAD_COMMON_JS);
+          mCoreBundleLoader
+            .load(mHippyBridge, new NativeCallback(mHandler) {
+            @Override
+            public void Call(long result, Message message,
+            String action, String reason) {
+              if (mBridgeState == BridgeState.DESTROYED) {
+                return;
+              }
+              RuntimeException exception = null;
+              if (result == 0) {
+                mBridgeState = BridgeState.INITIALIZED;
+              } else {
+                exception = new RuntimeException(
+                  "load coreJsBundle failed, check your core jsBundle:"
+                    + reason);
+              }
+              timeMonitor.startPoint(
+                MonitorGroupType.ENGINE_INITIALIZE,
+                TimeMonitor.MONITOR_POINT_NOTIFY_ENGINE_INITIALIZED);
+              callback.callback((result == 0), exception);
+            }
+          });
+        } else {
+          mBridgeState = BridgeState.INITIALIZED;
+          callback.callback(true, null);
+        }
+      }
+    }, mGroupId);
   }
 
   runBundle(id: number, loader: HippyBundleLoader): void {

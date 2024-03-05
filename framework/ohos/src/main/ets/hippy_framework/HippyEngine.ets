@@ -56,6 +56,15 @@ export class V8InitParams {
   public maximumHeapSize: number = 0;
 }
 
+export enum EngineState {
+  UNINIT = 0,
+  INITING = 1,
+  ONRESTART = 2,
+  INITERRORED = 3,
+  INITED = 4,
+  DESTROYED = 5,
+}
+
 
 export class EngineInitParams {
   libHippy: HippyLibrary
