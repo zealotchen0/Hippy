@@ -25,11 +25,34 @@ import { NativeCallback } from '../connector/NativeCallback';
 export class HippyBridgeImpl implements HippyBridge {
   private URI_SCHEME_ASSETS: string = '';
   private URI_SCHEME_FILE: string = '';
-  private jsDriver: JsDriver
+  private mEngineContext: HippyEngineContext;
+  private mBridgeCallback: BridgeCallback;
+  private mEnableV8Serialization: boolean;
+  private mIsDevModule: boolean;
+  private mDebugServerHost: string;
+  private mV8InitParams: V8InitParams;
+  private mJsDriver: JsDriver;
 
-  public constructor(jsDriver: JsDriver) {
-    this.jsDriver = jsDriver;
+  public constructor(
+    engineContext: HippyEngineContext,
+    callback: BridgeCallback,
+    enableV8Serialization: boolean,
+    isDevModule: boolean,
+    debugServerHost: string,
+    v8InitParams: V8InitParams,
+    jsDriver: JsDriver) {
+    this.mEngineContext = engineContext;
+    this.mBridgeCallback = callback;
+    this.mEnableV8Serialization =  enableV8Serialization;
+    this.mIsDevModule = isDevModule;
+    this.mDebugServerHost = string;
+    this.mV8InitParams = V8InitParams;
+    this.mJsDriver = jsDriver;
+    this.mJsDriver.setBridgeProxy(this);
+
+    // TODO Code Cache
   }
+
   initJSBridge(gobalConfig: string, callback: NativeCallback, groupId: number): void {
     throw new Error('Method not implemented.');
   }
@@ -52,5 +75,4 @@ export class HippyBridgeImpl implements HippyBridge {
 
   callFunction(functionId: number, callback: NativeCallback, buffer: Uint8Array) {
   }
-
 }
