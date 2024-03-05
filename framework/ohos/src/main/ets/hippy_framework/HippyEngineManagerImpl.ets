@@ -19,9 +19,11 @@
  */
 import resmgr from "@ohos.resourceManager";
 import hilog from '@ohos.hilog';
-import { EngineInitParams,
+import {
+  EngineInitParams,
   EngineInitStatus,
-  HippyEngine, HippyEngineInitCallback,
+  HippyEngine,
+  HippyEngineInitCallback,
   HippyModuleLoadCallback,
   ModuleLoadParams,
   ModuleLoadStatus,
@@ -57,14 +59,12 @@ import { URI_SCHEME_ASSETS } from './bridge/HippyBridge';
 export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
   private libHippy: HippyLibrary
   private resourceManager: resmgr.ResourceManager | null = null
-
   private providers: Array<HippyAPIProvider> | null = null
-
+  public vfsManager: VfsManager
   public jsDriver: JsDriver | null = null
   public domMgr: DomManager | null = null
   public nativeRenderProvider: NativeRenderProvider | null = null
   public nativeRenderer: NativeRenderer | null = null
-
   public mGlobalConfigs: HippyGlobalConfigs
   public mCoreBundleLoader: HippyBundleLoader | null = null;
   public mJsBundleLoader: HippyBundleLoader | null = null;
@@ -103,11 +103,11 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
     // create core bundle loader
     let coreBundleLoader: HippyBundleLoader | null = null;
     if (!TextUtils.isEmpty(params.coreJSAssetsPath)) {
-        coreBundleLoader = new HippyAssetBundleLoader(params.context, params.coreJSAssetsPath,
-                    !TextUtils.isEmpty(params.codeCacheTag), params.codeCacheTag);
+      coreBundleLoader = new HippyAssetBundleLoader(params.context, params.coreJSAssetsPath,
+        !TextUtils.isEmpty(params.codeCacheTag), params.codeCacheTag);
     } else if (!TextUtils.isEmpty(params.coreJSFilePath)) {
-        coreBundleLoader = new HippyFileBundleLoader(params.coreJSFilePath,
-                 !TextUtils.isEmpty(params.codeCacheTag), params.codeCacheTag);
+      coreBundleLoader = new HippyFileBundleLoader(params.coreJSFilePath,
+        !TextUtils.isEmpty(params.codeCacheTag), params.codeCacheTag);
     }
     this.mCoreBundleLoader = coreBundleLoader;
     // this.mPreloadBundleLoader = preloadBundleLoader;
@@ -116,7 +116,28 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
     // this.mProcessors = params.processors;
   }
 
-  initEngine(initCallbak: HippyEngineInitCallback): void {
+  public initDevModule() {
+    // TODO Debug
+  }
+
+  public restartEngine() {
+    // 性能打点
+    this.mMonitor.startPoint(MonitorGroupType.ENGINE_INITIALIZE, TimeMonitor.MONITOR_POINT_INIT_NATIVE_ENGINE);
+    this.domMgr = new DomManager(this.libHippy)
+    // 初始化 HippyEngineContext
+    this.mEngineContext = new HippyEngineContextImpl(
+      this.domMgr,
+      this.mGlobalConfigs,
+      this.mMonitor,
+      this.mCoreBundleLoader,
+    );
+    // TODO initBridge
+    this.mEngineContext.getBridgeManager().initBridge();
+
+  }
+
+
+  public initEngine(initCallbak: HippyEngineInitCallback): void {
     this.domMgr = new DomManager(this.libHippy)
     this.mEngineContext = new HippyEngineContextImpl(this.libHippy, this.domMgr, this.mGlobalConfigs);
     this.moduleManager = new HippyModuleManager(this.mEngineContext)
@@ -257,5 +278,4 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
   public getNativeRenderContext(): NativeRenderContext {
     return this.nativeRenderProvider?.getNativeRenderImpl().getNativeRenderContext() as NativeRenderContext
   }
-
 }
