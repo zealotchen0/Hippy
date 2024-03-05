@@ -33,7 +33,7 @@ import { PreferencesStorageAdapter } from './adapter/storage/PreferencesStorageA
 import { HippyThirdPartyAdapter } from './adapter/thirdparty/HippyThirdPartyAdapter';
 import { HippyBundleLoader } from './bridge/bundleloader/HippyBundleLoader';
 import { HippyAPIProvider } from './HippyAPIProvider';
-import { HippyEngineImpl } from './HippyEngineImpl';
+import { HippyEngineManagerImpl } from './HippyEngineManagerImpl';
 
 export interface HippyEngine {
   initEngine(initCallbak: HippyEngineInitCallback): void
@@ -45,7 +45,7 @@ export interface HippyEngine {
 }
 
 export function createHippyEngine(params: EngineInitParams): HippyEngine {
-  return new HippyEngineImpl(params)
+  return new HippyEngineManagerImpl(params)
 }
 
 export type HippyEngineInitCallback = (statusCode: EngineInitStatus, msg: string) => void
@@ -130,7 +130,7 @@ export class EngineInitParams {
 // Hippy 业务模块jsbundle加载时的参数设置
 export class ModuleLoadParams {
   // 必须参数
-  public context: Context;
+  // public context: Context;
   /**
    * 必须参数 业务模块jsbundle中定义的组件名称。componentName对应的是js文件中的"appName"，比如： var hippy = new Hippy({
    * appName: "Demo", entryPage: App });
@@ -142,23 +142,30 @@ export class ModuleLoadParams {
   // 可选参数 二选一设置 自己开发的业务模块的文件路径（assets路径和文件路径二选一，优先使用assets路径）
   public jsFilePath: string;
   // 可选参数 传递给前端的rootview：比如：Hippy.entryPage: class App extends Component
-  public jsParams: HippyMap;
+  public jsParams: HippyMap | null = null;
   // 可选参数 目前只有一个用处：映射："CustomViewCreator" <==> 宿主自定义的一个HippyCustomViewCreator(这个creator还得通过ModuleParams.Builder.setCustomViewCreator来指定才行)
-  public nativeParams: HippyMap;
+  public nativeParams: HippyMap | null = null;
   // 可选参数 Bundle加载器，老式用法，不建议使用（若一定要使用，则会覆盖jsAssetsPath，jsFilePath的值）。参见jsAssetsPath，jsFilePath
   // 可选参数 code cache的名字，如果设置为空，则不启用code cache，默认为 ""
   public codeCacheTag = "";
-  public bundleLoader: HippyBundleLoader;
+  public bundleLoader: HippyBundleLoader | null = null;
 
-  public constructor(params: ModuleLoadParams) {
-    this.context = params.context;
-    this.jsAssetsPath = params.jsAssetsPath;
-    this.jsFilePath = params.jsFilePath;
-    this.componentName = params.componentName;
-    this.jsParams = params.jsParams;
-    this.nativeParams = params.nativeParams;
-    this.codeCacheTag = params.codeCacheTag;
-    this.bundleLoader = params.bundleLoader;
+  public constructor(
+    jsAssetsPath = '',
+    jsFilePath = '',
+    componentName = '',
+    codeCacheTag = '',
+    jsParams: HippyMap | null,
+    nativeParams: HippyMap | null,
+    bundleLoader: HippyBundleLoader | null,
+  ) {
+    this.jsAssetsPath = jsAssetsPath;
+    this.jsFilePath = jsFilePath;
+    this.componentName = componentName;
+    this.jsParams = jsParams;
+    this.nativeParams = nativeParams;
+    this.codeCacheTag = codeCacheTag;
+    this.bundleLoader = bundleLoader;
 }
 }
 

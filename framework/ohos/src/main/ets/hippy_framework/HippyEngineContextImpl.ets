@@ -1,55 +1,51 @@
+import { TimeMonitor } from '../support/utils/TimeMonitor';
 import { VfsManager } from '../vfs/VfsManager';
 import { HippyBridgeManager } from './bridge/HippyBridgeManager';
 import { DomManager } from './connector/DomManager';
 import { JsDriver } from './connector/JsDriver';
 import { HippyEngineContext } from './HippyEngineContext';
+import { HippyGlobalConfigs } from './HippyGlobalConfigs';
 import { HippyModuleManager } from './modules/HippyModuleManager';
 
-public
 
-class HippyEngineContextImpl implements HippyEngineContext {
-  private mComponentName: string;
-  private mModuleManager: HippyModuleManager;
-  private mBridgeManager: HippyBridgeManager;
-  private mRenderer: RenderConnector;
-  private mDomManager: DomManager;
-  private mJsDriver: JsDriver;
-  private mVfsManager: VfsManager;
+export class HippyEngineContextImpl implements HippyEngineContext {
+  private mGlobalConfigs: HippyGlobalConfigs;
 
   // TODO
   // private mDevtoolsManager: DevtoolsManager;
 
-  // volatile CopyOnWriteArrayList<HippyEngineLifecycleEventListener> mEngineLifecycleEventListeners;
 
-  public constructor(domManager: DomManager) {
-    // this.mVfsManager = (mProcessors != null) ? new VfsManager(mProcessors) : new VfsManager();
-    // this.mVfsManager.setId(onCreateVfs(mVfsManager));
-    DefaultProcessor
-    defaultProcessor = new DefaultProcessor(new HippyResourceLoader(this));
-    PerformanceProcessor
-    performanceProcessor = new PerformanceProcessor(this);
-    mVfsManager.addProcessorAtFirst(performanceProcessor);
-    mVfsManager.addProcessorAtLast(defaultProcessor);
-    if (mDebugMode) {
-      mDevtoolsManager = new DevtoolsManager(true);
-      String
-      localCachePath = getGlobalConfigs().getContext().getCacheDir()
-        .getAbsolutePath();
-      mDevtoolsManager.create(localCachePath,
-        getDevSupportManager().createDebugUrl(mServerHost));
-      //mVfsManager.addProcessorAtFirst(new DevtoolsProcessor(mDevtoolsManager.getId()));
-    }
+  public constructor(
+    domManager: DomManager,
+    globalConfigs: HippyGlobalConfigs) {
+    this.mGlobalConfigs = globalConfigs;
+  }
 
-    mModuleManager = new HippyModuleManagerImpl(this, mProviders,
-      enableV8Serialization);
-    mJsDriver = new JsDriver();
-    mBridgeManager = new HippyBridgeManagerImpl(this, mCoreBundleLoader,
-      getBridgeType(), enableV8Serialization, mDebugMode,
-      mServerHost, mGroupId, mThirdPartyAdapter, v8InitParams, mJsDriver);
-    mDomManager = (domManager != null) ? domManager : new DomManager();
-    mRenderer = createRenderer(RenderConnector.NATIVE_RENDERER);
-    mDomManager.attachToRenderer(mRenderer);
-    mRenderer.attachToDom(mDomManager);
-    mRenderer.setFrameworkProxy(HippyEngineManagerImpl.this);
+  getComponentName(): string {
+    throw new Error('Method not implemented.');
+  }
+
+  getVfsManager(): VfsManager {
+    throw new Error('Method not implemented.');
+  }
+
+  getJsDriver(): JsDriver {
+    throw new Error('Method not implemented.');
+  }
+
+  getMonitor(): TimeMonitor {
+    throw new Error('Method not implemented.');
+  }
+
+  getGlobalConfigs(): HippyGlobalConfigs {
+    return this.mGlobalConfigs;
+  }
+
+  getModuleManager(): HippyModuleManager {
+    throw new Error('Method not implemented.');
+  }
+
+  getBridgeManager(): HippyBridgeManager {
+    throw new Error('Method not implemented.');
   }
 }

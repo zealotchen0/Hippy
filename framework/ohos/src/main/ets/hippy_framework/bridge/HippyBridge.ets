@@ -17,35 +17,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { NativeCallback } from '../connector/NativeCallback';
 
 export interface HippyBridge {
-  URI_SCHEME_ASSETS: string;
-  URI_SCHEME_FILE: string;
 
-  initJSBridge(gobalConfig: string, callback: NativeCallback, groupId: number);
+  initJSBridge(gobalConfig: string, callback: NativeCallback, groupId: number): void;
 
-  runScriptFromUri(uri: string, assetManager: AssetManager, canUseCodeCache: boolean,
-  codeCacheTag: string, callback: NativeCallback): boolean;
+  runScriptFromUri(uri: string, canUseCodeCache: boolean, codeCacheTag: string, callback: NativeCallback): boolean;
 
-  onDestroy();
+  onDestroy(): void;
 
-  destroy(callback: NativeCallback, isReload: boolean);
+  destroy(callback: NativeCallback, isReload: boolean): void;
 
-  callFunction1(functionId: number, callback: NativeCallback, buffer: ByteBuffer);
-
-  callFunction2(functionId: number, callback: NativeCallback, buffer: byte[]);
-
-  callFunction3(functionId: number, callback: NativeCallback, buffer: byte[], offset: number,
-   length: number);
+  callFunction(functionId: number, callback: NativeCallback, buffer: Uint8Array): void;
 
   getV8RuntimeId(): number;
 }
 
 export interface BridgeCallback {
 
-  callNatives(moduleName: string, moduleFunc: string, callId: string, params: ByteBuffer);
+  callNatives(moduleName: string, moduleFunc: string, callId: string, params: Uint8Array): void;
 
-  reportException(message: string, stackTrace: string);
+  reportException(message: string, stackTrace: string): void;
 
-  reportException(e: Throwable);
 }
