@@ -1,21 +1,41 @@
+import { HippyMap } from '../support/common/HippyTypes';
+import { HippyLibrary } from '../hippy_library/HippyLibrary';
+import { HRRenderViewCreator } from '../renderer_native/components/HippyRenderRegisterMap';
+import { NativeRenderContext } from '../renderer_native/NativeRenderContext';
+import { NativeRenderProvider } from '../renderer_native/NativeRenderProvider';
+import { PixelUtil } from '../support/utils/PixelUtil';
 import { TimeMonitor } from '../support/utils/TimeMonitor';
 import { VfsManager } from '../vfs/VfsManager';
+import { HippyBundleLoader } from './bridge/bundleloader/HippyBundleLoader';
 import { HippyBridgeManager } from './bridge/HippyBridgeManager';
+import { HippyBridgeManagerImpl } from './bridge/HippyBridgeManagerImpl';
 import { DomManager } from './connector/DomManager';
 import { JsDriver } from './connector/JsDriver';
+import { NativeRenderer } from './connector/NativeRenderer';
+import { HippyAPIProvider } from './HippyAPIProvider';
+import { EngineInitParams } from './HippyEngine';
 import { HippyEngineContext } from './HippyEngineContext';
 import { HippyGlobalConfigs } from './HippyGlobalConfigs';
 import { HippyModuleManager } from './modules/HippyModuleManager';
-
+import { HashMap } from '@kit.ArkTS';
+import { HippyResourceLoader } from './adapter/http/HippyResourceLoader';
+import { DefaultProcessor } from '../vfs/DefaultProcessor';
 
 export class HippyEngineContextImpl implements HippyEngineContext {
   private mEngineInitParams: EngineInitParams;
   private mGlobalConfigs: HippyGlobalConfigs;
+  public vfsManager: VfsManager
+  public nativeParams: HashMap<string, Object> = new HashMap()
   private mDomManager: DomManager;
   private mMonitor: TimeMonitor;
   private mModuleManager: HippyModuleManager;
   private mBridgeManager: HippyBridgeManager;
-  public mCoreBundleLoader: HippyBundleLoader;
+  public mCoreBundleLoader: HippyBundleLoader | null = null;
+  private providers: Array<HippyAPIProvider> | null = null
+  public nativeRenderProvider: NativeRenderProvider | null = null
+  public nativeRenderer: NativeRenderer | null = null
+  private libHippy: HippyLibrary
+  private mJsDriver: JsDriver
 
   // TODO
   // private mDevtoolsManager: DevtoolsManager;
@@ -26,14 +46,21 @@ export class HippyEngineContextImpl implements HippyEngineContext {
     domManager: DomManager,
     globalConfigs: HippyGlobalConfigs,
     monitor: TimeMonitor,
-    coreBundleLoader: HippyBundleLoader
+    coreBundleLoader: HippyBundleLoader | null
   ) {
     this.mEngineInitParams = params;
+    this.libHippy = this.mEngineInitParams.libHippy
     this.mGlobalConfigs = globalConfigs;
+    this.vfsManager = new VfsManager(this.libHippy)
+    const resourceLoader = new HippyResourceLoader(this)
+    this.vfsManager.addProcessorAtFirst(new DefaultProcessor(resourceLoader))
     this.mDomManager = domManager;
     this.mMonitor = monitor;
-    this.moduleManager = new HippyModuleManager(this);
+    this.mCoreBundleLoader = coreBundleLoader;
+    this.mModuleManager = new HippyModuleManager(this);
 
+
+    this.providers = this.mEngineInitParams.providers;
     // provider挂载
     let customRenderViewCreatorMap: Map<string, HRRenderViewCreator> | null = null
     if (this.providers) {
@@ -49,16 +76,15 @@ export class HippyEngineContextImpl implements HippyEngineContext {
     }
     // Render注册
     this.nativeRenderProvider = new NativeRenderProvider(this.libHippy, customRenderViewCreatorMap)
-    this.nativeRenderProvider.getNativeRenderImpl().setFrameworkProxy(this)
     this.nativeRenderer = new NativeRenderer(this.libHippy, this.nativeRenderProvider)
-    this.nativeRenderer.attachToDom(this.domMgr.instanceId)
+    this.nativeRenderer.attachToDom(this.mDomManager.instanceId)
     // DomManager挂载
-    this.domMgr.attachToRenderer(this.nativeRenderer.instanceId)
-    let rootNodeId = this.getNativeRenderContext().getRootId()
-    this.domMgr.createRootNode(rootNodeId, PixelUtil.getDensity())
-    this.domMgr.attachToRoot(rootNodeId)
-    // jsDriver注册
-    this.jsDriver = new JsDriver(this.libHippy, this.moduleManager)
+    this.mDomManager.attachToRenderer(this.nativeRenderer.instanceId)
+    const rootNodeId = this.getNativeRenderContext().getRootId()
+    this.mDomManager.createRootNode(rootNodeId, PixelUtil.getDensity())
+    this.mDomManager.attachToRoot(rootNodeId)
+    // JsDriver注册
+    this.mJsDriver = new JsDriver(this.libHippy, this.mModuleManager)
 
     // BridgeManager注册
     this.mBridgeManager = new HippyBridgeManagerImpl(
@@ -73,6 +99,24 @@ export class HippyEngineContextImpl implements HippyEngineContext {
       this.mJsDriver);
   }
 
+  onRuntimeInitialized(): void {
+    const rootNodeId = this.getNativeRenderContext().getRootId()
+    this.mJsDriver.attachToDom(this.mDomManager.instanceId)
+    this.mJsDriver.attachToRoot(rootNodeId)
+  }
+
+  getDomManagerId(): number {
+    return this.mDomManager.getDomManagerId();
+  }
+
+  getVfsId(): number {
+    return this.vfsManager.getVfsId();
+  }
+
+  getNativeRenderProvider(): NativeRenderProvider | null {
+    return this.nativeRenderProvider;
+  }
+
   getComponentName(): string {
     throw new Error('Method not implemented.');
   }
@@ -82,7 +126,7 @@ export class HippyEngineContextImpl implements HippyEngineContext {
   }
 
   getJsDriver(): JsDriver {
-    return this.jsDriver;
+    return this.mJsDriver;
   }
 
   getMonitor(): TimeMonitor {
@@ -94,10 +138,18 @@ export class HippyEngineContextImpl implements HippyEngineContext {
   }
 
   getModuleManager(): HippyModuleManager {
-    return this.moduleManager;
+    return this.mModuleManager;
   }
 
   getBridgeManager(): HippyBridgeManager {
     return this.mBridgeManager;
+  }
+
+  getNativeParams() : HashMap<string, Object> {
+    return this.nativeParams
+  }
+
+  public getNativeRenderContext(): NativeRenderContext {
+    return this.nativeRenderProvider?.getNativeRenderImpl().getNativeRenderContext() as NativeRenderContext
   }
 }
