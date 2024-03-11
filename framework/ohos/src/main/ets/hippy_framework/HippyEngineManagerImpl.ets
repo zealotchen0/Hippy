@@ -44,7 +44,7 @@ import { HippyResourceLoader } from './adapter/http/HippyResourceLoader';
 import { HippyAPIProvider } from './HippyAPIProvider';
 import { HRRenderViewCreator } from '../renderer_native/components/HippyRenderRegisterMap';
 import { HippyGlobalConfigs } from './HippyGlobalConfigs';
-import { TimeMonitor } from '../support/utils/TimeMonitor';
+import { MonitorGroupType, TimeMonitor } from '../support/utils/TimeMonitor';
 import { TextUtils } from '../support/utils/TextUtils';
 import { HippyAssetBundleLoader } from './bridge/bundleloader/HippyAssetBundleLoader';
 import { HippyBundleLoader } from './bridge/bundleloader/HippyBundleLoader';
@@ -60,7 +60,8 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
   private libHippy: HippyLibrary
   private resourceManager: resmgr.ResourceManager | null = null
   private providers: Array<HippyAPIProvider> | null = null
-  public vfsManager: VfsManager
+  private params: EngineInitParams;
+
   public jsDriver: JsDriver | null = null
   public domMgr: DomManager | null = null
   public nativeRenderProvider: NativeRenderProvider | null = null
@@ -82,6 +83,7 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
   public moduleManager: HippyModuleManager | null = null;
 
   constructor(params: EngineInitParams) {
+    this.params = params;
     this.libHippy = params.libHippy
     this.providers = params.providers
     this.mGlobalConfigs = new HippyGlobalConfigs(params)
@@ -126,82 +128,30 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
     this.domMgr = new DomManager(this.libHippy)
     // 初始化 HippyEngineContext
     this.mEngineContext = new HippyEngineContextImpl(
+      this.params,
       this.domMgr,
       this.mGlobalConfigs,
       this.mMonitor,
       this.mCoreBundleLoader,
     );
+    // 提供给 Render 模块的 Proxy
+    const nativeRenderProvider = this.mEngineContext.getNativeRenderProvider()
+    if (nativeRenderProvider) {
+      nativeRenderProvider.getNativeRenderImpl().setFrameworkProxy(this);
+    }
+
     // TODO initBridge
-    this.mEngineContext.getBridgeManager().initBridge();
+    this.mEngineContext.getBridgeManager().initBridge(this.initBridgeCallback);
+  }
+
+  initBridgeCallback() {
 
   }
 
 
   public initEngine(initCallbak: HippyEngineInitCallback): void {
-    this.domMgr = new DomManager(this.libHippy)
-    this.mEngineContext = new HippyEngineContextImpl(this.libHippy, this.domMgr, this.mGlobalConfigs);
-    this.moduleManager = new HippyModuleManager(this.mEngineContext)
-    let customRenderViewCreatorMap: Map<string, HRRenderViewCreator> | null = null
-    if (this.providers) {
-      customRenderViewCreatorMap = new Map()
-      for (let provider of this.providers) {
-        let map = provider.getCustomRenderViewCreatorMap()
-        if (map) {
-          map.forEach((value, key) => {
-            customRenderViewCreatorMap?.set(key, value)
-          })
-        }
-      }
-    }
-
-    this.nativeRenderProvider = new NativeRenderProvider(this.libHippy, customRenderViewCreatorMap)
-    this.nativeRenderProvider.getNativeRenderImpl().setFrameworkProxy(this)
-    this.nativeRenderer = new NativeRenderer(this.libHippy, this.nativeRenderProvider)
-    this.nativeRenderer.attachToDom(this.domMgr.instanceId)
-    this.domMgr.attachToRenderer(this.nativeRenderer.instanceId)
-    let rootNodeId = this.getNativeRenderContext().getRootId()
-    this.domMgr.createRootNode(rootNodeId, PixelUtil.getDensity())
-    this.domMgr.attachToRoot(rootNodeId)
-    this.jsDriver = new JsDriver(this.libHippy, this.moduleManager)
-    this.jsDriver.initialize(this.domMgr.instanceId, this.getVfsManager().instanceId, (result: number, reason: string) => {
-      if (!this.jsDriver || !this.domMgr || !this.getVfsManager() || !this.resourceManager) {
-        return
-      }
-      hilog.info(0x0000, 'hippy', 'jsDriver initialize callback, instanceId: %{public}d', this.jsDriver.instanceId);
-      if (result != 0) {
-        //return;
-      }
-
-      this.jsDriver.attachToDom(this.domMgr.instanceId)
-      this.jsDriver.attachToRoot(rootNodeId)
-
-      // TODO:
-      let assetPath = "vue2/vendor.android.js"
-      let uri = assetPath
-      if (!assetPath.startsWith(URI_SCHEME_ASSETS)) {
-        if (assetPath.startsWith("/")) {
-          uri = URI_SCHEME_ASSETS + assetPath
-        } else {
-          uri = URI_SCHEME_ASSETS + "/" + assetPath
-        }
-      }
-
-      this.jsDriver.runScriptFromUri(uri,
-        this.resourceManager,
-        false, "", this.getVfsManager().instanceId, (result: number, reason: string) => {
-          if (!this.jsDriver) {
-            return
-          }
-          hilog.info(0x0000, 'hippy', 'jsDriver runScriptFromUri callback, instanceId: %{public}d', this.jsDriver.instanceId);
-          if (result != 0) {
-            //return;
-          }
-
-          if (initCallbak) {
-            initCallbak(EngineInitStatus.STATUS_OK, "")
-          }
-        })
-    })
+    this.initDevModule();
+    this.restartEngine();
   }
 
   loadModule(loadParams: ModuleLoadParams, loadCallback: HippyModuleLoadCallback) {

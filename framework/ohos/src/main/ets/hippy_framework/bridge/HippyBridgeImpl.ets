@@ -17,10 +17,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { HippyBridge } from './HippyBridge';
+import { BridgeCallback, HippyBridge } from './HippyBridge';
 import { JsDriver } from '../connector/JsDriver';
 import { HippyAny } from '../../support/common/HippyTypes';
 import { NativeCallback } from '../connector/NativeCallback';
+import { HippyEngineContext } from '../HippyEngineContext';
+import { V8InitParams } from '../HippyEngine';
+import { MonitorGroupType, TimeMonitor } from '../../support/utils/TimeMonitor';
+import { TextUtils } from '../../support/utils/TextUtils';
 
 export class HippyBridgeImpl implements HippyBridge {
   private URI_SCHEME_ASSETS: string = '';
@@ -30,7 +34,7 @@ export class HippyBridgeImpl implements HippyBridge {
   private mEnableV8Serialization: boolean;
   private mIsDevModule: boolean;
   private mDebugServerHost: string;
-  private mV8InitParams: V8InitParams;
+  private mV8InitParams: V8InitParams | null;
   private mJsDriver: JsDriver;
 
   public constructor(
@@ -39,26 +43,64 @@ export class HippyBridgeImpl implements HippyBridge {
     enableV8Serialization: boolean,
     isDevModule: boolean,
     debugServerHost: string,
-    v8InitParams: V8InitParams,
+    v8InitParams: V8InitParams | null,
     jsDriver: JsDriver) {
     this.mEngineContext = engineContext;
     this.mBridgeCallback = callback;
     this.mEnableV8Serialization =  enableV8Serialization;
     this.mIsDevModule = isDevModule;
-    this.mDebugServerHost = string;
-    this.mV8InitParams = V8InitParams;
+    this.mDebugServerHost = debugServerHost;
+    this.mV8InitParams = v8InitParams;
     this.mJsDriver = jsDriver;
-    this.mJsDriver.setBridgeProxy(this);
 
     // TODO Code Cache
+    // if (mCodeCacheRootDir == null) {
+    //         Context context = mContext.getGlobalConfigs().getContext();
+    //         File hippyFile = FileUtils.getHippyFile(context);
+    //         if (hippyFile != null) {
+    //             mCodeCacheRootDir =
+    //                     hippyFile.getAbsolutePath() + File.separator + "codecache"
+    //                             + File.separator;
+    //         }
+    // }
   }
 
-  initJSBridge(gobalConfig: string, callback: NativeCallback, groupId: number): void {
-    throw new Error('Method not implemented.');
+  initJSBridge(globalConfig: string, callback: NativeCallback, groupId: number): void {
+    this.initJSEngine(globalConfig, callback, groupId);
+  }
+
+  initJSEngine(globalConfig: string, callback: NativeCallback, groupId: number) {
+    this.mEngineContext.getMonitor().startPoint(MonitorGroupType.ENGINE_INITIALIZE, TimeMonitor.MONITOR_POINT_INIT_JS_ENGINE);
+    // TODO 多线程问题
+    this.mJsDriver.initialize(
+      this.mEngineContext.getDomManagerId(),
+      this.mEngineContext.getVfsId(),
+      callback)
   }
 
   runScriptFromUri(uri: string, canUseCodeCache: boolean, codeCacheTag: string, callback: NativeCallback): boolean {
-    throw new Error('Method not implemented.');
+        //  if (!mInit) {
+        //     return false;
+        // }
+        const context = this.mEngineContext.getGlobalConfigs().getContext();
+        if (context === null) {
+          return false;
+        }
+        const assetManager = context.resourceManager;
+        const codeCacheDir = "";
+        // TODO Code Cache
+        // if (!TextUtils.isEmpty(codeCacheTag) && !TextUtils.isEmpty(mCodeCacheRootDir)) {
+        //     codeCacheDir = mCodeCacheRootDir + codeCacheTag + File.separator;
+        //     File codeCacheFile = new File(codeCacheDir);
+        //     if (!codeCacheFile.exists() && !codeCacheFile.mkdirs()) {
+        //         canUseCodeCache = false;
+        //         codeCacheDir = "";
+        //     }
+        // } else {
+        //     canUseCodeCache = false;
+        // }
+        return this.mJsDriver.runScriptFromUri(uri, assetManager, canUseCodeCache, codeCacheDir,
+                this.mEngineContext.getVfsId(), callback);
   }
 
   onDestroy(): void {

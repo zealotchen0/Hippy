@@ -21,9 +21,16 @@ import { BinaryWriter } from '../../serialization/writer/BinaryWriter';
 import { HippyAny, HippyMap, HippyValue } from '../../support/common/HippyTypes';
 import { ArgumentUtils } from '../../support/utils/ArgumentUtils';
 import { I18nUtil } from '../../support/utils/I18nUtil';
+import { MonitorGroupType, TimeMonitor } from '../../support/utils/TimeMonitor';
 import { HippyThirdPartyAdapter } from '../adapter/thirdparty/HippyThirdPartyAdapter';
+import { JsDriver } from '../connector/JsDriver';
+import { NativeCallback } from '../connector/NativeCallback';
+import { V8InitParams } from '../HippyEngine';
+import { HippyEngineContext } from '../HippyEngineContext';
 import { Serializer } from '../serialization/Serializer';
 import { HippyBundleLoader } from './bundleloader/HippyBundleLoader';
+import { BridgeCallback } from './HippyBridge';
+import { HippyBridgeImpl } from './HippyBridgeImpl';
 import { HippyBridgeManager } from './HippyBridgeManager';
 
 export enum BridgeState {
@@ -32,7 +39,7 @@ export enum BridgeState {
   DESTROYED = 2,
 }
 
-export class HippyBridgeManagerImpl implements HippyBridgeManager {
+export class HippyBridgeManagerImpl implements HippyBridgeManager, BridgeCallback {
   // Bridge 状态
   public static MSG_CODE_INIT_BRIDGE = 10;
   public static MSG_CODE_RUN_BUNDLE = 11;
@@ -53,26 +60,27 @@ export class HippyBridgeManagerImpl implements HippyBridgeManager {
   // 销毁状态
   public static DESTROY_CLOSE = 0;
   public static DESTROY_RELOAD = 1;
-
   public mContext: HippyEngineContext;
-  public mCoreBundleLoader: HippyBundleLoader;
+  public mCoreBundleLoader: HippyBundleLoader | null;
   public mEnableV8Serialization: boolean;
   public mIsDevModule: boolean;
   public mDebugServerHost: string;
   public mGroupId: number;
-  public mThirdPartyAdapter: HippyThirdPartyAdapter;
-  public mV8InitParams: V8InitParams;
+  public mThirdPartyAdapter: HippyThirdPartyAdapter | null;
+  public mV8InitParams: V8InitParams | null;
   public mJsDriver: JsDriver;
+  public mHippyBridge: HippyBridgeImpl;
+  public mBridgeState: BridgeState = BridgeState.UNINITIALIZED;
 
   public constructor(
     context: HippyEngineContext,
-    coreBundleLoader: HippyBundleLoader,
+    coreBundleLoader: HippyBundleLoader | null,
     enableV8Serialization: boolean,
     isDevModule: boolean,
     debugServerHost: string,
     groupId: number,
-    thirdPartyAdapter: HippyThirdPartyAdapter,
-    v8InitParams: V8InitParams,
+    thirdPartyAdapter: HippyThirdPartyAdapter | null,
+    v8InitParams: V8InitParams | null,
     jsDriver: JsDriver) {
 
     this.mContext = context;
@@ -80,6 +88,10 @@ export class HippyBridgeManagerImpl implements HippyBridgeManager {
     this.mGroupId = groupId;
     this.mThirdPartyAdapter = thirdPartyAdapter;
     this.mEnableV8Serialization = enableV8Serialization;
+    this.mIsDevModule = isDevModule;
+    this.mDebugServerHost = debugServerHost;
+    this.mJsDriver = jsDriver;
+    this.mV8InitParams = v8InitParams;
     this.mHippyBridge = new HippyBridgeImpl(
       context,
       this,
@@ -94,63 +106,6 @@ export class HippyBridgeManagerImpl implements HippyBridgeManager {
     } else {
       // mStringBuilder = new StringBuilder(1024);
     }
-  }
-
-  initBridge(): void {
-    this.mHippyBridge.initJSBridge(getGlobalConfigs(), new NativeCallback(mHandler) {
-      @Override
-      public void Call(long result, Message message, String action,
-      String reason) {
-        if (result != 0 || mBridgeState == BridgeState.DESTROYED) {
-          String info =
-            "initJSBridge error: result " + result + ", reason "
-              + reason + ", bridge state " + mBridgeState;
-          reportException(new Throwable(info));
-          return;
-        }
-        long runtimeId = mHippyBridge.getV8RuntimeId();
-        if (mContext != null) {
-          mContext.onRuntimeInitialized();
-        }
-        if (enableTurbo()) {
-          mTurboModuleManager = new TurboModuleManager(mContext);
-          mTurboModuleManager.install(runtimeId);
-        }
-        if (mThirdPartyAdapter != null) {
-          mThirdPartyAdapter.onRuntimeInit(runtimeId);
-        }
-        if (mCoreBundleLoader != null) {
-          final TimeMonitor timeMonitor = mContext.getMonitor();
-          timeMonitor.startPoint(MonitorGroupType.ENGINE_INITIALIZE,
-            TimeMonitor.MONITOR_POINT_LOAD_COMMON_JS);
-          mCoreBundleLoader
-            .load(mHippyBridge, new NativeCallback(mHandler) {
-            @Override
-            public void Call(long result, Message message,
-            String action, String reason) {
-              if (mBridgeState == BridgeState.DESTROYED) {
-                return;
-              }
-              RuntimeException exception = null;
-              if (result == 0) {
-                mBridgeState = BridgeState.INITIALIZED;
-              } else {
-                exception = new RuntimeException(
-                  "load coreJsBundle failed, check your core jsBundle:"
-                    + reason);
-              }
-              timeMonitor.startPoint(
-                MonitorGroupType.ENGINE_INITIALIZE,
-                TimeMonitor.MONITOR_POINT_NOTIFY_ENGINE_INITIALIZED);
-              callback.callback((result == 0), exception);
-            }
-          });
-        } else {
-          mBridgeState = BridgeState.INITIALIZED;
-          callback.callback(true, null);
-        }
-      }
-    }, mGroupId);
   }
 
   runBundle(id: number, loader: HippyBundleLoader): void {
@@ -189,6 +144,66 @@ export class HippyBridgeManagerImpl implements HippyBridgeManager {
     throw new Error('Method not implemented.');
   }
 
+  callNatives(moduleName: string, moduleFunc: string, callId: string, params: Uint8Array): void {
+    throw new Error('Method not implemented.');
+  }
+
+  reportException(message: string, stackTrace: string): void {
+    throw new Error('Method not implemented.');
+  }
+
+  initBridge(initBridgeCallback: NativeCallback): void {
+    this.mHippyBridge.initJSBridge(this.getGlobalConfigsString(), () => {
+        this.nativeBridgeCallback(initBridgeCallback);
+    }, this.mGroupId);
+  }
+
+  nativeBridgeCallback(initBridgeCallback: NativeCallback): void {
+    if (this.mContext != null) {
+      this.mContext.onRuntimeInitialized();
+    }
+    // TODO
+    if (this.enableTurbo()) {
+      // mTurboModuleManager = new TurboModuleManager(mContext);
+      // mTurboModuleManager.install(runtimeId);
+    }
+    // if (mThirdPartyAdapter != null) {
+    //   mThirdPartyAdapter.onRuntimeInit(runtimeId);
+    // }
+    if (this.mCoreBundleLoader != null) {
+      const timeMonitor = this.mContext.getMonitor();
+      timeMonitor.startPoint(MonitorGroupType.ENGINE_INITIALIZE,
+        TimeMonitor.MONITOR_POINT_LOAD_COMMON_JS);
+      this.mCoreBundleLoader
+        .load(this.mHippyBridge, this.bundleLoaderCallback);
+    } else {
+      this.mBridgeState = BridgeState.INITIALIZED;
+      initBridgeCallback(1, '');
+    }
+  }
+
+  bundleLoaderCallback(result: number, reason: string) {
+    if (this.mBridgeState == BridgeState.DESTROYED) {
+      return;
+    }
+    if (result == 0) {
+      this.mBridgeState = BridgeState.INITIALIZED;
+    } else {
+      throw new Error("load coreJsBundle failed, check your core jsBundle:"
+        + reason);
+    }
+    const timeMonitor = this.mContext.getMonitor();
+    timeMonitor.startPoint(
+      MonitorGroupType.ENGINE_INITIALIZE,
+      TimeMonitor.MONITOR_POINT_NOTIFY_ENGINE_INITIALIZED);
+    // callback.callback((result == 0), exception);
+  }
+
+  private enableTurbo(): boolean {
+    return this.mContext.getGlobalConfigs() != null && this.mContext.getGlobalConfigs()
+      .enableTurbo();
+  }
+
 
   loadInstance(name: string, id: number, params: HippyMap) {
     // TODO(hot):
@@ -204,7 +219,7 @@ export class HippyBridgeManagerImpl implements HippyBridgeManager {
     let buffer = binaryWriter.chunked().buffer
   }
 
-  getGlobalConfigs(): string {
+  getGlobalConfigsString(): string {
     // TODO(hot):
     let globalParams = new Map<string, HippyValue | Map<string, HippyValue> | Map<string, HippyValue | Map<string, HippyValue>>>()
     let dimensionMap = new Map<string, HippyValue>()
