@@ -25,6 +25,7 @@ import { HippyEngineContext } from '../HippyEngineContext';
 import { V8InitParams } from '../HippyEngine';
 import { MonitorGroupType, TimeMonitor } from '../../support/utils/TimeMonitor';
 import { TextUtils } from '../../support/utils/TextUtils';
+import { HippyBridgeManagerImpl } from './HippyBridgeManagerImpl';
 
 export class HippyBridgeImpl implements HippyBridge {
   private URI_SCHEME_ASSETS: string = '';
@@ -47,7 +48,7 @@ export class HippyBridgeImpl implements HippyBridge {
     jsDriver: JsDriver) {
     this.mEngineContext = engineContext;
     this.mBridgeCallback = callback;
-    this.mEnableV8Serialization =  enableV8Serialization;
+    this.mEnableV8Serialization = enableV8Serialization;
     this.mIsDevModule = isDevModule;
     this.mDebugServerHost = debugServerHost;
     this.mV8InitParams = v8InitParams;
@@ -70,7 +71,8 @@ export class HippyBridgeImpl implements HippyBridge {
   }
 
   initJSEngine(globalConfig: string, callback: NativeCallback, groupId: number) {
-    this.mEngineContext.getMonitor().startPoint(MonitorGroupType.ENGINE_INITIALIZE, TimeMonitor.MONITOR_POINT_INIT_JS_ENGINE);
+    this.mEngineContext.getMonitor()
+      .startPoint(MonitorGroupType.ENGINE_INITIALIZE, TimeMonitor.MONITOR_POINT_INIT_JS_ENGINE);
     // TODO 多线程问题
     this.mJsDriver.initialize(
       this.mEngineContext.getDomManagerId(),
@@ -79,28 +81,28 @@ export class HippyBridgeImpl implements HippyBridge {
   }
 
   runScriptFromUri(uri: string, canUseCodeCache: boolean, codeCacheTag: string, callback: NativeCallback): boolean {
-        //  if (!mInit) {
-        //     return false;
-        // }
-        const context = this.mEngineContext.getGlobalConfigs().getContext();
-        if (context === null) {
-          return false;
-        }
-        const assetManager = context.resourceManager;
-        const codeCacheDir = "";
-        // TODO Code Cache
-        // if (!TextUtils.isEmpty(codeCacheTag) && !TextUtils.isEmpty(mCodeCacheRootDir)) {
-        //     codeCacheDir = mCodeCacheRootDir + codeCacheTag + File.separator;
-        //     File codeCacheFile = new File(codeCacheDir);
-        //     if (!codeCacheFile.exists() && !codeCacheFile.mkdirs()) {
-        //         canUseCodeCache = false;
-        //         codeCacheDir = "";
-        //     }
-        // } else {
-        //     canUseCodeCache = false;
-        // }
-        return this.mJsDriver.runScriptFromUri(uri, assetManager, canUseCodeCache, codeCacheDir,
-                this.mEngineContext.getVfsId(), callback);
+    //  if (!mInit) {
+    //     return false;
+    // }
+    const context = this.mEngineContext.getGlobalConfigs().getContext();
+    if (context === null) {
+      return false;
+    }
+    const assetManager = context.resourceManager;
+    const codeCacheDir = "";
+    // TODO Code Cache
+    // if (!TextUtils.isEmpty(codeCacheTag) && !TextUtils.isEmpty(mCodeCacheRootDir)) {
+    //     codeCacheDir = mCodeCacheRootDir + codeCacheTag + File.separator;
+    //     File codeCacheFile = new File(codeCacheDir);
+    //     if (!codeCacheFile.exists() && !codeCacheFile.mkdirs()) {
+    //         canUseCodeCache = false;
+    //         codeCacheDir = "";
+    //     }
+    // } else {
+    //     canUseCodeCache = false;
+    // }
+    return this.mJsDriver.runScriptFromUri(uri, assetManager, canUseCodeCache, codeCacheDir,
+      this.mEngineContext.getVfsId(), callback);
   }
 
   onDestroy(): void {
@@ -116,5 +118,13 @@ export class HippyBridgeImpl implements HippyBridge {
   }
 
   callFunction(functionId: number, callback: NativeCallback, buffer: Uint8Array) {
+    if (functionId == HippyBridgeManagerImpl.FUNCTION_ACTION_LOAD_INSTANCE) {
+      // TODO loadInstance 参数序列化
+      this.mJsDriver.loadInstance('');
+    } else if (functionId == HippyBridgeManagerImpl.FUNCTION_ACTION_DESTROY_INSTANCE) {
+      // mJsDriver.unloadInstance(buffer, 0, length);
+    } else {
+      // mJsDriver.callFunction(functionName, callback, buffer, 0, length);
+    }
   }
 }

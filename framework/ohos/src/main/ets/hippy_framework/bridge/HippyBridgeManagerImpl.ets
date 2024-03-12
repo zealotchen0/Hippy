@@ -21,6 +21,7 @@ import { BinaryWriter } from '../../serialization/writer/BinaryWriter';
 import { HippyAny, HippyMap, HippyValue } from '../../support/common/HippyTypes';
 import { ArgumentUtils } from '../../support/utils/ArgumentUtils';
 import { I18nUtil } from '../../support/utils/I18nUtil';
+import { LogUtils } from '../../support/utils/LogUtils';
 import { MonitorGroupType, TimeMonitor } from '../../support/utils/TimeMonitor';
 import { HippyThirdPartyAdapter } from '../adapter/thirdparty/HippyThirdPartyAdapter';
 import { JsDriver } from '../connector/JsDriver';
@@ -109,7 +110,13 @@ export class HippyBridgeManagerImpl implements HippyBridgeManager, BridgeCallbac
   }
 
   runBundle(id: number, loader: HippyBundleLoader): void {
-    throw new Error('Method not implemented.');
+    loader.load(this.mHippyBridge, (result: number, reason: string) => {
+        this.bundleIndexLoaderCallback(result, reason);
+      });
+  }
+
+  bundleIndexLoaderCallback = (result: number, reason: string) => {
+      LogUtils.i('hippy bundleIndexLoaderCallback', result + reason)
   }
 
   resumeInstance(id: number): void {
@@ -153,12 +160,17 @@ export class HippyBridgeManagerImpl implements HippyBridgeManager, BridgeCallbac
   }
 
   initBridge(initBridgeCallback: NativeCallback): void {
-    this.mHippyBridge.initJSBridge(this.getGlobalConfigsString(), () => {
-        this.nativeBridgeCallback(initBridgeCallback);
+    this.mHippyBridge.initJSBridge(this.getGlobalConfigsString(), (result: number, reason: string) => {
+        this.initJSDriverCallback(result, reason, initBridgeCallback);
     }, this.mGroupId);
   }
 
-  nativeBridgeCallback(initBridgeCallback: NativeCallback): void {
+  initJSDriverCallback(result: number, reason: string, initBridgeCallback: NativeCallback): void {
+    LogUtils.i('hippy', 'jsDriver initialize callback, instanceId: %{public}d' + this.mJsDriver.instanceId);
+    if (result != 0) {
+      LogUtils.e('hippy', 'jsDriver initialize error ' + reason);
+    }
+
     if (this.mContext != null) {
       this.mContext.onRuntimeInitialized();
     }
@@ -175,14 +187,16 @@ export class HippyBridgeManagerImpl implements HippyBridgeManager, BridgeCallbac
       timeMonitor.startPoint(MonitorGroupType.ENGINE_INITIALIZE,
         TimeMonitor.MONITOR_POINT_LOAD_COMMON_JS);
       this.mCoreBundleLoader
-        .load(this.mHippyBridge, this.bundleLoaderCallback);
+        .load(this.mHippyBridge, () => {
+          this.bundleVendorLoaderCallback(result, reason, initBridgeCallback);
+      });
     } else {
       this.mBridgeState = BridgeState.INITIALIZED;
       initBridgeCallback(1, '');
     }
   }
 
-  bundleLoaderCallback(result: number, reason: string) {
+  public bundleVendorLoaderCallback = (result: number, reason: string, initBridgeCallback: NativeCallback) => {
     if (this.mBridgeState == BridgeState.DESTROYED) {
       return;
     }
@@ -196,7 +210,7 @@ export class HippyBridgeManagerImpl implements HippyBridgeManager, BridgeCallbac
     timeMonitor.startPoint(
       MonitorGroupType.ENGINE_INITIALIZE,
       TimeMonitor.MONITOR_POINT_NOTIFY_ENGINE_INITIALIZED);
-    // callback.callback((result == 0), exception);
+    initBridgeCallback(result, reason);
   }
 
   private enableTurbo(): boolean {
@@ -217,6 +231,12 @@ export class HippyBridgeManagerImpl implements HippyBridgeManager, BridgeCallbac
     serializer.writeHeader()
     serializer.writeValue(params)
     let buffer = binaryWriter.chunked().buffer
+
+    this.mHippyBridge.callFunction(HippyBridgeManagerImpl.FUNCTION_ACTION_LOAD_INSTANCE, this.callFunctionCallBack, binaryWriter.chunked());
+  }
+
+  callFunctionCallBack = (result: number, reason: string) => {
+    LogUtils.i('hippy callFunctionCallBack', result + reason)
   }
 
   getGlobalConfigsString(): string {

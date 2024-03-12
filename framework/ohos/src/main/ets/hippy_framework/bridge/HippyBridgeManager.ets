@@ -27,7 +27,7 @@ export interface HippyBridgeManager {
 
   runBundle(id: number, loader: HippyBundleLoader): void;
 
-  loadInstance(name: string, id: number, params: HippyMap): void;
+  loadInstance(name: string, id: number, params: HippyMap | null): void;
 
   resumeInstance(id: number): void;
 

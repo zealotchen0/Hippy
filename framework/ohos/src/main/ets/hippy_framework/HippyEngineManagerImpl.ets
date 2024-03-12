@@ -62,7 +62,6 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
   private providers: Array<HippyAPIProvider> | null = null
   private params: EngineInitParams;
 
-  public jsDriver: JsDriver | null = null
   public domMgr: DomManager | null = null
   public nativeRenderProvider: NativeRenderProvider | null = null
   public nativeRenderer: NativeRenderer | null = null
@@ -122,7 +121,7 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
     // TODO Debug
   }
 
-  public restartEngine() {
+  public restartEngine(initCallback: HippyEngineInitCallback) {
     // 性能打点
     this.mMonitor.startPoint(MonitorGroupType.ENGINE_INITIALIZE, TimeMonitor.MONITOR_POINT_INIT_NATIVE_ENGINE);
     this.domMgr = new DomManager(this.libHippy)
@@ -135,26 +134,54 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
       this.mCoreBundleLoader,
     );
     // 提供给 Render 模块的 Proxy
-    const nativeRenderProvider = this.mEngineContext.getNativeRenderProvider()
-    if (nativeRenderProvider) {
-      nativeRenderProvider.getNativeRenderImpl().setFrameworkProxy(this);
+    this.nativeRenderProvider = this.mEngineContext.getNativeRenderProvider()
+    if (this.nativeRenderProvider) {
+      this.nativeRenderProvider.getNativeRenderImpl().setFrameworkProxy(this);
     }
 
     // TODO initBridge
-    this.mEngineContext.getBridgeManager().initBridge(this.initBridgeCallback);
+    this.mEngineContext.getBridgeManager().initBridge((result: number, reason: string) => {
+      this.initBridgeCallback(result, reason, initCallback)
+    });
   }
 
-  initBridgeCallback() {
+  initBridgeCallback = (result: number, reason: string, initCallback: HippyEngineInitCallback) => {
+    const jsDriver = this.mEngineContext?.getJsDriver();
+    if (!jsDriver) {
+      return
+    }
+    LogUtils.i('hippy', 'jsDriver runScriptFromUri callback, instanceId: %{public}d' + jsDriver.instanceId);
+    if (result != 0) {
+      //return;
+    }
+
+    if (initCallback) {
+      initCallback(EngineInitStatus.STATUS_OK, "")
+    }
 
   }
 
 
-  public initEngine(initCallbak: HippyEngineInitCallback): void {
+  public initEngine(initCallback: HippyEngineInitCallback): void {
     this.initDevModule();
-    this.restartEngine();
+    this.restartEngine(initCallback);
   }
 
   loadModule(loadParams: ModuleLoadParams, loadCallback: HippyModuleLoadCallback) {
+    const jsDriver = this.mEngineContext?.getJsDriver();
+    if (!jsDriver || !this.getVfsManager() || !this.resourceManager) {
+      return
+    }
+    let coreBundleLoader: HippyBundleLoader | null = null;
+    if (!TextUtils.isEmpty(loadParams.jsAssetsPath)) {
+      coreBundleLoader = new HippyAssetBundleLoader(this.mGlobalConfigs.getContext()!, loadParams.jsAssetsPath,
+        !TextUtils.isEmpty(loadParams.codeCacheTag), loadParams.codeCacheTag);
+    } else if (!TextUtils.isEmpty(loadParams.jsFilePath)) {
+      coreBundleLoader = new HippyFileBundleLoader(loadParams.jsFilePath,
+        !TextUtils.isEmpty(loadParams.codeCacheTag), loadParams.codeCacheTag);
+    }
+    this.mJsBundleLoader = coreBundleLoader;
+
     this.loadJsModule(loadParams, loadCallback)
   }
 
@@ -186,43 +213,22 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
   }
 
   loadJsModule(loadParams: ModuleLoadParams, loadCallback: HippyModuleLoadCallback) {
-    if (!this.jsDriver || !this.getVfsManager() || !this.resourceManager) {
-      return
+    if (!this.mEngineContext) {
+      return;
     }
-    let coreBundleLoader: HippyBundleLoader | null = null;
-    if (!TextUtils.isEmpty(loadParams.jsAssetsPath)) {
-      coreBundleLoader = new HippyAssetBundleLoader(this.mGlobalConfigs.getContext()!, loadParams.jsAssetsPath,
-        !TextUtils.isEmpty(loadParams.codeCacheTag), loadParams.codeCacheTag);
-    } else if (!TextUtils.isEmpty(loadParams.jsFilePath)) {
-      coreBundleLoader = new HippyFileBundleLoader(loadParams.jsFilePath,
-        !TextUtils.isEmpty(loadParams.codeCacheTag), loadParams.codeCacheTag);
+    if (this.mJsBundleLoader != null) {
+      // TODO 多RootView
+      this.mEngineContext?.getBridgeManager().runBundle(0, this.mJsBundleLoader);
+    } else {
+      LogUtils.e('hippy', 'load module error. jsBundleLoader==null');
+      // notifyModuleLoaded(ModuleLoadStatus.STATUS_VARIABLE_NULL,
+      //   "load module error. jsBundleLoader==null");
+      return;
     }
-    this.mJsBundleLoader = coreBundleLoader;
+    // TODO 多RootView
+    this.mEngineContext.getBridgeManager().loadInstance(loadParams.componentName, 0, loadParams.jsParams);
 
-    // TODO:
-    let assetPath = "vue2/index.android.js"
-    let uri = assetPath
-    if (!assetPath.startsWith(URI_SCHEME_ASSETS)) {
-      if (assetPath.startsWith("/")) {
-        uri = URI_SCHEME_ASSETS + assetPath
-      } else {
-        uri = URI_SCHEME_ASSETS + "/" + assetPath
-      }
-    }
-
-    this.jsDriver.runScriptFromUri(uri,
-      this.resourceManager,
-      false, "", this.getVfsManager().instanceId, (result: number, reason: string) => {
-        if (!this.jsDriver) {
-          return
-        }
-        hilog.info(0x0000, 'hippy', 'jsDriver runScriptFromUri callback, instanceId: %{public}d', this.jsDriver.instanceId);
-        if (result != 0) {
-          //return;
-        }
-
-      })
-    this.jsDriver.loadInstance('')
+    // TODO: Debug
   }
 
   public getNativeRenderContext(): NativeRenderContext {

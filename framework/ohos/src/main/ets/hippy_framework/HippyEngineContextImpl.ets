@@ -1,4 +1,3 @@
-import { HippyMap } from '../support/common/HippyTypes';
 import { HippyLibrary } from '../hippy_library/HippyLibrary';
 import { HRRenderViewCreator } from '../renderer_native/components/HippyRenderRegisterMap';
 import { NativeRenderContext } from '../renderer_native/NativeRenderContext';
