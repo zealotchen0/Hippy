@@ -7,7 +7,7 @@ var hippyVueBase=function(e){var t={};function n(o){if(t[o])return t[o].exports;
  * Tencent is pleased to support the open source community by making
  * Hippy available.
  *
- * Copyright (C) 2017-2023 THL A29 Limited, a Tencent company.
+ * Copyright (C) 2017-2024 THL A29 Limited, a Tencent company.
  * All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,7 @@ function o(e){return(o="function"==typeof Symbol&&"symbol"==typeof Symbol.iterat
  * Tencent is pleased to support the open source community by making
  * Hippy available.
  *
- * Copyright (C) 2017-2023 THL A29 Limited, a Tencent company.
+ * Copyright (C) 2017-2024 THL A29 Limited, a Tencent company.
  * All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
