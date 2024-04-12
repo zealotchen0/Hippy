@@ -108,7 +108,7 @@ export class NetworkModule extends HippyNativeModuleBase {
       try {
         this.normalizeRequest(request, requestHeaders, requestParams);
       } catch (e) {
-        promise.reject(e.getMessage());
+        // promise.reject(e.getMessage());
         return;
       }
       let uri: string = requestParams.get(HippyHttpRequest.HTTP_URL);
