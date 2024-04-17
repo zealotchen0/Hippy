@@ -321,7 +321,6 @@ export class HippyBridgeManagerImpl implements HippyBridgeManager, BridgeCallbac
   }
 
   private enableTurbo(): boolean {
-    return this.mContext.getGlobalConfigs() != null && this.mContext.getGlobalConfigs()
-      .enableTurbo();
+    return this.mContext.getGlobalConfigs() != null && this.mContext.getGlobalConfigs().enableTurbo();
   }
 }

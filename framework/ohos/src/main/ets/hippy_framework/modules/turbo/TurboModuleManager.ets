@@ -36,6 +36,7 @@ export class TurboModuleManager {
     }
 
     const hippyModuleManager: HippyModuleManager = this.mHippyEngineContext.getModuleManager();
+    const turboModule = hippyModuleManager.getNativeModule(name)
     // HippyNativeModuleInfo moduleInfo = hippyModuleManager.getNativeModuleInfo().get(name);
     // if (moduleInfo == null) {
     //   return null;
