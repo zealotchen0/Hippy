@@ -29,8 +29,15 @@
           class="banner-view"
         >
           <span>BannerView</span>
-        </div>  
+        </div>
+        <div
+          v-if="isOhos"
+          class="banner-view"
+        >
+          <span>BannerView</span>
+        </div>
         <waterfall-item 
+          v-if="isAndroid"
           :fullSpan="true",
           class="banner-view"
         >
@@ -90,6 +97,8 @@ export default {
       footerRefreshText: '正在加载...',
       isLoading: false,
       isIos: Vue.Native.Platform === 'ios',
+      isAndroid: Vue.Native.Platform === 'android',
+      isOhos: Vue.Native.Platform === 'ohos',
     };
   },
   mounted() {
