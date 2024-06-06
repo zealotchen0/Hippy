@@ -44,12 +44,12 @@ bool PagerView::SetProp(const std::string &propKey, const HippyValue &propValue)
   if (propKey == "initialPage") {
     initialPage_ = HRValueUtils::GetInt32(propValue);
     index_ = initialPage_;
-    GetLocalRootArkUINode().NodeSwiperSwipeToIndex(index_, 1);
+    GetLocalRootArkUINode().NodeSwiperIndex(index_);
     return true;
   } else if (propKey == "pagescroll") {
     propValue.ToInt32(initialPage_);
     index_ = initialPage_;
-    GetLocalRootArkUINode().NodeSwiperSwipeToIndex(index_, 1);
+    GetLocalRootArkUINode().NodeSwiperIndex(index_);
     return true;
   } else if (propKey == "scrollEnabled") {
     bool enable;
