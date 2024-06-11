@@ -66,6 +66,7 @@ set(SOURCE_SET
   src/utils/hr_event_utils.cc
   src/utils/hr_convert_utils.cc
   src/utils/hr_text_convert_utils.cc
+  src/utils/hr_url_utils.cc
   src/virtual/hr_virtual_view_manager.cc
   src/virtual/hr_virtual_view.cc
   src/arkui/arkui_node.cc
@@ -103,6 +104,8 @@ set(SOURCE_SET
   src/components/refresh_wrapper_item_view.cc
   src/components/refresh_wrapper_view.cc
   src/components/rich_text_view.cc
+  src/components/rich_text_span_view.cc
+  src/components/rich_text_image_span_view.cc
   src/components/root_view.cc
   src/components/scroll_view.cc
   src/components/text_input_view.cc

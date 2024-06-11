@@ -62,15 +62,53 @@ void TextInputBaseNode::SetResponseRegion(HRPosition const &position, HRSize con
 
 void TextInputBaseNode::SetFontColor(uint32_t const &color) {
   uint32_t colorValue = color;
+  if (colorValue >> 24 == 0) {
+    colorValue |= ((uint32_t)0xff << 24);
+  }
   ArkUI_NumberValue preparedColorValue[] = {{.u32 = colorValue}};
   ArkUI_AttributeItem colorItem = {preparedColorValue, sizeof(preparedColorValue) / sizeof(ArkUI_NumberValue), nullptr, nullptr};
   MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_FONT_COLOR, &colorItem));
 }
 
-void TextInputBaseNode::SetTextAlign(std::optional<TextAlignment> const &textAlign) {
-  ArkUI_NumberValue value[] = {{ArkUI_TextAlignment::ARKUI_TEXT_ALIGNMENT_START}}; // TODO(hot):
+void TextInputBaseNode::SetTextAlign(ArkUI_TextAlignment const &textAlign){
+  ArkUI_NumberValue value[] = {{.i32 = textAlign}};
   ArkUI_AttributeItem item = {.value = value, .size = 1};
   MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_TEXT_ALIGN, &item));
+}
+
+void TextInputBaseNode::SetTextAlignVertical(ArkUI_Alignment const &alignment){
+  ArkUI_NumberValue value[] = {{.i32 = alignment}};
+  ArkUI_AttributeItem item = {.value = value, .size = 1};
+  MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_ALIGNMENT, &item));
+}
+
+void TextInputBaseNode::SetFontWeight(ArkUI_FontWeight const &weight){
+  ArkUI_NumberValue value[] = {{.i32 = weight}};
+  ArkUI_AttributeItem item = {.value = value, .size = 1};
+  MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_FONT_WEIGHT, &item));
+}
+
+void TextInputBaseNode::SetFontStyle(ArkUI_FontStyle const &style){
+  ArkUI_NumberValue value[] = {{.i32 = style}};
+  ArkUI_AttributeItem item = {.value = value, .size = 1};
+  MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_FONT_STYLE, &item));
+}
+
+void TextInputBaseNode::SetFontSize(float_t const &size){
+  ArkUI_NumberValue value[] = {{.f32 = size}};
+  ArkUI_AttributeItem item = {.value = value, .size = 1};
+  MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_FONT_SIZE, &item));
+}
+
+void TextInputBaseNode::SetFontFamily(std::string const &family){
+  ArkUI_AttributeItem textItem = {.string = family.c_str()};
+  MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_FONT_FAMILY, &textItem));
+}
+
+void TextInputBaseNode::SetMaxLines(int32_t const &lines){
+  ArkUI_NumberValue value[] = {{.i32 = lines}};
+  ArkUI_AttributeItem item = {.value = value, .size = 1};
+  MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_TEXT_MAX_LINES, &item));
 }
 
 } // namespace native
