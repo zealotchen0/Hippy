@@ -62,8 +62,6 @@ public:
   void InsertChild(ArkUINode &child, int32_t index);
   void RemoveChild(ArkUINode &child);
 
-  void SetPercentWidth(float percent);
-  void SetPercentHeight(float percent);
   void SetShowIndicator(bool show);
   void SetSwiperIndex(int32_t index);
   void SetSwiperSwipeToIndex(int32_t index, int32_t animation);

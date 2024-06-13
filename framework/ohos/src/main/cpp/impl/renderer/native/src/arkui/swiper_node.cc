@@ -108,18 +108,6 @@ void SwiperNode::RemoveChild(ArkUINode &child) {
   MaybeThrow(NativeNodeApi::GetInstance()->removeChild(nodeHandle_, child.GetArkUINodeHandle()));
 }
 
-void SwiperNode::SetPercentWidth(float percent) {
-  ArkUI_NumberValue value[] = {{.f32 = percent}};
-  ArkUI_AttributeItem item = {value, 1, nullptr, nullptr};
-  MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_WIDTH_PERCENT, &item));
-}
-
-void SwiperNode::SetPercentHeight(float percent) {
-  ArkUI_NumberValue value[] = {{.f32 = percent}};
-  ArkUI_AttributeItem item = {value, 1, nullptr, nullptr};
-  MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_HEIGHT_PERCENT, &item));
-}
-
 void SwiperNode::SetShowIndicator(bool show) {
   ArkUI_NumberValue value = {.i32 = int32_t(show)};
   ArkUI_AttributeItem item = {&value, 1, nullptr, nullptr};

@@ -160,21 +160,33 @@ void PagerView::OnNodeTouchEvent(const ArkUI_UIInputEvent *inputEvent) {
     break;
   }
 }
+
 void PagerView::Call(const std::string &method, const std::vector<HippyValue> params,
                      std::function<void(const HippyValue &result)> callback) {
-  if (method == "setPage") {
-    index_ = HRValueUtils::GetInt32(params[0]);
+  int32_t total = static_cast<int32_t>(GetLocalRootArkUINode().GetTotalChildCount());
+  if (total <= 0) {
+    return;
+  }
+  int32_t newIndex = 0;
+  if (!params.empty()) {
+    newIndex = HRValueUtils::GetInt32(params[0]);
+  }
+  if (method == "setPage" || method == "setPageWithoutAnimation") {
+    index_ = newIndex;
     GetLocalRootArkUINode().SetSwiperIndex(index_);
-  } else if (method == "setPageWithoutAnimation") {
-    index_ = HRValueUtils::GetInt32(params[0]);
-    GetLocalRootArkUINode().SetSwiperIndex(index_);
-  } else if (method == "next") {
-    GetLocalRootArkUINode().SetSwiperSwipeToIndex(++index_, 1);
-  } else if (method == "prev") {
-    GetLocalRootArkUINode().SetSwiperSwipeToIndex(--index_, 1);
   } else if (method == "setIndex") {
-    index_ = HRValueUtils::GetInt32(params[0]) + 1;
+    index_ = newIndex + 1;
     GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, 1);
+  } else if (method == "next") {
+    if (index_ < total - 1) {
+      ++index_;
+      GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, 1);
+    }
+  } else if (method == "prev") {
+    if (index_ > 0) {
+      --index_;
+      GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, 1);
+    }
   }
 }
 } // namespace native
