@@ -46,11 +46,6 @@ bool PagerView::SetProp(const std::string &propKey, const HippyValue &propValue)
     index_ = initialPage_;
     GetLocalRootArkUINode().SetSwiperIndex(index_);
     return true;
-  } else if (propKey == "pagescroll") {
-    propValue.ToInt32(initialPage_);
-    index_ = initialPage_;
-    GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, 1);
-    return true;
   } else if (propKey == "scrollEnabled") {
     bool enable;
     propValue.ToBoolean(enable);
@@ -163,13 +158,16 @@ void PagerView::OnNodeTouchEvent(const ArkUI_UIInputEvent *inputEvent) {
 
 void PagerView::Call(const std::string &method, const std::vector<HippyValue> params,
                      std::function<void(const HippyValue &result)> callback) {
-  if (params.empty()) {
-    return;
-  }
   if (method == "setPage") {
+    if (params.empty()) {
+      return;
+    }
     index_ = HRValueUtils::GetInt32(params[0]);
-    GetLocalRootArkUINode().SetSwiperIndex(index_);
+    GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, 1);
   } else if (method == "setPageWithoutAnimation") {
+    if (params.empty()) {
+      return;
+    }
     index_ = HRValueUtils::GetInt32(params[0]);
     GetLocalRootArkUINode().SetSwiperIndex(index_);
   } else if (method == "next") {
@@ -178,21 +176,26 @@ void PagerView::Call(const std::string &method, const std::vector<HippyValue> pa
       return;
     }
     if (index_ < total - 1) {
-      ++index_;
-      GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, 1);
+      GetLocalRootArkUINode().SetSwiperSwipeToIndex(++index_, 1);
     }
   } else if (method == "prev") {
     if (index_ > 0) {
-      --index_;
-      GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, 1);
+      GetLocalRootArkUINode().SetSwiperSwipeToIndex(--index_, 1);
     }
   } else if (method == "setIndex") {
     HippyValueObjectType map;
+    if (params.empty() || !params[0].IsObject()) {
+      FOOTSTONE_DLOG(INFO) << "Unknown params";
+      return;
+    }
     bool r = params[0].ToObject(map);
     if (r && map.size() > 0) {
       index_ = HRValueUtils::GetInt32(map["index"]);
-      GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, 1);
+      int32_t animated = HRValueUtils::GetBool(map["animated"], 0);
+      GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, animated);
     }
+  } else {
+    FOOTSTONE_DLOG(INFO) << "Unknown function name: " << method;
   }
 }
 } // namespace native
