@@ -163,21 +163,20 @@ void PagerView::OnNodeTouchEvent(const ArkUI_UIInputEvent *inputEvent) {
 
 void PagerView::Call(const std::string &method, const std::vector<HippyValue> params,
                      std::function<void(const HippyValue &result)> callback) {
-  int32_t total = static_cast<int32_t>(GetLocalRootArkUINode().GetTotalChildCount());
-  if (total <= 0) {
+  if (params.empty()) {
     return;
   }
-  int32_t newIndex = 0;
-  if (!params.empty()) {
-    newIndex = HRValueUtils::GetInt32(params[0]);
-  }
-  if (method == "setPage" || method == "setPageWithoutAnimation") {
-    index_ = newIndex;
+  if (method == "setPage") {
+    index_ = HRValueUtils::GetInt32(params[0]);
     GetLocalRootArkUINode().SetSwiperIndex(index_);
-  } else if (method == "setIndex") {
-    index_ = newIndex + 1;
-    GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, 1);
+  } else if (method == "setPageWithoutAnimation") {
+    index_ = HRValueUtils::GetInt32(params[0]);
+    GetLocalRootArkUINode().SetSwiperIndex(index_);
   } else if (method == "next") {
+    int32_t total = static_cast<int32_t>(GetLocalRootArkUINode().GetTotalChildCount());
+    if (total < 1) {
+      return;
+    }
     if (index_ < total - 1) {
       ++index_;
       GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, 1);
@@ -185,6 +184,13 @@ void PagerView::Call(const std::string &method, const std::vector<HippyValue> pa
   } else if (method == "prev") {
     if (index_ > 0) {
       --index_;
+      GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, 1);
+    }
+  } else if (method == "setIndex") {
+    HippyValueObjectType map;
+    bool r = params[0].ToObject(map);
+    if (r && map.size() > 0) {
+      index_ = HRValueUtils::GetInt32(map["index"]);
       GetLocalRootArkUINode().SetSwiperSwipeToIndex(index_, 1);
     }
   }
