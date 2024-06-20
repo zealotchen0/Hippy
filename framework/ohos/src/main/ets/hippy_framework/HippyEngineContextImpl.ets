@@ -146,6 +146,10 @@ export class HippyEngineContextImpl implements HippyEngineContext {
     this.mDomManager.destroyRootNode(rootId)
   }
 
+  destroyBridge(isReload: boolean): void {
+    this.mBridgeManager.destroyBridge(isReload);
+  }
+
   getDomManagerId(): number {
     return this.mDomManager.getDomManagerId();
   }

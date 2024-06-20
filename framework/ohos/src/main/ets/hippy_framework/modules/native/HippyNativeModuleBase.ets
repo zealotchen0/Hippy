@@ -33,4 +33,12 @@ export class HippyNativeModuleBase {
   call(method: string, params: Array<HippyAny>, promise: HippyModulePromise): HippyAny {
     return null
   }
+
+  initialize() {
+    return null
+  }
+
+  destroy() {
+    return null
+  }
 }

@@ -122,8 +122,8 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
         != null) {
       let nativeModule = this.mEngineContext.getModuleManager()
         .getNativeModule(DeviceEventModule.NAME)
-      if (nativeModule != null ) {
-        return (nativeModule as DeviceEventModule).onBackPressed(handler);
+      if (nativeModule instanceof DeviceEventModule) {
+        return nativeModule.onBackPressed(handler);
       } else return false;
     } else {
       return false;
@@ -221,11 +221,15 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
   }
 
   destroyModule(rootId: number, destroyCallback: HippyModuleDestroyCallback): void {
-
+    if (this.mEngineContext != null && this.mEngineContext.getBridgeManager() != null) {
+      this.mEngineContext.getBridgeManager().destroyInstance(rootId);
+    }
   }
 
   destroyEngine(): void {
-
+    if (this.mEngineContext != null) {
+      this.mEngineContext.destroyBridge(false);
+    }
   }
 
   attachToRootView(rootId: number): void {

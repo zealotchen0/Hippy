@@ -51,6 +51,8 @@ export interface HippyEngineContext {
   // TODO
   getDevSupportManager(): DevSupportManager
 
+  destroyBridge(isReload: boolean): void
+
   //
   // DevtoolsManager getDevtoolsManager();
 
