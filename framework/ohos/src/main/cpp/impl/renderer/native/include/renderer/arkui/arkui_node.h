@@ -29,6 +29,8 @@
 #include "footstone/logging.h"
 #include "renderer/utils/hr_types.h"
 
+#define HIPPY_OHOS_MEM_CHECK 0
+
 namespace hippy {
 inline namespace render {
 inline namespace native {
@@ -60,6 +62,10 @@ public:
   ArkUI_NodeHandle GetArkUINodeHandle();
 
   void MarkDirty();
+  
+  void AddChild(ArkUINode &child);
+  void InsertChild(ArkUINode &child, int32_t index);
+  void RemoveChild(ArkUINode &child);
 
   virtual ArkUINode &SetPosition(const HRPosition &position);
   virtual ArkUINode &SetSize(const HRSize &size);

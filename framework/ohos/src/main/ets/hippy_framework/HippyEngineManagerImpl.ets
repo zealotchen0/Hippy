@@ -24,6 +24,7 @@ import {
   EngineInitStatus,
   HippyEngine,
   HippyEngineInitCallback,
+  HippyModuleDestroyCallback,
   HippyModuleLoadCallback,
   ModuleLoadParams,
   V8InitParams
@@ -219,6 +220,14 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
     }
   }
 
+  destroyModule(rootId: number, destroyCallback: HippyModuleDestroyCallback): void {
+
+  }
+
+  destroyEngine(): void {
+
+  }
+
   attachToRootView(rootId: number): void {
     this.mEngineContext!.attachDomToRootView(rootId)
     this.isAttachedToRootView = true
@@ -230,6 +239,10 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
     } else {
       this.cachedRootId = rootId
     }
+  }
+
+  destroyRoot(rootId: number): void {
+    this.mEngineContext!.destroyRoot(rootId)
   }
 
   getVfsManager(): VfsManager {
