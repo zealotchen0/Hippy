@@ -38,7 +38,6 @@ export class HippyNativeModuleBase {
     return null
   }
 
-  destroy() {
-    return null
+  destroy(): void {
   }
 }
