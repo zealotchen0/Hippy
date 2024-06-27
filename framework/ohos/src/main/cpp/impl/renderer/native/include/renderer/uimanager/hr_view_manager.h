@@ -41,8 +41,7 @@ class HRViewManager {
 public:
   HRViewManager(uint32_t instance_id, uint32_t root_id, std::shared_ptr<NativeRender> &native_render,
     napi_env ts_env, napi_ref ts_render_provider_ref,
-    std::set<std::string> &custom_views, std::map<std::string, std::string> &mapping_views,
-    CustomViewBuilderFunction &custom_view_builder);
+    std::set<std::string> &custom_views, std::map<std::string, std::string> &mapping_views);
   ~HRViewManager() = default;
   
   void AttachToNativeXComponent(OH_NativeXComponent* nativeXComponent, uint32_t node_id);
@@ -70,6 +69,10 @@ public:
 
   void CallViewMethod(uint32_t tag, const std::string &method, const std::vector<HippyValue> params,
                       std::function<void(const HippyValue &result)> callback);
+  
+  LayoutSize CallCustomMeasure(uint32_t tag,
+    float width, LayoutMeasureMode width_measure_mode,
+    float height, LayoutMeasureMode height_measure_mode);
 
   uint64_t AddEndBatchCallback(const EndBatchCallback &cb);
   void RemoveEndBatchCallback(uint64_t cbId);
@@ -101,8 +104,6 @@ private:
   std::set<std::string> custom_ts_render_views_;
   napi_env ts_env_ = nullptr;
   napi_ref ts_render_provider_ref_ = nullptr;
-  
-  CustomViewBuilderFunction custom_render_views_builder_;
 };
 
 } // namespace native

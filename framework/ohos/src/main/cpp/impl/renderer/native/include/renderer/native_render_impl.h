@@ -43,7 +43,6 @@ public:
   
   void RegisterNativeXComponentHandle(OH_NativeXComponent *nativeXComponent, uint32_t root_id, uint32_t node_id);
   void RegisterCustomTsRenderViews(napi_env ts_env, napi_ref ts_render_provider_ref, std::set<std::string> &custom_views, std::map<std::string, std::string> &mapping_views);
-  void RegisterCustomRenderViews(CustomViewBuilderFunction &custom_view_builder);
   
   void DestroyRoot(uint32_t root_id);
 
@@ -61,6 +60,10 @@ public:
   void CallUIFunction(uint32_t root_id, uint32_t node_id, const std::string &functionName,
                       const std::vector<HippyValue> params, std::function<void(const HippyValue &result)> callback);
 
+  LayoutSize CustomMeasure(uint32_t root_id, uint32_t node_id,
+    float width, LayoutMeasureMode width_measure_mode,
+    float height, LayoutMeasureMode height_measure_mode);
+  
   void SpanPosition(uint32_t root_id, uint32_t node_id, float x, float y);
   
   std::string GetBundlePath() override;

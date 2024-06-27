@@ -47,10 +47,6 @@ void NativeRenderProvider::RegisterCustomTsRenderViews(napi_env ts_env, napi_ref
   render_impl_->RegisterCustomTsRenderViews(ts_env_, ts_render_provider_ref, custom_views, mapping_views);
 }
 
-void NativeRenderProvider::RegisterCustomRenderViews(CustomViewBuilderFunction &custom_view_builder) {
-  render_impl_->RegisterCustomRenderViews(custom_view_builder);
-}
-
 void NativeRenderProvider::DestroyRoot(uint32_t root_id) {
   render_impl_->DestroyRoot(root_id);
 }
@@ -124,6 +120,12 @@ void NativeRenderProvider::CallUIFunction(uint32_t root_id, uint32_t node_id, ui
     };
     render_impl->CallUIFunction(root_id, node_id, func_name, params, (cb_id == 0) ? nullptr : cb);
   });
+}
+
+LayoutSize NativeRenderProvider::CustomMeasure(uint32_t root_id, uint32_t node_id,
+    float width, LayoutMeasureMode width_measure_mode,
+    float height, LayoutMeasureMode height_measure_mode) {
+  return render_impl_->CustomMeasure(root_id, node_id, width, width_measure_mode, height, height_measure_mode);
 }
 
 void NativeRenderProvider::SpanPosition(uint32_t root_id, uint32_t node_id, float x, float y) {

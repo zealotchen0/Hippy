@@ -23,12 +23,12 @@ import { HippyLibrary } from 'hippy/src/main/ets/hippy_library/HippyLibrary'
 import HippyRenderBaseView
   from 'hippy/src/main/ets/renderer_native/components/base/HippyRenderBaseView'
 import { ExampleComponentA,
-  ExampleViewA } from '../hippyExtend/ExampleViewA'
+  ExampleViewA } from '../hippy_extend/ExampleViewA'
 import { DriverMode, HippyInfo } from './PageConfiguration'
 import { image } from '@kit.ImageKit'
 import {
   ExampleComponentB,
-  ExampleViewB } from '../hippyExtend/ExampleViewB'
+  ExampleViewB } from '../hippy_extend/ExampleViewB'
 import { LogUtils } from 'hippy/src/main/ets/support/utils/LogUtils'
 
 //dimens.xml

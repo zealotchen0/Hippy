@@ -47,10 +47,6 @@ void NativeRenderImpl::RegisterCustomTsRenderViews(napi_env ts_env, napi_ref ts_
   hr_manager_->RegisterCustomTsRenderViews(ts_env, ts_render_provider_ref, custom_views, mapping_views);
 }
 
-void NativeRenderImpl::RegisterCustomRenderViews(CustomViewBuilderFunction &custom_view_builder) {
-  hr_manager_->RegisterCustomRenderViews(custom_view_builder);
-}
-
 void NativeRenderImpl::DestroyRoot(uint32_t root_id) {
   hr_manager_->RemoveViewManager(root_id);
   hr_manager_->RemoveVirtualNodeManager(root_id);
@@ -183,6 +179,16 @@ void NativeRenderImpl::CallUIFunction(uint32_t root_id, uint32_t node_id, const 
   FOOTSTONE_DLOG(INFO) << "callUIFunction: rootId " << root_id << ", id " << node_id << ", functionName "
                        << functionName << ", params" << params.size();
   view_manager->CallViewMethod(node_id, functionName, params, callback);
+}
+
+LayoutSize NativeRenderImpl::CustomMeasure(uint32_t root_id, uint32_t node_id,
+    float width, LayoutMeasureMode width_measure_mode,
+    float height, LayoutMeasureMode height_measure_mode) {
+    auto view_manager = hr_manager_->GetViewManager(root_id);
+  if (!view_manager) {
+    return {0, 0};
+  }
+  return view_manager->CallCustomMeasure(node_id, width, width_measure_mode, height, height_measure_mode);
 }
 
 void NativeRenderImpl::SpanPosition(uint32_t root_id, uint32_t node_id, float x, float y) {
