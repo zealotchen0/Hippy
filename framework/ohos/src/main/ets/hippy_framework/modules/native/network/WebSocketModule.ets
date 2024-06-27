@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 import { HippyNativeModule } from '../../../../support/annotation/HippyNativeModule'
-import { Hippy2Map, HippyAny, HippyMap, HippyValue } from '../../../../support/common/HippyTypes'
+import { HippyAny, HippyMap, HippyValue } from '../../../../support/common/HippyTypes'
 import { HippyEngineContext } from '../../../HippyEngineContext'
 import { HippyNativeModuleBase } from '../HippyNativeModuleBase'
 import { webSocket } from '@kit.NetworkKit'
@@ -212,7 +212,7 @@ export class WebSocketModule extends HippyNativeModuleBase {
   }
 
   public sendWebSocketEvent(eventType: string, data: HippyMap, socketId: number) {
-    const eventParams: Hippy2Map = new Map<string, HippyValue | Map<string, HippyValue>>();
+    const eventParams: HippyMap = new Map<string, HippyAny>();
     eventParams.set(WebSocketModule.PARAM_KEY_SOCKET_ID, socketId);
     eventParams.set(WebSocketModule.PARAM_KEY_TYPE, eventType);
     eventParams.set(WebSocketModule.PARAM_KEY_DATA, data);
