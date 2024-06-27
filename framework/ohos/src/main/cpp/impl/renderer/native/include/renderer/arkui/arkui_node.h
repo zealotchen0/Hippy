@@ -99,24 +99,31 @@ public:
   virtual ArkUINode &SetBorderRadius(float topLeft, float topRight, float bottomLeft, float bottomRight);
   virtual ArkUINode &SetBorderStyle(ArkUI_BorderStyle top, ArkUI_BorderStyle right, ArkUI_BorderStyle bottom, ArkUI_BorderStyle left);
   virtual ArkUINode &SetShadow(const HRShadow &shadow);
+  virtual ArkUINode &SetExpandSafeArea();//TODO will update when NODE_EXPAND_SAFE_AREA add in sdk
+  virtual ArkUINode &SetTransitionMove(const ArkUI_TransitionEdge edgeType,int32_t duration,ArkUI_AnimationCurve curveType = ARKUI_CURVE_EASE);  
+  virtual ArkUINode &SetTransitionOpacity(const ArkUI_AnimationCurve curveType,int32_t duration);
+  virtual ArkUINode &SetTransitionTranslate(float distanceX,float distanceY,float distanceZ,ArkUI_AnimationCurve curveType,int32_t duration);   
+  virtual void ResetNodeAttribute(ArkUI_NodeAttributeType type);
   virtual HRSize GetSize() const;
   virtual uint32_t GetTotalChildCount() const;
 
   virtual void OnNodeEvent(ArkUI_NodeEvent *event) {}
-
+    
   void RegisterClickEvent();
   void UnregisterClickEvent();
   void RegisterAppearEvent();
   void UnregisterAppearEvent();
   void RegisterDisappearEvent();
   void UnregisterDisappearEvent();
-
+  void RegisterAreaChangeEvent();
+  void UnregisterAreaChangeEvent();
 protected:
   void MaybeThrow(int32_t status) {
     if (status != 0) {
       auto message = std::string("ArkUINode operation failed with status: ") + std::to_string(status);
       FOOTSTONE_LOG(ERROR) << message;
-      throw std::runtime_error(std::move(message));
+      // TODO(hot):
+      //throw std::runtime_error(std::move(message));
     }
   }
 
@@ -125,6 +132,7 @@ protected:
   bool hasClickEvent_ = false;
   bool hasAppearEvent_ = false;
   bool hasDisappearEvent_ = false;
+  bool hasAreaChangeEvent_ = false;  
 };
 
 } // namespace native

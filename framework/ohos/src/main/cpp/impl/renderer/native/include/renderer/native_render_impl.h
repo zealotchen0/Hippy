@@ -34,15 +34,16 @@ inline namespace native {
 
 class NativeRenderImpl : public NativeRender {
 public:
-  NativeRenderImpl(uint32_t instance_id);
+  NativeRenderImpl(uint32_t instance_id, const std::string &bundle_path);
   ~NativeRenderImpl() = default;
 
   void InitRenderManager();
   
   uint32_t GetInstanceId() { return instance_id_; }
   
-  void RegisterNativeXComponentHandle(OH_NativeXComponent *nativeXComponent, uint32_t root_id);
-  void RegisterCustomTsRenderViews(uint32_t root_id, const std::set<std::string> &views, napi_ref builder_callback_ref, napi_env env);
+  void RegisterNativeXComponentHandle(OH_NativeXComponent *nativeXComponent, uint32_t root_id, uint32_t node_id);
+  void RegisterCustomTsRenderViews(napi_env ts_env, napi_ref ts_render_provider_ref, std::set<std::string> &custom_views, std::map<std::string, std::string> &mapping_views);
+  void RegisterCustomRenderViews(CustomViewBuilderFunction &custom_view_builder);
   
   void DestroyRoot(uint32_t root_id);
 
@@ -62,11 +63,13 @@ public:
 
   void SpanPosition(uint32_t root_id, uint32_t node_id, float x, float y);
   
+  std::string GetBundlePath() override;
   uint64_t AddEndBatchCallback(uint32_t root_id, const EndBatchCallback &cb) override;
   void RemoveEndBatchCallback(uint32_t root_id, uint64_t cbId) override;
 
 private:
   uint32_t instance_id_;
+  std::string bundle_path_;
   std::shared_ptr<HRManager> hr_manager_;
 };
 

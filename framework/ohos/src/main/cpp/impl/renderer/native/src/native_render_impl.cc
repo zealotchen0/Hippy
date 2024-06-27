@@ -27,29 +27,28 @@ namespace hippy {
 inline namespace render {
 inline namespace native {
 
-NativeRenderImpl::NativeRenderImpl(uint32_t instance_id) : instance_id_(instance_id) {}
+NativeRenderImpl::NativeRenderImpl(uint32_t instance_id, const std::string &bundle_path) : instance_id_(instance_id), bundle_path_(bundle_path) {}
 
 void NativeRenderImpl::InitRenderManager() {
   auto native_render = std::static_pointer_cast<NativeRender>(shared_from_this());
   hr_manager_ = std::make_shared<HRManager>(instance_id_, native_render);
 }
 
-void NativeRenderImpl::RegisterNativeXComponentHandle(OH_NativeXComponent *nativeXComponent, uint32_t root_id) {
+void NativeRenderImpl::RegisterNativeXComponentHandle(OH_NativeXComponent *nativeXComponent, uint32_t root_id, uint32_t node_id) {
   auto view_manager = hr_manager_->GetViewManager(root_id);
   if (!view_manager) {
     return;
   }
   
-  view_manager->AttachToNativeXComponent(nativeXComponent);
+  view_manager->AttachToNativeXComponent(nativeXComponent, node_id);
 }
 
-void NativeRenderImpl::RegisterCustomTsRenderViews(uint32_t root_id, const std::set<std::string> &views, napi_ref builder_callback_ref, napi_env env) {
-  auto view_manager = hr_manager_->GetViewManager(root_id);
-  if (!view_manager) {
-    return;
-  }
-  
-  view_manager->RegisterCustomTsRenderViews(views, builder_callback_ref, env);
+void NativeRenderImpl::RegisterCustomTsRenderViews(napi_env ts_env, napi_ref ts_render_provider_ref, std::set<std::string> &custom_views, std::map<std::string, std::string> &mapping_views) {
+  hr_manager_->RegisterCustomTsRenderViews(ts_env, ts_render_provider_ref, custom_views, mapping_views);
+}
+
+void NativeRenderImpl::RegisterCustomRenderViews(CustomViewBuilderFunction &custom_view_builder) {
+  hr_manager_->RegisterCustomRenderViews(custom_view_builder);
 }
 
 void NativeRenderImpl::DestroyRoot(uint32_t root_id) {
@@ -198,6 +197,10 @@ void NativeRenderImpl::SpanPosition(uint32_t root_id, uint32_t node_id, float x,
   m->top_ = y;
   auto tm = std::static_pointer_cast<HRMutation>(m);
   view_manager->AddMutations(tm);
+}
+
+std::string NativeRenderImpl::GetBundlePath() {
+  return bundle_path_;
 }
 
 uint64_t NativeRenderImpl::AddEndBatchCallback(uint32_t root_id, const EndBatchCallback &cb) {
