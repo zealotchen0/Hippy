@@ -20,7 +20,7 @@
 import hilog from '@ohos.hilog';
 
 export class LogUtils {
-  private static DEBUG_ENABLE: boolean = false
+  private static DEBUG_ENABLE: boolean = true
 
   public static enableDebugLog(debuggable: boolean) {
     LogUtils.DEBUG_ENABLE = debuggable

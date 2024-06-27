@@ -50,8 +50,9 @@ import { HippyThirdPartyAdapter } from './adapter/thirdparty/HippyThirdPartyAdap
 import { HippyEngineContext } from './HippyEngineContext'
 import { HippyEngineContextImpl } from './HippyEngineContextImpl';
 import { LogUtils } from '../support/utils/LogUtils';
-import { HippyMap } from '../support/common/HippyTypes';
+import { HippyAny, HippyMap } from '../support/common/HippyTypes';
 import { DeviceEventModule } from './modules/native';
+import { EventDispatcher } from './modules/javascript/EventDispatcher';
 
 export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
   private libHippy: HippyLibrary
@@ -80,6 +81,7 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
   private cachedLoadParams: ModuleLoadParams | null = null;
   private cachedLoadCallback: HippyModuleLoadCallback | null = null;
   private cachedRootId: number = 0;
+  private destroyCallback: Function | null = null;
 
   constructor(params: EngineInitParams) {
     this.params = params;
@@ -191,15 +193,24 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
 
   }
 
+  public sendEvent(event: string, params: HippyAny): void {
+    if (this.mEngineContext != null && this.mEngineContext.getModuleManager() != null) {
+      const eventModule = this.mEngineContext.getModuleManager().getJavaScriptModule(EventDispatcher.MODULE_NAME);
+      if (eventModule != null) {
+        (eventModule as EventDispatcher).receiveNativeEvent(event, params);
+      }
+    }
+  }
+
   public initEngine(initCallback: HippyEngineInitCallback): void {
     this.initDevModule();
     this.restartEngine(initCallback);
   }
 
-  loadModule(loadParams: ModuleLoadParams, loadCallback: HippyModuleLoadCallback) {
+  loadModule(loadParams: ModuleLoadParams, loadCallback: HippyModuleLoadCallback): number {
     const jsDriver = this.mEngineContext?.getJsDriver();
     if (!jsDriver || !this.getVfsManager() || !this.resourceManager) {
-      return
+      return 0;
     }
     let coreBundleLoader: HippyBundleLoader | null = null;
     if (!TextUtils.isEmpty(loadParams.jsAssetsPath)) {
@@ -218,9 +229,11 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
       this.cachedLoadParams = loadParams
       this.cachedLoadCallback = loadCallback
     }
+    return this.cachedRootId;
   }
 
   destroyModule(rootId: number, destroyCallback: HippyModuleDestroyCallback): void {
+    this.destroyCallback = destroyCallback;
     if (this.mEngineContext != null && this.mEngineContext.getBridgeManager() != null) {
       this.mEngineContext.getBridgeManager().destroyInstance(rootId);
     }
@@ -229,6 +242,12 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
   destroyEngine(): void {
     if (this.mEngineContext != null) {
       this.mEngineContext.destroyBridge(false);
+    }
+  }
+
+  onDestroyEngine(): void {
+    if (this.mEngineContext != null) {
+      this.mEngineContext.destroy(false);
     }
   }
 
@@ -247,6 +266,9 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
 
   destroyRoot(rootId: number): void {
     this.mEngineContext!.destroyRoot(rootId)
+    if (this.destroyCallback) {
+      this.destroyCallback();
+    }
   }
 
   getVfsManager(): VfsManager {

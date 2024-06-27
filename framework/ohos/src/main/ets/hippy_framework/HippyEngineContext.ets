@@ -32,8 +32,6 @@ export interface HippyEngineContext {
 
   getLibHippy(): HippyLibrary
 
-  getComponentName(): string
-
   getNativeParams(): Map<string, Object>
 
   getVfsManager(): VfsManager
@@ -53,15 +51,7 @@ export interface HippyEngineContext {
 
   destroyBridge(isReload: boolean): void
 
-  //
   // DevtoolsManager getDevtoolsManager();
-
-  // ViewGroup getRootView();
-  //
-  // View getRootView(int rootId);
-  //
-  // @Nullable
-  // View findViewById(int nodeId);
 
   // void addEngineLifecycleEventListener(HippyEngineLifecycleEventListener listener);
   //
@@ -70,20 +60,17 @@ export interface HippyEngineContext {
   handleException(error: HippyJsException): void
 
   // int getEngineId();
-  //
+
   getDomManagerId(): number;
 
-  //
   getVfsId(): number;
 
   //
   // int getDevtoolsId();
   //
   onRuntimeInitialized(): void;
-  //
-  // void onBridgeDestroyed(boolean isReload, Throwable e);
-  //
-  // void onLoadModuleCompleted(ModuleLoadStatus statusCode, @Nullable String msg);
-  //
-  // void onLoadInstanceCompleted(long result, String reason);
+
+  onBridgeDestroyed(isReload: boolean): void;
+
+  onLoadModuleCompleted(statusCode: number, msg: string): void;
 }
