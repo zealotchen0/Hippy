@@ -26,13 +26,15 @@ import { NativeRenderProviderManager } from './NativeRenderProviderManager';
 import { HREventType } from './utils/HREventUtils';
 import { LogUtils } from '../support/utils/LogUtils';
 import { HippyLibrary } from '../hippy_library/HippyLibrary';
-import { HippyAny, HippyMap } from '../support/common/HippyTypes';
+import { HippyAny, HippyMap, HippyResource } from '../support/common/HippyTypes';
 import { HRRenderViewCreator } from './components/HippyRenderRegisterMap';
 import { CreateRenderViewParamsForCApi,
   SetRenderViewFrameParamsForCApi,
   UpdateEventListenerParamsForCApi,
   UpdatePropsParamsForCApi} from './NativeRenderBuilderForCApi';
-import { FrameNode } from '@kit.ArkUI';
+import { componentSnapshot, FrameNode } from '@kit.ArkUI';
+import { image } from '@kit.ImageKit';
+import { util } from '@kit.ArkTS';
 
 export class NativeRenderProvider {
   private readonly TAG = "NativeRenderProvider"
@@ -215,6 +217,29 @@ export class NativeRenderProvider {
       }
     }
     this.libHippy?.NativeRenderProvider_DoCallBack(this.instanceId, result, functionName, rootId, nodeId, callbackId, buffer)
+  }
+
+  // for devtools
+  getComponentSnapshot(componentId: string, resultMap: HippyMap) {
+    componentSnapshot.get(componentId + "", async (error: Error, pixmap: image.PixelMap) => {
+      if (error) {
+        console.log("error: " + JSON.stringify(error))
+        return;
+      }
+      const imagePackageApi: image.ImagePacker = image.createImagePacker()
+      let packOpts: image.PackingOption = {
+        format: 'image/jpeg',
+        quality: 100,
+      }
+      const readBuffer = await imagePackageApi.packing(pixmap, packOpts);
+      let base64Helper = new util.Base64Helper();
+      let uint8Arr = new Uint8Array(readBuffer);
+      let pixelStr = base64Helper.encodeToStringSync(uint8Arr);
+      resultMap.set("screenShot", pixelStr);
+      resultMap.set("width", 50);
+      resultMap.set("height", 50);
+      resultMap.set("screenScale", 1.0);
+    })
   }
 
   // for c-api
