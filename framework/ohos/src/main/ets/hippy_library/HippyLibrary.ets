@@ -21,13 +21,25 @@ import resmgr from "@ohos.resourceManager";
 import { JsDriver } from '../hippy_framework/connector/JsDriver';
 import { NativeCallback } from '../hippy_framework/connector/NativeCallback';
 import { NativeRenderProvider } from '../renderer_native/NativeRenderProvider';
-import { HippyAny } from '../support/common/HippyTypes';
+import { HippyAny, HippyArray } from '../support/common/HippyTypes';
 import { FetchResourceCallback } from '../vfs/FetchResourceCallback';
 import { ResourceDataHolder } from '../vfs/ResourceDataHolder';
 import { VfsManager } from '../vfs/VfsManager';
 import { FrameNode } from '@kit.ArkUI';
 
+export interface HippyRenderViewInfo {
+  tag: number
+  viewName: string
+}
+
+export type CallResultCallback = (result: HippyAny) => void
+
 export interface HippyLibrary {
+  Devtools_OnCreateDevtools(dataDir: string, wsUrl: string): number;
+  Devtools_OnDestroyDevtools(devtoolsId: number, isReload: boolean): void;
+  Devtools_OnBindDevtools(devtoolsId: number, driverId: number, domId: number, renderId: number): void;
+  Devtools_OnAttachToRoot(devtoolsId: number, rootId: number): void;
+
   DomManager_SetRenderManager(instanceId: number, renderId: number): void;
   DomManager_CreateDomManager(): number;
   DomManager_DestroyDomManager(domManagerId: number): void;
@@ -51,7 +63,7 @@ export interface HippyLibrary {
   ): number;
   JsDriver_DestroyJsDriver(instanceId: number, useLowMemoryMode: boolean, isReload: boolean, callback: NativeCallback): void;
   JsDriver_LoadInstance(instanceId: number, buffer: ArrayBuffer): void;
-  JsDriver_UnloadInstance(instanceId: number,str: string): void;
+  JsDriver_UnloadInstance(instanceId: number,buffer: ArrayBuffer): void;
   JsDriver_RunScriptFromUri(
     instanceId: number,
     uri: string,
@@ -75,7 +87,7 @@ export interface HippyLibrary {
   JsDriver_CallFunction(instanceId: number, action: string, callback: NativeCallback, buffer: ArrayBuffer): void;
 
   NativeRenderer_CreateNativeRenderManager(enableArkCApi: boolean, renderProvider: NativeRenderProvider,
-    customRenderViews: Array<string> | null, customMeasureRenderViews: Array<string> | null, mappingRenderViews: Array<string> | null, density: number): number;
+    customRenderViews: Array<string> | null, customMeasureRenderViews: Array<string> | null, mappingRenderViews: Array<string> | null, bundlePath: string, density: number): number;
   NativeRenderer_DestroyNativeRenderManager(instanceId: number): void;
   NativeRenderer_SetDomManager(instanceId: number, domManagerId: number): void;
 
@@ -86,6 +98,9 @@ export interface HippyLibrary {
   NativeRenderProvider_DoMeasureText(instanceId: number, props:string[] | null, width: number, widthMode: number, height: number, heightMode: number): number[];
 
   NativeRenderProvider_DestroyRoot(instanceId: number, rootId: number): void;
+  NativeRenderProvider_GetViewParent(instanceId: number, rootId: number, nodeId: number): HippyRenderViewInfo | null;
+  NativeRenderProvider_GetViewChildren(instanceId: number, rootId: number, nodeId: number): Array<HippyRenderViewInfo> | null;
+  NativeRenderProvider_CallViewMethod(instanceId: number, rootId: number, nodeId: number, method: string, params: HippyArray, callback: CallResultCallback | null): void;
 
   VfsManager_CreateVfs(vfsDelegate: VfsManager): number;
   VfsManager_DestroyVfs(instanceId: number): void;

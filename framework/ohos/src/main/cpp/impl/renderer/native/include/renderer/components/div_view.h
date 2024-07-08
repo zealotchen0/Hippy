@@ -29,7 +29,7 @@ namespace hippy {
 inline namespace render {
 inline namespace native {
 
-class DivView : public BaseView, public StackNodeDelegate {
+class DivView : public BaseView {
 public:
   DivView(std::shared_ptr<NativeRenderContext> &ctx);
   virtual ~DivView();
@@ -38,9 +38,7 @@ public:
   bool SetProp(const std::string &propKey, const HippyValue &propValue) override;
 
   void OnChildInserted(std::shared_ptr<BaseView> const &childView, int32_t index) override;
-  void OnChildRemoved(std::shared_ptr<BaseView> const &childView) override;
-
-  void OnClick() override;
+  void OnChildRemoved(std::shared_ptr<BaseView> const &childView, int32_t index) override;
   
 private:
   StackNode stackNode_;

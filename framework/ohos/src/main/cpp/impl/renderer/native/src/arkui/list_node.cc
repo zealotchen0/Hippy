@@ -52,6 +52,9 @@ ListNode::~ListNode() {
   for (auto eventType : LIST_NODE_EVENT_TYPES) {
     NativeNodeApi::GetInstance()->unregisterNodeEvent(nodeHandle_, eventType);
   }
+  if (hasAdapter_) {
+    NativeNodeApi::GetInstance()->resetAttribute(nodeHandle_, NODE_LIST_NODE_ADAPTER);
+  }
 }
 
 void ListNode::RemoveAllChildren() {
@@ -126,18 +129,22 @@ void ListNode::SetScrollBarDisplayMode(ArkUI_ScrollBarDisplayMode mode) {
   MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_SCROLL_BAR_DISPLAY_MODE, &item));
 }
 
+void ListNode::SetLazyAdapter(ArkUI_NodeAdapterHandle adapterHandle) {
+  ArkUI_AttributeItem item{nullptr, 0, nullptr, adapterHandle};
+  MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_LIST_NODE_ADAPTER, &item));
+  hasAdapter_ = true;
+}
+
 void ListNode::OnNodeEvent(ArkUI_NodeEvent *event) {
+  ArkUINode::OnNodeEvent(event);
+  
   if (listNodeDelegate_ == nullptr) {
     return;
   }
 
   auto eventType = OH_ArkUI_NodeEvent_GetEventType(event);
   auto nodeComponentEvent = OH_ArkUI_NodeEvent_GetNodeComponentEvent(event);
-  if (eventType == ArkUI_NodeEventType::NODE_EVENT_ON_APPEAR) {
-    listNodeDelegate_->OnAppear();
-  } else if (eventType == ArkUI_NodeEventType::NODE_EVENT_ON_DISAPPEAR) {
-    listNodeDelegate_->OnDisappear();
-  } else if (eventType == ArkUI_NodeEventType::NODE_LIST_ON_SCROLL_INDEX) {
+  if (eventType == ArkUI_NodeEventType::NODE_LIST_ON_SCROLL_INDEX) {
     int32_t firstIndex = nodeComponentEvent->data[0].i32;
     int32_t lastIndex = nodeComponentEvent->data[1].i32;
     int32_t centerIndex = nodeComponentEvent->data[2].i32;

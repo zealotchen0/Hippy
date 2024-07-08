@@ -90,13 +90,14 @@ set(SOURCE_SET
   src/arkui/text_input_base_node.cc
   src/arkui/text_node.cc
   src/arkui/water_flow_node.cc
-  src/arkui/web_node.cc
+  src/arkui/dialog_controller.cc
   src/components/hippy_render_view_creator.cc
   src/components/base_view.cc
   src/components/custom_ts_view.cc
   src/components/custom_view.cc
   src/components/div_view.cc
   src/components/image_view.cc
+  src/components/list_item_adapter.cc
   src/components/list_item_view.cc
   src/components/list_view.cc
   src/components/modal_view.cc
@@ -114,11 +115,11 @@ set(SOURCE_SET
   src/components/text_input_view.cc
   src/components/waterfall_item_view.cc
   src/components/waterfall_view.cc
-  src/components/web_view.cc
   )
 set(PUBLIC_SOURCE_SET
   src/native_render_provider_capi.cc
   src/native_render_provider_napi.cc
+  src/api/hippy_view_provider.cc
   )
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCE_SET} PUBLIC ${PUBLIC_SOURCE_SET})
 # endregion

@@ -20,27 +20,31 @@
  *
  */
 
-#include "renderer/components/web_view.h"
-#include "renderer/utils/hr_value_utils.h"
+#pragma once
+
+#include "renderer/arkui/text_node.h"
+#include "renderer/arkui/stack_node.h"
+#include "renderer/components/custom_view.h"
 
 namespace hippy {
 inline namespace render {
 inline namespace native {
 
-WebView::WebView(std::shared_ptr<NativeRenderContext> &ctx) : BaseView(ctx) {}
+class ExampleViewA : public CustomView {
+public:
+  ExampleViewA(std::shared_ptr<NativeRenderContext> &ctx);
+  virtual ~ExampleViewA();
 
-WebView::~WebView() {}
+  StackNode &GetLocalRootArkUINode() override;
+  bool SetProp(const std::string &propKey, const HippyValue &propValue) override;
 
-WebNode &WebView::GetLocalRootArkUINode() { return webNode_; }
-
-bool WebView::SetProp(const std::string &propKey, const HippyValue &propValue) {
-  if (propKey == "url") {
-    return true;
-  } else if (propKey == "source") {
-    return true;
-  }
-  return BaseView::SetProp(propKey, propValue);
-}
+  void OnChildInserted(std::shared_ptr<BaseView> const &childView, int32_t index) override;
+  void OnChildRemoved(std::shared_ptr<BaseView> const &childView, int32_t index) override;
+  
+private:
+  StackNode stackNode_;
+  TextNode textNode_;
+};
 
 } // namespace native
 } // namespace render

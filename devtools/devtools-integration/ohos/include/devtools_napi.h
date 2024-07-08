@@ -18,17 +18,15 @@
  * limitations under the License.
  */
 
-#import "HippyDefines.h"
-#import "VFSUriHandler.h"
-#import "VFSUriLoader.h"
+#pragma once
 
-@class HippyBridge;
-class NativeRenderManager;
+#include "footstone/string_view.h"
+#include "footstone/task_runner.h"
+#include <js_native_api.h>
+#include <js_native_api_types.h>
 
-class HippyDemoLoader : public VFSUriLoader {
-};
+namespace hippy::devtools {
 
 
-class HippyDemoHandler : public VFSUriHandler {
+}
 
-};

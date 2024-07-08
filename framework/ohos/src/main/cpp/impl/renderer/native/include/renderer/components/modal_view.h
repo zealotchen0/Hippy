@@ -24,6 +24,7 @@
 
 #include "renderer/components/base_view.h"
 #include "renderer/arkui/stack_node.h"
+#include "renderer/arkui/dialog_controller.h"
 
 namespace hippy {
 inline namespace render {
@@ -36,9 +37,22 @@ public:
 
   StackNode &GetLocalRootArkUINode() override;
   bool SetProp(const std::string &propKey, const HippyValue &propValue) override;
-  
+  void OnSetPropsEnd() override;
+  void UpdateRenderViewFrame(const HRRect &frame, const HRPadding &padding) override;
+  void OnChildInserted(std::shared_ptr<BaseView> const &childView, int index) override;
+  void OnChildRemoved(std::shared_ptr<BaseView> const &childView, int32_t index) override;
+    
+  //StackNodeDelegate
+  void OnAppear() override;
+  void OnDisappear() override;
+  void OnAreaChange(ArkUI_NumberValue* data) override; 
+    
 private:
   StackNode stackNode_;
+  DialogController dialog_;
+  bool transparent = true;
+  std::string animationType = "fade";
+  bool darkStatusBarText = false;
 };
 
 } // namespace native

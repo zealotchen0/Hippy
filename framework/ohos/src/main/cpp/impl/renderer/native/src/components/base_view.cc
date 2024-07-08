@@ -22,6 +22,7 @@
 
 #include "renderer/components/base_view.h"
 #include "renderer/dom_node/hr_node_props.h"
+#include "renderer/utils/hr_url_utils.h"
 #include "renderer/utils/hr_value_utils.h"
 #include "renderer/utils/hr_convert_utils.h"
 #include "renderer/uimanager/hr_gesture_dispatcher.h"
@@ -46,6 +47,16 @@ BaseView::~BaseView() {
   ++sCount;
   FOOTSTONE_DLOG(INFO) << "Hippy ohos mem check, view, del: " << this << ", type: " << view_type_ << ", count: " << sCount;
 #endif
+}
+
+void BaseView::Init() {
+  GetLocalRootArkUINode().SetArkUINodeDelegate(this);
+}
+
+void BaseView::SetTag(uint32_t tag) {
+  tag_ = tag;
+  std::string id_str = "HippyId" + std::to_string(tag);
+  GetLocalRootArkUINode().SetId(id_str);
 }
 
 bool BaseView::SetProp(const std::string &propKey, const HippyValue &propValue) {
@@ -534,7 +545,7 @@ void BaseView::SetInterceptTouch(bool flag) {
   if (HandleGestureBySelf()) {
     return;
   }
-  GetLocalRootArkUINode().SetHitTestMode(flag ? ArkUIHitTestMode::BLOCK : ArkUIHitTestMode::DEFAULT);
+  GetLocalRootArkUINode().SetHitTestMode(flag ? ARKUI_HIT_TEST_MODE_BLOCK : ARKUI_HIT_TEST_MODE_DEFAULT);
 }
 
 void BaseView::SetInterceptPullUp(bool flag) {
@@ -611,18 +622,19 @@ void BaseView::AddSubRenderView(std::shared_ptr<BaseView> &subView, int32_t inde
   if (index < 0 || index > (int32_t)children_.size()) {
     index = (int32_t)children_.size();
   }
-  OnChildInserted(subView, index);
   auto it = children_.begin() + index;
   subView->SetParent(shared_from_this());
   children_.insert(it, subView);
+  OnChildInserted(subView, index);
 }
 
 void BaseView::RemoveSubView(std::shared_ptr<BaseView> &subView) {
   auto it = std::find(children_.begin(), children_.end(), subView);
   if (it != children_.end()) {
     auto view = std::move(*it);
+    int32_t index = static_cast<int32_t>(it - children_.begin());
     children_.erase(it);
-    OnChildRemoved(view);
+    OnChildRemoved(view, index);
   }
 }
 
@@ -660,8 +672,49 @@ bool BaseView::CheckRegisteredEvent(std::string &eventName) {
   return false;
 }
 
+void BaseView::OnClick() {
+  if (eventClick_) {
+    eventClick_();
+  }
+}
+
+void BaseView::OnAppear() {
+  if (eventAttachedToWindow_) {
+    eventAttachedToWindow_();
+  }
+}
+
+void BaseView::OnDisappear() {
+  if (eventDetachedFromWindow_) {
+    eventDetachedFromWindow_();
+  }
+}
+
+void BaseView::OnAreaChange(ArkUI_NumberValue* data) {
+  
+}
+
+// TODO(hot):
 std::string BaseView::ConvertToLocalPathIfNeeded(const std::string &uri) {
-  // TODO(hot):
+  // hpfile://./assets/defaultSource.jpg
+  if (uri.find("hpfile://") == 0) {
+    std::string prefix = "hpfile://./";
+    auto pos = uri.find(prefix);
+    if (pos == 0) {
+      auto relativePath = uri.substr(prefix.length());
+      auto bundlePath = ctx_->GetNativeRender().lock()->GetBundlePath();
+      auto lastPos = bundlePath.rfind("/");
+      if (lastPos != std::string::npos) {
+        bundlePath = bundlePath.substr(0, lastPos + 1);
+      }
+      auto fullPath = bundlePath + relativePath;
+      auto localPath = HRUrlUtils::convertAssetImageUrl(fullPath);
+      return localPath;
+    }
+  } else if (uri.find("asset:/") == 0) {
+    auto localPath = HRUrlUtils::convertAssetImageUrl(uri);
+    return localPath;
+  }
   return uri;
 }
 

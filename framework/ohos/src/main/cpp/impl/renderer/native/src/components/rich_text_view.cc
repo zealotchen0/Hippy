@@ -30,7 +30,7 @@ inline namespace render {
 inline namespace native {
 
 RichTextView::RichTextView(std::shared_ptr<NativeRenderContext> &ctx) : BaseView(ctx) {
-  textNode_.SetTextNodeDelegate(this);
+
 }
 
 RichTextView::~RichTextView() {
@@ -205,15 +205,9 @@ void RichTextView::OnChildInserted(std::shared_ptr<BaseView> const &childView, i
   textNode_.InsertChild(childView->GetLocalRootArkUINode(), index);
 }
 
-void RichTextView::OnChildRemoved(std::shared_ptr<BaseView> const &childView) {
-  BaseView::OnChildRemoved(childView);
+void RichTextView::OnChildRemoved(std::shared_ptr<BaseView> const &childView, int32_t index) {
+  BaseView::OnChildRemoved(childView, index);
   textNode_.RemoveChild(childView->GetLocalRootArkUINode());
-}
-
-void RichTextView::OnClick() {
-  if (eventClick_) {
-    eventClick_();
-  }
 }
 
 } // namespace native

@@ -28,7 +28,6 @@ inline namespace render {
 inline namespace native {
 
 DivView::DivView(std::shared_ptr<NativeRenderContext> &ctx) : BaseView(ctx) {
-  stackNode_.SetStackNodeDelegate(this);
 }
 
 DivView::~DivView() {
@@ -53,15 +52,9 @@ void DivView::OnChildInserted(std::shared_ptr<BaseView> const &childView, int32_
   stackNode_.InsertChild(childView->GetLocalRootArkUINode(), index);
 }
 
-void DivView::OnChildRemoved(std::shared_ptr<BaseView> const &childView) {
-  BaseView::OnChildRemoved(childView);
+void DivView::OnChildRemoved(std::shared_ptr<BaseView> const &childView, int32_t index) {
+  BaseView::OnChildRemoved(childView, index);
   stackNode_.RemoveChild(childView->GetLocalRootArkUINode());
-}
-
-void DivView::OnClick() {
-  if (eventClick_) {
-    eventClick_();
-  }
 }
 
 } // namespace native

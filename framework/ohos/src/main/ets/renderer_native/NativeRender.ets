@@ -17,18 +17,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { HippyRootView } from '.';
+import { CallResultCallback, HippyRenderViewInfo } from '../hippy_library/HippyLibrary';
 import { HippyException } from '../support/common/HippyException';
 import { HippyExecutor } from '../support/common/HippyExecutor';
+import { HippyArray, HippyRecord } from '../support/common/HippyTypes';
 import { VfsManager } from '../vfs/VfsManager';
 import { ImageDecoderAdapter } from './components/image/ImageDecoderAdapter';
 import { ImageLoaderAdapter } from './components/image/ImageLoaderAdapter';
 import { FontAdapter } from './components/richtext/FontAdapter';
 import { FrameworkProxy } from './FrameworkProxy'
+import { WrappedHippyCustomRenderViewBuilder } from './HippyRenderViewBuilder';
 import { HRManager } from './uimanager/HRManager';
 import { HippyEndBatchCallback } from './uimanager/HRViewManager';
 
 export interface NativeRender {
-  attachToRootView(rootId: number): void
+  createRootView(pageName: string, pageData: HippyRecord, wrappedCustomRenderViewBuilder: WrappedHippyCustomRenderViewBuilder | null): HippyRootView
 
   destroyRoot(rootId: number): void
 
@@ -62,4 +66,9 @@ export interface NativeRender {
   addEndBatchCallback(rootId: number, cb: HippyEndBatchCallback): void
 
   removeEndBatchCallback(rootId: number, cb: HippyEndBatchCallback): void
+
+  getViewParent(rootId: number, nodeId: number): HippyRenderViewInfo | null
+  getViewChildren(rootId: number, nodeId: number): Array<HippyRenderViewInfo> | null
+  callViewMethod(rootId: number, nodeId: number, method: string, params: HippyArray, callback: CallResultCallback | null): void
+
 }

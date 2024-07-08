@@ -25,6 +25,7 @@
 #include "connector/exception_handler.h"
 #include <js_native_api.h>
 #include <js_native_api_types.h>
+// #include "devtools/vfs/devtools_handler.h"
 #include "oh_napi/data_holder.h"
 #include "oh_napi/oh_napi_invocation.h"
 #include "oh_napi/oh_napi_register.h"
@@ -39,6 +40,11 @@
 
 #ifdef JS_V8
 #include "driver/vm/v8/v8_vm.h"
+#endif
+
+#ifdef ENABLE_INSPECTOR
+#include "devtools/devtools_data_source.h"
+#include "devtools/vfs/devtools_handler.h"
 #endif
 
 namespace hippy {
@@ -109,8 +115,12 @@ static napi_value CreateJsDriver(napi_env env, napi_callback_info info) {
   if (arkTs.IsArray(args[vm_param_index]) && arkTs.GetArrayLength(args[vm_param_index]) >= 2) {
     has_vm_init_param = true;
   }
-  // auto vfs_id = arkTs.GetInteger(args[9]);
-  // auto devtools_id = arkTs.GetInteger(args[10]);
+    
+  #ifdef ENABLE_INSPECTOR
+//     auto vfs_id = arkTs.GetInteger(args[9]);
+    auto devtools_id = arkTs.GetInteger(args[10]);
+  #endif  
+  auto is_reload = false; // TODO:
 
   FOOTSTONE_LOG(INFO) << "CreateJsDriver begin, enable_v8_serialization = " << static_cast<uint32_t>(enable_v8_serialization)
                       << ", is_dev_module = " << static_cast<uint32_t>(is_dev_module)
@@ -180,7 +190,7 @@ static napi_value CreateJsDriver(napi_env env, napi_callback_info info) {
     }
   };
   auto engine = JsDriverUtils::CreateEngineAndAsyncInitialize(
-      dom_task_runner, param, group_id);
+      dom_task_runner, param, group_id, is_reload);
   {
     std::lock_guard<std::mutex> lock(holder_mutex);
     engine_holder[engine.get()] = engine;
@@ -197,9 +207,9 @@ static napi_value CreateJsDriver(napi_env env, napi_callback_info info) {
 static napi_value DestroyJsDriver(napi_env env, napi_callback_info info) {
   ArkTS arkTs(env);
   auto args = arkTs.GetCallbackArgs(info);
-  auto scope_id = static_cast<uint32_t>(arkTs.GetInteger(args[0]));
+  uint32_t scope_id = static_cast<uint32_t>(arkTs.GetInteger(args[0]));
   // auto single_thread_mode = arkTs.GetBoolean(args[1]);
-  auto is_reload = arkTs.GetInteger(args[2]);
+  auto is_reload = arkTs.GetBoolean(args[2]);
   auto callback_ref = arkTs.CreateReference(args[3]);
 
   {
@@ -266,9 +276,19 @@ static napi_value UnloadInstance(napi_env env, napi_callback_info info) {
   ArkTS arkTs(env);
   auto args = arkTs.GetCallbackArgs(info);
   uint32_t scope_id = static_cast<uint32_t>(arkTs.GetInteger(args[0]));
-  auto buffer_data = arkTs.GetString(args[1]);
+    void *buffer_data = NULL;
+  size_t byte_length = 0;
+  if (arkTs.IsArrayBuffer(args[1])) {
+    arkTs.GetArrayBufferInfo(args[1], &buffer_data, &byte_length);
+  }
+  FOOTSTONE_CHECK(byte_length > 0);
+
+  byte_string buffer;
+  if (buffer_data && byte_length > 0) {
+    buffer.assign(static_cast<char *>(buffer_data), byte_length);
+  }
   auto scope = GetScope(scope_id);
-  JsDriverUtils::UnloadInstance(scope, std::move(buffer_data));
+  JsDriverUtils::UnloadInstance(scope, std::move(buffer));
   return arkTs.GetUndefined();
 }
 

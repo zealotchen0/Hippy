@@ -22,23 +22,33 @@
 
 #pragma once
 
-#include "renderer/components/base_view.h"
-#include "renderer/arkui/web_node.h"
+#include "renderer/arkui/text_node.h"
+#include "renderer/arkui/stack_node.h"
+#include "renderer/components/custom_view.h"
 
 namespace hippy {
 inline namespace render {
 inline namespace native {
 
-class WebView : public BaseView {
+class ExampleViewB : public CustomView {
 public:
-  WebView(std::shared_ptr<NativeRenderContext> &ctx);
-  ~WebView();
+  ExampleViewB(std::shared_ptr<NativeRenderContext> &ctx);
+  virtual ~ExampleViewB();
 
-  WebNode &GetLocalRootArkUINode() override;
+  StackNode &GetLocalRootArkUINode() override;
   bool SetProp(const std::string &propKey, const HippyValue &propValue) override;
   
+  LayoutSize CustomMeasure(float width, LayoutMeasureMode width_measure_mode,
+                           float height, LayoutMeasureMode height_measure_mode) override {
+    return {100, 100};
+  }
+
+  void OnChildInserted(std::shared_ptr<BaseView> const &childView, int32_t index) override;
+  void OnChildRemoved(std::shared_ptr<BaseView> const &childView, int32_t index) override;
+  
 private:
-  WebNode webNode_;
+  StackNode stackNode_;
+  TextNode textNode_;
 };
 
 } // namespace native

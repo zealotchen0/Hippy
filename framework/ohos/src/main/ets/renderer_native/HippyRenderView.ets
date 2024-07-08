@@ -23,7 +23,6 @@ import HippyRenderBaseView, { HippyObservedArray } from './components/base/Hippy
 import {
   hippyRenderViewCreatorRegisterMap,
   HRRenderViewCreator } from './components/HippyRenderRegisterMap';
-import { IHippyRenderExceptionListener } from './IHippyRenderExceptionListener';
 import { NativeRenderContext } from './NativeRenderContext';
 import { HRSize } from './utils/HRTypes';
 import { HRDisplaySyncUtils } from './utils/HRDisplaySyncUtils';
@@ -37,25 +36,22 @@ export class HippyRenderView extends HippyRenderBaseView {
   private renderViewSize: HRSize
   private avoidArea: window.AvoidArea | null = null
   private lazyCoreTasks: Array<() => void> = []
-  private renderExceptionListener: IHippyRenderExceptionListener | null = null
   uiContext: UIContext | null = null
 
-  constructor(ctx: NativeRenderContext, pageName: string, pageData: HippyRecord, initViewSize: HRSize, avoidArea: window.AvoidArea | null, renderExceptionListener: IHippyRenderExceptionListener | null) {
+  constructor(ctx: NativeRenderContext, pageName: string, pageData: HippyRecord, initViewSize: HRSize, avoidArea: window.AvoidArea | null) {
     super(ctx)
     this.tag = ctx.getRootId()
     this.pagerName = pageName
     this.pagerData = pageData
     this.renderViewSize = initViewSize
     this.avoidArea = avoidArea
-    this.renderExceptionListener = renderExceptionListener
 
     let renderManger = ctx.getNativeRender().getRenderManager()
     renderManger.initViewManager(this)
   }
 
   onDestroy(): void {
-    let renderManger = this.ctx.getNativeRender().getRenderManager()
-    renderManger.destroyViewManager(this.ctx.getRootId())
+
   }
 
   setProp(propKey: string, propValue: HippyAny): boolean {
@@ -118,9 +114,6 @@ export class HippyRenderView extends HippyRenderBaseView {
     return viewRegisterMap
   }
 
-  setRenderExceptionListener(listener: IHippyRenderExceptionListener) {
-    this.renderExceptionListener = listener
-  }
 }
 
 @Component

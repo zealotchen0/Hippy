@@ -27,7 +27,7 @@ namespace hippy {
 inline namespace render {
 inline namespace native {
 
-NativeRenderImpl::NativeRenderImpl(uint32_t instance_id) : instance_id_(instance_id) {}
+NativeRenderImpl::NativeRenderImpl(uint32_t instance_id, const std::string &bundle_path) : instance_id_(instance_id), bundle_path_(bundle_path) {}
 
 void NativeRenderImpl::InitRenderManager() {
   auto native_render = std::static_pointer_cast<NativeRender>(shared_from_this());
@@ -181,6 +181,16 @@ void NativeRenderImpl::CallUIFunction(uint32_t root_id, uint32_t node_id, const 
   view_manager->CallViewMethod(node_id, functionName, params, callback);
 }
 
+LayoutSize NativeRenderImpl::CustomMeasure(uint32_t root_id, uint32_t node_id,
+    float width, LayoutMeasureMode width_measure_mode,
+    float height, LayoutMeasureMode height_measure_mode) {
+    auto view_manager = hr_manager_->GetViewManager(root_id);
+  if (!view_manager) {
+    return {0, 0};
+  }
+  return view_manager->CallCustomMeasure(node_id, width, width_measure_mode, height, height_measure_mode);
+}
+
 void NativeRenderImpl::SpanPosition(uint32_t root_id, uint32_t node_id, float x, float y) {
   auto view_manager = hr_manager_->GetViewManager(root_id);
   if (!view_manager) {
@@ -193,6 +203,10 @@ void NativeRenderImpl::SpanPosition(uint32_t root_id, uint32_t node_id, float x,
   m->top_ = y;
   auto tm = std::static_pointer_cast<HRMutation>(m);
   view_manager->AddMutations(tm);
+}
+
+std::string NativeRenderImpl::GetBundlePath() {
+  return bundle_path_;
 }
 
 uint64_t NativeRenderImpl::AddEndBatchCallback(uint32_t root_id, const EndBatchCallback &cb) {
@@ -209,6 +223,30 @@ void NativeRenderImpl::RemoveEndBatchCallback(uint32_t root_id, uint64_t cbId) {
     return;
   }
   view_manager->RemoveEndBatchCallback(cbId);
+}
+
+bool NativeRenderImpl::GetViewParent(uint32_t root_id, uint32_t node_id, uint32_t &parent_id, std::string &parent_view_type) {
+  auto view_manager = hr_manager_->GetViewManager(root_id);
+  if (!view_manager) {
+    return false;
+  }
+  return view_manager->GetViewParent(node_id, parent_id, parent_view_type);
+}
+
+bool NativeRenderImpl::GetViewChildren(uint32_t root_id, uint32_t node_id, std::vector<uint32_t> &children_ids, std::vector<std::string> &children_view_types) {
+  auto view_manager = hr_manager_->GetViewManager(root_id);
+  if (!view_manager) {
+    return false;
+  }
+  return view_manager->GetViewChildren(node_id, children_ids, children_view_types);
+}
+
+void NativeRenderImpl::CallViewMethod(uint32_t root_id, uint32_t node_id, const std::string &method, const std::vector<HippyValue> params, std::function<void(const HippyValue &result)> callback) {
+  auto view_manager = hr_manager_->GetViewManager(root_id);
+  if (!view_manager) {
+    return;
+  }
+  view_manager->CallViewMethod(node_id, method, params, callback);
 }
 
 } // namespace native

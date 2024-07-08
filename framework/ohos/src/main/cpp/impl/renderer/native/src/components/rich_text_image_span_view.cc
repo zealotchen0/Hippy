@@ -37,7 +37,6 @@ static const std::string ASSET_PREFIX = "asset:/";
 static const std::string INTERNET_IMAGE_PREFIX = "http";
 
 RichTextImageSpanView::RichTextImageSpanView(std::shared_ptr<NativeRenderContext> &ctx) : BaseView(ctx) {
-  imageSpanNode_.SetSpanNodeDelegate(this);
   imageSpanNode_.SetImageObjectFit(ARKUI_OBJECT_FIT_FILL);
 }
 
@@ -83,10 +82,12 @@ bool RichTextImageSpanView::SetProp(const std::string &propKey, const HippyValue
       return true;
     }
     return false;
+  } else {
+    bool handled = SetEventProp(propKey, propValue);
+    return handled;
   }
   
   // Not to set some attributes for text span.
-  return false;
 }
 
 void RichTextImageSpanView::UpdateRenderViewFrame(const HRRect &frame, const HRPadding &padding) {
@@ -115,12 +116,6 @@ void RichTextImageSpanView::fetchImage(const std::string &imageUrl) {
     
     // TODO(hot):
 	}
-}
-
-void RichTextImageSpanView::OnClick() {
-  if (eventClick_) {
-    eventClick_();
-  }
 }
 
 } // namespace native

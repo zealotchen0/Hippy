@@ -17,6 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import fs from '@ohos.file.fs';
 import { BridgeCallback, HippyBridge } from './HippyBridge';
 import { JsDriver } from '../connector/JsDriver';
 import { NativeCallback } from '../connector/NativeCallback';
@@ -29,8 +30,9 @@ import { LogUtils } from '../../support/utils/LogUtils';
 export class HippyBridgeImpl implements HippyBridge {
 
   public static TAG: string = "HippyBridgeImpl";
-  private mEngineContext: HippyEngineContext;
-  private mBridgeCallback: BridgeCallback;
+  private static mCodeCacheRootDir: string | null = null;
+  private mEngineContext: HippyEngineContext | null;
+  private mBridgeCallback: BridgeCallback | null;
   private mEnableV8Serialization: boolean;
   private mIsDevModule: boolean;
   private mDebugServerHost: string;
@@ -53,16 +55,27 @@ export class HippyBridgeImpl implements HippyBridge {
     this.mV8InitParams = v8InitParams;
     this.mJsDriver = jsDriver;
 
-    // TODO Code Cache
-    // if (mCodeCacheRootDir == null) {
-    //         Context context = mContext.getGlobalConfigs().getContext();
-    //         File hippyFile = FileUtils.getHippyFile(context);
-    //         if (hippyFile != null) {
-    //             mCodeCacheRootDir =
-    //                     hippyFile.getAbsolutePath() + File.separator + "codecache"
-    //                             + File.separator;
-    //         }
-    // }
+    // mJsDriver.setBridgeProxy(this);
+    if (HippyBridgeImpl.mCodeCacheRootDir == null) {
+      let context = this.mEngineContext.getGlobalConfigs().getContext();
+      let baseFile: string | undefined;
+      if (context?.getApplicationContext() != null) {
+        baseFile = context?.getApplicationContext().filesDir;
+      } else {
+        baseFile = context?.filesDir;
+      }
+      let childDir = baseFile + "/hippy";
+      let rs = fs.accessSync(childDir);
+      if (!rs) {
+        fs.mkdirSync(childDir);
+      } else {
+        const stat: fs.Stat = fs.statSync(childDir);
+        if (!stat || !stat.isDirectory()) {
+          fs.mkdirSync(childDir, true);
+        }
+      }
+      HippyBridgeImpl.mCodeCacheRootDir = childDir + "/codecache/";
+    }
   }
 
   initJSBridge(globalConfig: string, callback: NativeCallback, groupId: number): void {
@@ -70,61 +83,80 @@ export class HippyBridgeImpl implements HippyBridge {
   }
 
   initJSEngine(globalConfig: string, callback: NativeCallback, groupId: number) {
-    this.mEngineContext.getMonitor()
+    if (!this.mEngineContext) {
+      return;
+    }
+    this.mEngineContext?.getMonitor()
       .startPoint(MonitorGroupType.ENGINE_INITIALIZE, TimeMonitor.MONITOR_POINT_INIT_JS_ENGINE);
     // TODO 多线程问题
     this.mJsDriver.initialize(
       this.mEngineContext.getDomManagerId(),
       this.mEngineContext.getVfsId(),
+      this.mIsDevModule,
       callback,
       globalConfig,
-      this.mEnableV8Serialization)
+      this.mEnableV8Serialization,
+      groupId,
+      this.mEngineContext.getDevtoolsId()
+    )
+  }
+
+  getHippyEngineContext(): HippyEngineContext | null {
+    return this.mEngineContext
   }
 
   runScriptFromUri(uri: string, canUseCodeCache: boolean, codeCacheTag: string, callback: NativeCallback): boolean {
-    //  if (!mInit) {
-    //     return false;
-    // }
+    if (!this.mEngineContext) {
+      return false;
+    }
     const context = this.mEngineContext.getGlobalConfigs().getContext();
     if (context === null) {
       return false;
     }
     const assetManager = context.resourceManager;
-    const codeCacheDir = "";
-    // TODO Code Cache
-    // if (!TextUtils.isEmpty(codeCacheTag) && !TextUtils.isEmpty(mCodeCacheRootDir)) {
-    //     codeCacheDir = mCodeCacheRootDir + codeCacheTag + File.separator;
-    //     File codeCacheFile = new File(codeCacheDir);
-    //     if (!codeCacheFile.exists() && !codeCacheFile.mkdirs()) {
-    //         canUseCodeCache = false;
-    //         codeCacheDir = "";
-    //     }
-    // } else {
-    //     canUseCodeCache = false;
-    // }
+    let codeCacheDir = "";
+    if (codeCacheTag != "" && HippyBridgeImpl.mCodeCacheRootDir as string != "") {
+      codeCacheDir = HippyBridgeImpl.mCodeCacheRootDir + codeCacheTag;
+      try {
+        let rs = fs.accessSync(codeCacheDir);
+        if (!rs) {
+          fs.mkdirSync(codeCacheDir, true);
+        } else {
+          const stat: fs.Stat = fs.statSync(codeCacheDir);
+          if (!stat || !stat.isDirectory()) {
+            fs.mkdirSync(codeCacheDir, true);
+          }
+        }
+      } catch (e) {
+        canUseCodeCache = false;
+        codeCacheDir = "";
+      }
+    } else {
+      canUseCodeCache = false;
+    }
     return this.mJsDriver.runScriptFromUri(uri, assetManager, canUseCodeCache, codeCacheDir,
       this.mEngineContext.getVfsId(), callback);
   }
 
   onDestroy(): void {
-    throw new Error('Method not implemented.');
+    this.mEngineContext = null;
+    this.mBridgeCallback = null;
   }
 
   destroy(callback: NativeCallback, isReload: boolean): void {
-    throw new Error('Method not implemented.');
+    this.mJsDriver.onDestroy(false, isReload, callback);
   }
 
   getV8RuntimeId(): number {
-    throw new Error('Method not implemented.');
+    return this.mJsDriver.getInstanceId();
   }
 
   callFunction(functionId: number, callback: NativeCallback, buffer: Uint8Array) {
     const functionName = this.getCallFunctionName(functionId)
     if (functionId == HippyBridgeManagerImpl.FUNCTION_ACTION_LOAD_INSTANCE) {
-      // TODO loadInstance 参数序列化
       this.mJsDriver.loadInstance(buffer, callback);
     } else if (functionId == HippyBridgeManagerImpl.FUNCTION_ACTION_DESTROY_INSTANCE) {
-      // mJsDriver.unloadInstance(buffer, 0, length);
+      this.mJsDriver.unloadInstance(buffer);
     } else {
       this.mJsDriver.callFunction(functionName, callback, buffer);
     }

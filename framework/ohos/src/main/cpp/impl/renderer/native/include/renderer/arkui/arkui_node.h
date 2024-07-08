@@ -38,11 +38,13 @@ inline namespace native {
 // ArkUI_NativeModule API ref:
 // https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkui/_ark_u_i___native_module.md#arkui_nodeattributetype
 
-enum class ArkUIHitTestMode : int32_t {
-  DEFAULT,
-  BLOCK,
-  TRANSPARENT,
-  NONE,
+class ArkUINodeDelegate {
+public:
+  virtual ~ArkUINodeDelegate() = default;
+  virtual void OnClick() {}
+  virtual void OnAppear() {}
+  virtual void OnDisappear() {}
+  virtual void OnAreaChange(ArkUI_NumberValue* data) {}  
 };
 
 class ArkUINode {
@@ -67,6 +69,7 @@ public:
   void InsertChild(ArkUINode &child, int32_t index);
   void RemoveChild(ArkUINode &child);
 
+  virtual ArkUINode &SetId(const std::string &id);
   virtual ArkUINode &SetPosition(const HRPosition &position);
   virtual ArkUINode &SetSize(const HRSize &size);
   virtual ArkUINode &SetWidth(float width);
@@ -89,7 +92,7 @@ public:
   virtual ArkUINode &SetFocusStatus(int32_t focus);
   virtual ArkUINode &SetLinearGradient(const HRLinearGradient &linearGradient);
   virtual ArkUINode &SetId(const int32_t &tag);
-  virtual ArkUINode &SetHitTestMode(const ArkUIHitTestMode mode);
+  virtual ArkUINode &SetHitTestMode(const ArkUI_HitTestMode mode);
   virtual ArkUINode &SetEnabled(bool enabled);
   virtual ArkUINode &SetBackgroundImage(const std::string &uri);
   virtual ArkUINode &SetBackgroundImagePosition(const HRPosition &position);
@@ -99,18 +102,26 @@ public:
   virtual ArkUINode &SetBorderRadius(float topLeft, float topRight, float bottomLeft, float bottomRight);
   virtual ArkUINode &SetBorderStyle(ArkUI_BorderStyle top, ArkUI_BorderStyle right, ArkUI_BorderStyle bottom, ArkUI_BorderStyle left);
   virtual ArkUINode &SetShadow(const HRShadow &shadow);
+  virtual ArkUINode &SetMargin(float left, float top, float right, float bottom);
+  virtual ArkUINode &SetExpandSafeArea();//TODO will update when NODE_EXPAND_SAFE_AREA add in sdk
+  virtual ArkUINode &SetTransitionMove(const ArkUI_TransitionEdge edgeType,int32_t duration,ArkUI_AnimationCurve curveType = ARKUI_CURVE_EASE);  
+  virtual ArkUINode &SetTransitionOpacity(const ArkUI_AnimationCurve curveType,int32_t duration);
+  virtual ArkUINode &SetTransitionTranslate(float distanceX,float distanceY,float distanceZ,ArkUI_AnimationCurve curveType,int32_t duration);   
+  virtual void ResetNodeAttribute(ArkUI_NodeAttributeType type);
   virtual HRSize GetSize() const;
   virtual uint32_t GetTotalChildCount() const;
-
-  virtual void OnNodeEvent(ArkUI_NodeEvent *event) {}
-
+  
+  void SetArkUINodeDelegate(ArkUINodeDelegate *arkUINodeDelegate);
+  virtual void OnNodeEvent(ArkUI_NodeEvent *event);
+  
   void RegisterClickEvent();
   void UnregisterClickEvent();
   void RegisterAppearEvent();
   void UnregisterAppearEvent();
   void RegisterDisappearEvent();
   void UnregisterDisappearEvent();
-
+  void RegisterAreaChangeEvent();
+  void UnregisterAreaChangeEvent();
 protected:
   void MaybeThrow(int32_t status) {
     if (status != 0) {
@@ -123,9 +134,12 @@ protected:
 
   ArkUI_NodeHandle nodeHandle_;
   
+  ArkUINodeDelegate *arkUINodeDelegate_ = nullptr;
+  
   bool hasClickEvent_ = false;
   bool hasAppearEvent_ = false;
   bool hasDisappearEvent_ = false;
+  bool hasAreaChangeEvent_ = false;  
 };
 
 } // namespace native

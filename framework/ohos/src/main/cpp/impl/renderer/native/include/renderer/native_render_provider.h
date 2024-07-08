@@ -35,7 +35,7 @@ inline namespace native {
 
 class NativeRenderProvider : public std::enable_shared_from_this<NativeRenderProvider>{
 public:
-  NativeRenderProvider(uint32_t instance_id);
+  NativeRenderProvider(uint32_t instance_id, const std::string &bundle_path);
   ~NativeRenderProvider() = default;
   
   uint32_t GetInstanceId() { return instance_id_; }
@@ -61,6 +61,10 @@ public:
   
   void CallUIFunction(uint32_t root_id, uint32_t node_id, uint32_t cb_id, const std::string &func_name, const std::vector<HippyValue> &params);
 
+  LayoutSize CustomMeasure(uint32_t root_id, uint32_t node_id,
+    float width, LayoutMeasureMode width_measure_mode,
+    float height, LayoutMeasureMode height_measure_mode);
+  
   void SpanPosition(uint32_t root_id, uint32_t node_id, float x, float y);
   
   void OnSize(uint32_t root_id, float width, float height);
@@ -69,6 +73,10 @@ public:
       const std::shared_ptr<HippyValue> &params, bool capture, bool bubble, HREventType event_type);
   void DoCallBack(int32_t result, uint32_t cb_id, const std::string &func_name,
       uint32_t root_id, uint32_t node_id, const HippyValue &params);
+  
+  bool GetViewParent(uint32_t root_id, uint32_t node_id, uint32_t &parent_id, std::string &parent_view_type);
+  bool GetViewChildren(uint32_t root_id, uint32_t node_id, std::vector<uint32_t> &children_ids, std::vector<std::string> &children_view_types);
+  void CallViewMethod(uint32_t root_id, uint32_t node_id, const std::string &method, const std::vector<HippyValue> params, std::function<void(const HippyValue &result)> callback);
   
 private:
   constexpr static const char * EVENT_PREFIX = "on";

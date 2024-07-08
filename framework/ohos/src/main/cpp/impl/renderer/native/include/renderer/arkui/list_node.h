@@ -32,8 +32,6 @@ inline namespace native {
 class ListNodeDelegate {
 public:
   virtual ~ListNodeDelegate() = default;
-  virtual void OnAppear() {}
-  virtual void OnDisappear() {}
   virtual void OnScrollIndex(int32_t firstIndex, int32_t lastIndex, int32_t centerIndex) {}
   virtual void OnScroll(float scrollOffsetX, float scrollOffsetY) {}
   virtual void OnScrollStart() {}
@@ -62,9 +60,13 @@ public:
   void SetEnableScrollInteraction(bool enabled);
   void SetListCachedCount(int32_t count);
   void SetScrollBarDisplayMode(ArkUI_ScrollBarDisplayMode mode);
+  void SetLazyAdapter(ArkUI_NodeAdapterHandle adapterHandle);
 
   void OnNodeEvent(ArkUI_NodeEvent *event) override;
   void SetNodeDelegate(ListNodeDelegate *listNodeDelegate);
+  
+private:
+  bool hasAdapter_ = false;
 };
 
 } // namespace native

@@ -27,12 +27,11 @@ import { HippyModuleManager } from './modules/HippyModuleManager';
 import { HippyJsException } from './common/HippyJsException';
 import { DevSupportManager } from './devsupport/DevSupportManager';
 import { HippyLibrary } from '../hippy_library/HippyLibrary';
+import { DevtoolsManager } from './devsupport/DevtoolsManager';
 
 export interface HippyEngineContext {
 
   getLibHippy(): HippyLibrary
-
-  getComponentName(): string
 
   getNativeParams(): Map<string, Object>
 
@@ -48,18 +47,9 @@ export interface HippyEngineContext {
 
   getBridgeManager(): HippyBridgeManager
 
-  // TODO
-  getDevSupportManager(): DevSupportManager
+  getDevSupportManager(): DevSupportManager | null
 
-  //
-  // DevtoolsManager getDevtoolsManager();
-
-  // ViewGroup getRootView();
-  //
-  // View getRootView(int rootId);
-  //
-  // @Nullable
-  // View findViewById(int nodeId);
+  destroyBridge(isReload: boolean): void
 
   // void addEngineLifecycleEventListener(HippyEngineLifecycleEventListener listener);
   //
@@ -68,20 +58,16 @@ export interface HippyEngineContext {
   handleException(error: HippyJsException): void
 
   // int getEngineId();
-  //
+
   getDomManagerId(): number;
 
-  //
   getVfsId(): number;
 
-  //
-  // int getDevtoolsId();
-  //
+  getDevtoolsId(): number;
+
   onRuntimeInitialized(): void;
-  //
-  // void onBridgeDestroyed(boolean isReload, Throwable e);
-  //
-  // void onLoadModuleCompleted(ModuleLoadStatus statusCode, @Nullable String msg);
-  //
-  // void onLoadInstanceCompleted(long result, String reason);
+
+  onBridgeDestroyed(isReload: boolean): void;
+
+  onLoadModuleCompleted(statusCode: number, msg: string): void;
 }

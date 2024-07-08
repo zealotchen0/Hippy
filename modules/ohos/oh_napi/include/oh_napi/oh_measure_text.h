@@ -11,7 +11,9 @@
 #include <native_drawing/drawing_text_typography.h>
 #include <native_drawing/drawing_register_font.h>
 
-#define MEASURE_TEXT_CHECK_PROP
+// Note: Do not open normally, it impacts performance.
+// #define MEASURE_TEXT_CHECK_PROP
+// #define MEASURE_TEXT_LOG_RESULT
 
 struct OhImageSpanHolder {
     double width;
@@ -49,6 +51,7 @@ public:
 private:
     static std::map<std::string, std::string> fontFamilyList_;
 
+    OH_Drawing_FontWeight FontWeightToDrawing(std::string &str);
     bool HasProp(std::map<std::string, std::string> &propMap, const char *s);
 
 #ifdef MEASURE_TEXT_CHECK_PROP
@@ -68,4 +71,8 @@ private:
     double paddingBottom_ = 0;
     double paddingLeft_ = 0;
     double paddingRight_ = 0;
+  
+#ifdef MEASURE_TEXT_LOG_RESULT
+    std::string logTextContent_;
+#endif
 };

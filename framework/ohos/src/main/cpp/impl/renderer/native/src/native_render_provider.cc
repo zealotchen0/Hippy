@@ -30,8 +30,8 @@ namespace hippy {
 inline namespace render {
 inline namespace native {
 
-NativeRenderProvider::NativeRenderProvider(uint32_t instance_id) : instance_id_(instance_id) {
-  render_impl_ = std::make_shared<NativeRenderImpl>(instance_id);
+NativeRenderProvider::NativeRenderProvider(uint32_t instance_id, const std::string &bundle_path) : instance_id_(instance_id) {
+  render_impl_ = std::make_shared<NativeRenderImpl>(instance_id, bundle_path);
   render_impl_->InitRenderManager();
 }
 
@@ -122,6 +122,12 @@ void NativeRenderProvider::CallUIFunction(uint32_t root_id, uint32_t node_id, ui
   });
 }
 
+LayoutSize NativeRenderProvider::CustomMeasure(uint32_t root_id, uint32_t node_id,
+    float width, LayoutMeasureMode width_measure_mode,
+    float height, LayoutMeasureMode height_measure_mode) {
+  return render_impl_->CustomMeasure(root_id, node_id, width, width_measure_mode, height, height_measure_mode);
+}
+
 void NativeRenderProvider::SpanPosition(uint32_t root_id, uint32_t node_id, float x, float y) {
   OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(ts_env_);
   taskRunner->RunAsyncTask([render_impl = render_impl_, root_id, node_id, x, y]() {
@@ -160,6 +166,18 @@ void NativeRenderProvider::DispatchEvent(uint32_t root_id, uint32_t node_id, con
 void NativeRenderProvider::DoCallBack(int32_t result, uint32_t cb_id, const std::string &func_name,
                                       uint32_t root_id, uint32_t node_id, const HippyValue &params) {
   NativeRenderProvider_DoCallBack(instance_id_, result, func_name, root_id, node_id, cb_id, params);
+}
+
+bool NativeRenderProvider::GetViewParent(uint32_t root_id, uint32_t node_id, uint32_t &parent_id, std::string &parent_view_type) {
+  return render_impl_->GetViewParent(root_id, node_id, parent_id, parent_view_type);
+}
+
+bool NativeRenderProvider::GetViewChildren(uint32_t root_id, uint32_t node_id, std::vector<uint32_t> &children_ids, std::vector<std::string> &children_view_types) {
+  return render_impl_->GetViewChildren(root_id, node_id, children_ids, children_view_types);
+}
+
+void NativeRenderProvider::CallViewMethod(uint32_t root_id, uint32_t node_id, const std::string &method, const std::vector<HippyValue> params, std::function<void(const HippyValue &result)> callback) {
+  render_impl_->CallViewMethod(root_id, node_id, method, params, callback);
 }
 
 } // namespace native

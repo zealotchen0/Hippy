@@ -30,7 +30,6 @@ inline namespace render {
 inline namespace native {
 
 RichTextSpanView::RichTextSpanView(std::shared_ptr<NativeRenderContext> &ctx) : BaseView(ctx) {
-  spanNode_.SetSpanNodeDelegate(this);
 }
 
 RichTextSpanView::~RichTextSpanView() {}
@@ -132,11 +131,13 @@ bool RichTextSpanView::SetProp(const std::string &propKey, const HippyValue &pro
     uint32_t value = HRValueUtils::GetUint32(propValue);
     GetLocalRootArkUINode().SetSpanTextBackgroundStyle(value);
     return true;
+  } else {
+    bool handled = SetEventProp(propKey, propValue);
+    return handled;
   }
   
   // Not to set some attributes for text span.
   // For example: NODE_BACKGROUND_COLOR will return ARKUI_ERROR_CODE_ATTRIBUTE_OR_EVENT_NOT_SUPPORTED (106102)
-  return false;
 }
 
 void RichTextSpanView::OnSetPropsEnd() {
@@ -154,12 +155,6 @@ void RichTextSpanView::OnSetPropsEnd() {
 void RichTextSpanView::UpdateRenderViewFrame(const HRRect &frame, const HRPadding &padding) {
   // Nothing to set for text span.
   // NODE_POSITION / NODE_WIDTH will return ARKUI_ERROR_CODE_ATTRIBUTE_OR_EVENT_NOT_SUPPORTED (106102)
-}
-
-void RichTextSpanView::OnClick() {
-  if (eventClick_) {
-    eventClick_();
-  }
 }
 
 } // namespace native
