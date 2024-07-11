@@ -25,6 +25,7 @@
 #include "oh_napi/oh_napi_task_runner.h"
 #include "oh_napi/oh_napi_invocation.h"
 #include "oh_napi/oh_napi_register.h"
+#include "oh_napi/oh_napi_utils.h"
 #include "oh_napi/oh_measure_text.h"
 #include "footstone/deserializer.h"
 #include "footstone/hippy_value.h"
@@ -418,7 +419,7 @@ static napi_value DoMeasureText(napi_env env, napi_callback_info info) {
   int height = arkTs.GetInteger(args[4]);
   int heightMode = arkTs.GetInteger(args[5]);
   float density = render_manager->GetDensity();
-    
+
   uint32_t p = 0;
   OhMeasureText measureInst;
   OhMeasureResult result;
@@ -447,6 +448,119 @@ static napi_value DoMeasureText(napi_env env, napi_callback_info info) {
   pack.push_back(arkTs.CreateDouble(result.width));
   pack.push_back(arkTs.CreateDouble(result.height));
   return arkTs.CreateArray(pack);
+}
+
+void NapiValue2HippyValue(struct napi_env__ * env, napi_value__ * pairItem2) {
+
+}
+
+HippyValue CallGetLocationOnScreenMethod(napi_env env, napi_ref render_provider_ref,
+                                         const std::string &method, uint32_t component_id) {
+  //   std::future<HippyValue> futHippyValue;
+  //   auto asyncTask = [&]() {
+  //     ArkTS arkTs(env);
+  //     std::vector<napi_value> args = {arkTs.CreateUint32(component_id)};
+  //     auto delegateObject = arkTs.GetObject(render_provider_ref);
+  //     auto napiValue = delegateObject.Call(method.c_str(), args);
+  //     return OhNapiUtils::NapiValue2HippyValue(env, napiValue);
+  //   };
+  //   futHippyValue = std::async(std::launch::async, asyncTask);
+  //   return futHippyValue.get();
+  HippyValue futHippyValue;
+  OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(env);
+  taskRunner->RunSyncTask([env = env, render_provider_ref = render_provider_ref, method,
+                           component_id, &futHippyValue]() {
+    ArkTS arkTs(env);
+    std::vector<napi_value> args = {arkTs.CreateUint32(component_id)};
+    auto delegateObject = arkTs.GetObject(render_provider_ref);
+    auto napiValue = delegateObject.Call(method.c_str(), args);
+    
+    HippyValueObjectType map;
+    OhNapiObject napiObj = arkTs.GetObject(napiValue);
+    std::vector<napi_value> napiObjArgs0 = {arkTs.CreateString("xOnScreen")};
+    auto napiCallValue0 = napiObj.Call("get", napiObjArgs0);
+    double ohNapiCallValue0 = arkTs.GetDouble(napiCallValue0);
+    map["xOnScreen"].ToDouble(ohNapiCallValue0);
+
+    std::vector<napi_value> napiObjArgs1 = {arkTs.CreateString("yOnScreen")};
+    auto napiCallValue1 = napiObj.Call("get", napiObjArgs1);
+    double ohNapiCallValue1 = arkTs.GetDouble(napiCallValue1);
+    map["yOnScreen"].ToDouble(ohNapiCallValue1);
+
+    std::vector<napi_value> napiObjArgs2 = {arkTs.CreateString("viewWidth")};
+    auto napiCallValue2 = napiObj.Call("get", napiObjArgs2);
+    double ohNapiCallValue2 = arkTs.GetDouble(napiCallValue2);
+    map["viewWidth"].ToDouble(ohNapiCallValue2);
+
+    std::vector<napi_value> napiObjArgs3 = {arkTs.CreateString("viewHeight")};
+    auto napiCallValue3 = napiObj.Call("get", napiObjArgs3);
+    double ohNapiCallValue3 = arkTs.GetDouble(napiCallValue3);
+    map["viewHeight"].ToDouble(ohNapiCallValue3);
+
+    ohNapiCallValue0 = 30;
+    ohNapiCallValue1 = 40;
+    ohNapiCallValue2 = 100;
+    ohNapiCallValue3 = 60;
+    map["xOnScreen"] = ohNapiCallValue0;
+    map["yOnScreen"] = ohNapiCallValue1;
+    map["viewWidth"] = ohNapiCallValue2;
+    map["viewHeight"] = ohNapiCallValue3;
+    //     std::vector<std::pair<napi_value, napi_value>> pairs = napiObj.GetALLObjectProperties();
+    //     for (auto it = pairs.begin(); it != pairs.end(); it++) {
+    //       auto &pair = *it;
+    //       auto &pairItem1 = pair.first;
+    //       auto objKey = arkTs.GetString(pairItem1);
+    //       if (objKey.length() > 0) {
+    //         auto &pairItem2 = pair.second;
+    //                 OhNapiObject callNapi = arkTs.GetObject(pairItem2);
+    //                 std::vector<napi_value> callNapiArgs = {};
+    //                 std::vector<napi_value> args =
+    //                 callNapi.Call("", )
+    //         auto objValue = OhNapiUtils::NapiValue2HippyValue(env, pairItem2);
+    //         map[objKey] = objValue;
+    //       }
+    //     }
+    futHippyValue = HippyValue(map);
+    //         ohNapiObject.GetKeyValuePairs();
+    //     futHippyValue = OhNapiUtils::NapiValue2HippyValue(env, napiValue);
+  });
+  //     HippyValue hippyValue = HippyValue();
+  return futHippyValue;
+}
+
+void CallGetComponentSnapshotMethod(napi_env env, napi_ref render_provider_ref,
+                                    const std::string &method, uint32_t component_id,
+                                    HippyValue &resultMap) {
+  OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(env);
+  taskRunner->RunSyncTask([env = env, render_provider_ref = render_provider_ref, method, component_id, &resultMap]() {
+    ArkTS arkTs(env);
+    std::vector<napi_value> args = {
+      arkTs.CreateUint32(component_id),
+      OhNapiUtils::HippyValue2NapiValue(env, resultMap)
+    };
+    auto delegateObject = arkTs.GetObject(render_provider_ref);
+    delegateObject.Call(method.c_str(), args);
+//     napi_value thenValue = delegateObject.Call(method.c_str(), args);
+//     OhNapiUtils::CallThen(env, thenValue);
+//     OhNapiUtils::CallThen(env, arkTs.GetReferenceValue(render_provider_ref));
+//         auto hippyThenValue = OhNapiUtils::NapiValue2HippyValue(env, thenValue);
+//
+//         auto promObject = arkTs.GetObject(thenValue);
+//         std::vector<napi_value> args2 = {};
+//         napi_value resultNapiValue2 = promObject.Call("then", args2);
+//         hippyThenValue = OhNapiUtils::NapiValue2HippyValue(env, resultNapiValue2);
+//
+//         HippyValueObjectType resultType;
+//         hippyThenValue.ToObject(resultType);
+//         std::string screenShot;
+//         int width;
+//         int height;
+//         double screenScale;
+//         resultType["screenShot"].ToString(screenShot);
+//         resultType["width"].ToInt32(width);
+//         resultType["height"].ToInt32(height);
+//         resultType["screenScale"].ToDouble(screenScale);
+  });
 }
 
 REGISTER_OH_NAPI("NativeRenderProvider", "NativeRenderProvider_UpdateRootSize", UpdateRootSize)

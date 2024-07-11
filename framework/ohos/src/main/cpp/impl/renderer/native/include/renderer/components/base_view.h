@@ -58,7 +58,21 @@ public:
   virtual void OnSetPropsEnd();
 
   virtual void Call(const std::string &method, const std::vector<HippyValue> params,
-                    std::function<void(const HippyValue &result)> callback) {}
+                    std::function<void(const HippyValue &result)> callback) {
+        FOOTSTONE_DLOG(INFO) << "wangz::BaseView::Call::tag_::" << tag_ << ", view_type_::" << view_type_
+                       << ", method::" << method << ", method::" << method;
+        if (method == "getScreenShot") {
+          callback(params.back());
+        } else if (method == "addFrameCallback") {
+          auto resultMap = HippyValue();
+          callback(resultMap);
+        } else if (method == "removeFrameCallback") {
+          auto resultMap = HippyValue();
+          callback(resultMap);
+        } else if (method == "getLocationOnScreen") {
+          callback(params.back());
+        }
+  }
 
   void AddSubRenderView(std::shared_ptr<BaseView> &subView, int32_t index);
   void RemoveSubView(std::shared_ptr<BaseView> &subView);

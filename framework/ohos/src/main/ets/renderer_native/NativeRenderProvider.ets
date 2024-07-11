@@ -26,15 +26,15 @@ import { NativeRenderProviderManager } from './NativeRenderProviderManager';
 import { HREventType } from './utils/HREventUtils';
 import { LogUtils } from '../support/utils/LogUtils';
 import { HippyLibrary } from '../hippy_library/HippyLibrary';
-import { HippyAny, HippyMap, HippyResource } from '../support/common/HippyTypes';
+import { HippyAny, HippyMap, HippyResource, HippyValue } from '../support/common/HippyTypes';
 import { HRRenderViewCreator } from './components/HippyRenderRegisterMap';
 import { CreateRenderViewParamsForCApi,
   SetRenderViewFrameParamsForCApi,
   UpdateEventListenerParamsForCApi,
   UpdatePropsParamsForCApi} from './NativeRenderBuilderForCApi';
-import { componentSnapshot, FrameNode } from '@kit.ArkUI';
+import { componentSnapshot, componentUtils, display, FrameNode } from '@kit.ArkUI';
 import { image } from '@kit.ImageKit';
-import { util } from '@kit.ArkTS';
+import { HashMap, util } from '@kit.ArkTS';
 
 export class NativeRenderProvider {
   private readonly TAG = "NativeRenderProvider"
@@ -220,26 +220,44 @@ export class NativeRenderProvider {
   }
 
   // for devtools
-  getComponentSnapshot(componentId: string, resultMap: HippyMap) {
-    componentSnapshot.get(componentId + "", async (error: Error, pixmap: image.PixelMap) => {
-      if (error) {
-        console.log("error: " + JSON.stringify(error))
-        return;
-      }
+  async getComponentSnapshot(componentId: string, resultMap: HippyMap): Promise<HippyMap | null> {
+    LogUtils.d(this.TAG, "wangz::componentId::" + JSON.stringify(componentId));
+    try {
+      let pixmap: PixelMap = await componentSnapshot.get("HippyId" + componentId);
       const imagePackageApi: image.ImagePacker = image.createImagePacker()
       let packOpts: image.PackingOption = {
-        format: 'image/jpeg',
-        quality: 100,
+        format: 'image/png',
+        quality: 30,
       }
       const readBuffer = await imagePackageApi.packing(pixmap, packOpts);
       let base64Helper = new util.Base64Helper();
       let uint8Arr = new Uint8Array(readBuffer);
       let pixelStr = base64Helper.encodeToStringSync(uint8Arr);
-      resultMap.set("screenShot", pixelStr);
-      resultMap.set("width", 50);
-      resultMap.set("height", 50);
-      resultMap.set("screenScale", 1.0);
-    })
+      LogUtils.d(this.TAG, "wangz::pixelStr::" + pixelStr);
+      let rsMap = new Map<string, HippyValue>();
+      rsMap.set("screenShot", pixelStr);
+      rsMap.set("width", 50);
+      rsMap.set("height", 50);
+      rsMap.set("screenScale", 1.0);
+      LogUtils.d(this.TAG, "wangz::" + JSON.stringify(rsMap));
+      return rsMap;
+    } catch (e) {
+      LogUtils.d(this.TAG, "wangz::error::" + JSON.stringify(e));
+    }
+    LogUtils.d(this.TAG, "wangz::return::" + JSON.stringify(componentId));
+    return null;
+  }
+
+  getLocationOnScreen(componentId: string): HippyMap {
+    let info = componentUtils.getRectangleById("HippyId" + componentId);
+    LogUtils.d(this.TAG, "wangz::info::" + JSON.stringify(info));
+    let rsMap = new Map<string, HippyAny>();
+    rsMap.set("xOnScreen", info.screenOffset.x as HippyValue);
+    rsMap.set("yOnScreen", info.screenOffset.y as HippyValue);
+    rsMap.set("viewWidth", info.size.width as HippyValue);
+    rsMap.set("viewHeight", info.size.height as HippyValue);
+    LogUtils.d(this.TAG, "wangz::return::");
+    return rsMap as HippyMap;
   }
 
   // for c-api
