@@ -62,11 +62,6 @@
 
 #include "connector/java_turbo_module.h"
 
-using namespace hippy::napi;
-using string_view = footstone::string_view;
-using StringViewUtils = footstone::StringViewUtils;
-using V8Ctx = hippy::V8Ctx;
-
 constexpr char kTurboKey[] = "getTurboModule";
 
 namespace hippy {
