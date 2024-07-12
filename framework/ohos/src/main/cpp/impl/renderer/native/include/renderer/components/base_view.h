@@ -60,7 +60,7 @@ public:
   virtual void Call(const std::string &method, const std::vector<HippyValue> params,
                     std::function<void(const HippyValue &result)> callback) {
         FOOTSTONE_DLOG(INFO) << "wangz::BaseView::Call::tag_::" << tag_ << ", view_type_::" << view_type_
-                       << ", method::" << method << ", method::" << method;
+                       << ", method::" << method;
         if (method == "getScreenShot") {
           callback(params.back());
         } else if (method == "addFrameCallback") {

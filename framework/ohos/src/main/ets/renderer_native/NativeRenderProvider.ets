@@ -248,16 +248,34 @@ export class NativeRenderProvider {
     return null;
   }
 
-  getLocationOnScreen(componentId: string): HippyMap {
+  // getLocationOnScreen(componentId: string): HippyMap {
+  //   let info = componentUtils.getRectangleById("HippyId" + componentId);
+  //   LogUtils.d(this.TAG, "wangz::info::" + JSON.stringify(info));
+  //   let rsMap = new Map<string, HippyAny>();
+  //   rsMap.set("xOnScreen", info.screenOffset.x as HippyValue);
+  //   rsMap.set("yOnScreen", info.screenOffset.y as HippyValue);
+  //   rsMap.set("viewWidth", info.size.width as HippyValue);
+  //   rsMap.set("viewHeight", info.size.height as HippyValue);
+  //   LogUtils.d(this.TAG, "wangz::return::");
+  //   return rsMap as HippyMap;
+  // }
+
+  getLocationOnScreen(componentId: string): object {
+    interface HippyResult {
+      xOnScreen?: number;
+      yOnScreen?: number;
+      viewWidth?: number;
+      viewHeight?: number;
+    }
     let info = componentUtils.getRectangleById("HippyId" + componentId);
-    LogUtils.d(this.TAG, "wangz::info::" + JSON.stringify(info));
-    let rsMap = new Map<string, HippyAny>();
-    rsMap.set("xOnScreen", info.screenOffset.x as HippyValue);
-    rsMap.set("yOnScreen", info.screenOffset.y as HippyValue);
-    rsMap.set("viewWidth", info.size.width as HippyValue);
-    rsMap.set("viewHeight", info.size.height as HippyValue);
-    LogUtils.d(this.TAG, "wangz::return::");
-    return rsMap as HippyMap;
+    LogUtils.d(this.TAG, "wangz::info::" + "HippyId" + componentId + "::" + JSON.stringify(info));
+    let hippyResult: HippyResult = {};
+    hippyResult.xOnScreen = info.screenOffset.x;
+    hippyResult.yOnScreen = info.screenOffset.y;
+    hippyResult.viewWidth = info.size.width;
+    hippyResult.viewHeight = info.size.height;
+    LogUtils.d(this.TAG, "wangz::return::"+JSON.stringify(hippyResult));
+    return hippyResult as object;
   }
 
   // for c-api
