@@ -79,21 +79,14 @@ inline namespace turbo {
 std::shared_ptr<JavaRef> QueryTurboModuleImpl(std::shared_ptr<Scope>& scope,
                                               const std::string& module_name) {
   FOOTSTONE_DLOG(INFO) << "enter QueryTurboModuleImpl " << module_name.c_str();
-  //JNIEnv* j_env = JNIEnvironment::GetInstance()->AttachCurrentThread();
-//   string name = j_env->NewStringUTF(module_name.c_str());
-//   auto turbo_manager = std::any_cast<std::shared_ptr<JavaRef>>(scope->GetTurbo());
-//   jobject module_impl = j_env->CallObjectMethod(turbo_manager->GetObj(), get_method_id, name);
-//   auto result = std::make_shared<JavaRef>(j_env, module_impl);
-//   j_env->DeleteLocalRef(name);
-//   j_env->DeleteLocalRef(module_impl);
-//  return result;
-    std::shared_ptr<JavaRef> temp;
-    return temp;
+  if (scope->HasTurboInstance(module_name)) {
+      auto obj = scope->GetTurboInstance(module_name);
+  }
+  auto turbo_manager = std::any_cast<std::shared_ptr<JavaRef>>(scope->GetTurbo());
+ return turbo_manager;
 }
 
 void GetTurboModule(CallbackInfo& info, void* data) {
-  FOOTSTONE_DLOG(INFO) << "[turbo-perf] enter getTurboModule";
-
   FOOTSTONE_DLOG(INFO) << "[turbo-perf] enter getTurboModule";
   auto scope_wrapper = reinterpret_cast<ScopeWrapper*>(std::any_cast<void*>(info.GetSlot()));
   auto scope = scope_wrapper->scope.lock();
@@ -107,7 +100,7 @@ void GetTurboModule(CallbackInfo& info, void* data) {
 
   string_view name;
   ctx->GetValueString(info[0], &name);
-  auto turbo_manager = std::any_cast<std::shared_ptr<std::any>>(scope->GetTurbo());
+  auto turbo_manager = std::any_cast<std::shared_ptr<JavaRef>>(scope->GetTurbo());//
   if (!turbo_manager) {
     FOOTSTONE_LOG(ERROR) << "turbo_manager error";
     info.GetReturnValue()->SetUndefined();
@@ -120,7 +113,7 @@ void GetTurboModule(CallbackInfo& info, void* data) {
   if (!has_instance) {
     // 2. if not cached, query from Java
     auto module_impl = QueryTurboModuleImpl(scope, u8_name);
-    if (module_impl->GetObj().has_value()) { //need confirm
+    if (!module_impl->GetObj().has_value()) { //need confirm
       FOOTSTONE_LOG(ERROR) << "cannot find TurboModule = " << name;
       ctx->ThrowException("Cannot find TurboModule: " + name);
       return info.GetReturnValue()->SetUndefined();
@@ -131,6 +124,7 @@ void GetTurboModule(CallbackInfo& info, void* data) {
 
     // 4. bind c++ JavaTurboModule to js
     result = ctx->NewInstance(java_turbo_module->constructor, 0, nullptr, java_turbo_module.get());
+    // call js function
 
     // 5. add To Cache
     scope->SetTurboInstance(u8_name, result);
@@ -161,7 +155,7 @@ int Install(napi_env env, napi_callback_info info) {
   auto flag = hippy::global_data_holder.Find(scope_id, scope_object);
   FOOTSTONE_CHECK(flag);
   auto scope = std::any_cast<std::shared_ptr<Scope>>(scope_object);
-  scope->SetTurbo(std::make_pair(scope_id, scope)); //wrong,should change
+  scope->SetTurbo(std::make_shared<JavaRef>(env, scope)); //wrong,should change
 
   // v8的操作放到js线程
   auto runner = scope->GetTaskRunner();
