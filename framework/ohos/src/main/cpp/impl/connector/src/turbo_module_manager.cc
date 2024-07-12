@@ -1,0 +1,194 @@
+//
+// Created on 2024/7/10.
+//
+// Node APIs are not fully supported. To solve the compilation error of the interface cannot be found,
+// please include "napi/native_api.h".
+
+/*
+ *
+ * Tencent is pleased to support the open source community by making
+ * Hippy available.
+ *
+ * Copyright (C) 2019 THL A29 Limited, a Tencent company.
+ * All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include "connector/js_driver_napi.h"
+#include "connector/ark2js.h"
+#include "connector/js2ark.h"
+#include "connector/bridge.h"
+#include "connector/exception_handler.h"
+#include <js_native_api.h>
+#include <js_native_api_types.h>
+#include "oh_napi/data_holder.h"
+#include "oh_napi/oh_napi_invocation.h"
+#include "oh_napi/oh_napi_register.h"
+#include "oh_napi/ark_ts.h"
+#include "driver/js_driver_utils.h"
+#include "footstone/check.h"
+#include "footstone/logging.h"
+#include "footstone/persistent_object_map.h"
+#include "footstone/string_view_utils.h"
+#include "footstone/worker_manager.h"
+#include "vfs/handler/asset_handler.h"
+
+#include "oh_napi/oh_napi_register.h"
+#include "connector/turbo_module_manager.h"
+
+#include <cstdint>
+#include <memory>
+
+#include "oh_napi/oh_napi_register.h"
+#include "oh_napi/ark_ts.h"
+#include "footstone/logging.h"
+#include "footstone/string_view.h"
+#include "footstone/string_view_utils.h"
+#include "driver/napi/v8/v8_ctx.h"
+
+#include "scoped_java_ref.h"
+
+#include "connector/java_turbo_module.h"
+
+using namespace hippy::napi;
+using string_view = footstone::string_view;
+using StringViewUtils = footstone::StringViewUtils;
+using V8Ctx = hippy::V8Ctx;
+
+constexpr char kTurboKey[] = "getTurboModule";
+
+namespace hippy {
+inline namespace framework {
+inline namespace turbo {
+
+/**
+ * com.tencent.mtt.hippy.bridge.jsi.TurboModuleManager.get
+ */
+std::shared_ptr<JavaRef> QueryTurboModuleImpl(std::shared_ptr<Scope>& scope,
+                                              const std::string& module_name) {
+  FOOTSTONE_DLOG(INFO) << "enter QueryTurboModuleImpl " << module_name.c_str();
+  //JNIEnv* j_env = JNIEnvironment::GetInstance()->AttachCurrentThread();
+//   string name = j_env->NewStringUTF(module_name.c_str());
+//   auto turbo_manager = std::any_cast<std::shared_ptr<JavaRef>>(scope->GetTurbo());
+//   jobject module_impl = j_env->CallObjectMethod(turbo_manager->GetObj(), get_method_id, name);
+//   auto result = std::make_shared<JavaRef>(j_env, module_impl);
+//   j_env->DeleteLocalRef(name);
+//   j_env->DeleteLocalRef(module_impl);
+//  return result;
+    std::shared_ptr<JavaRef> temp;
+    return temp;
+}
+
+void GetTurboModule(CallbackInfo& info, void* data) {
+  FOOTSTONE_DLOG(INFO) << "[turbo-perf] enter getTurboModule";
+
+  FOOTSTONE_DLOG(INFO) << "[turbo-perf] enter getTurboModule";
+  auto scope_wrapper = reinterpret_cast<ScopeWrapper*>(std::any_cast<void*>(info.GetSlot()));
+  auto scope = scope_wrapper->scope.lock();
+  FOOTSTONE_CHECK(scope);
+  auto ctx = scope->GetContext();
+
+  if (!info[0] || !ctx->IsString(info[0])) {
+    FOOTSTONE_LOG(ERROR) << "cannot find TurboModule as param is invalid";
+    info.GetReturnValue()->SetUndefined();
+  }
+
+  string_view name;
+  ctx->GetValueString(info[0], &name);
+  auto turbo_manager = std::any_cast<std::shared_ptr<std::any>>(scope->GetTurbo());
+  if (!turbo_manager) {
+    FOOTSTONE_LOG(ERROR) << "turbo_manager error";
+    info.GetReturnValue()->SetUndefined();
+    return;
+  }
+  auto u8_name = StringViewUtils::ToStdString(
+      StringViewUtils::ConvertEncoding(name, string_view::Encoding::Utf8).utf8_value());
+  std::shared_ptr<CtxValue> result;
+  auto has_instance = scope->HasTurboInstance(u8_name);
+  if (!has_instance) {
+    // 2. if not cached, query from Java
+    auto module_impl = QueryTurboModuleImpl(scope, u8_name);
+    if (module_impl->GetObj().has_value()) { //need confirm
+      FOOTSTONE_LOG(ERROR) << "cannot find TurboModule = " << name;
+      ctx->ThrowException("Cannot find TurboModule: " + name);
+      return info.GetReturnValue()->SetUndefined();
+    }
+
+    // 3. constructor c++ JavaTurboModule
+    auto java_turbo_module = std::make_shared<JavaTurboModule>(u8_name, module_impl, ctx);
+
+    // 4. bind c++ JavaTurboModule to js
+    result = ctx->NewInstance(java_turbo_module->constructor, 0, nullptr, java_turbo_module.get());
+
+    // 5. add To Cache
+    scope->SetTurboInstance(u8_name, result);
+    scope->SetTurboHostObject(u8_name, java_turbo_module);
+
+    FOOTSTONE_DLOG(INFO) << "return module = " << name;
+  } else {
+    result = scope->GetTurboInstance(u8_name);
+    FOOTSTONE_DLOG(INFO) << "return cached module = " << name;
+  }
+
+  info.GetReturnValue()->Set(result);
+  FOOTSTONE_DLOG(INFO) << "[turbo-perf] exit getTurboModule";
+    
+}
+
+void TurboModuleManager::Destroy(napi_env env, napi_callback_info info) {
+
+}
+
+int Install(napi_env env, napi_callback_info info) {
+  ArkTS arkTs(env);
+  auto args = arkTs.GetCallbackArgs(info);
+  uint32_t ori_scope_id = static_cast<uint32_t>(arkTs.GetInteger(args[0]));
+  FOOTSTONE_LOG(INFO) << "install TurboModuleManager";
+  std::any scope_object;
+  auto scope_id = footstone::checked_numeric_cast<long, uint32_t>(ori_scope_id);//should use jlong
+  auto flag = hippy::global_data_holder.Find(scope_id, scope_object);
+  FOOTSTONE_CHECK(flag);
+  auto scope = std::any_cast<std::shared_ptr<Scope>>(scope_object);
+  scope->SetTurbo(std::make_pair(scope_id, scope)); //wrong,should change
+
+  // v8的操作放到js线程
+  auto runner = scope->GetTaskRunner();
+  if (!runner) {
+    FOOTSTONE_LOG(WARNING) << "TurboModuleManager install, runner invalid";
+    return -1;
+  }
+
+  std::weak_ptr<Scope> weak_scope = scope;
+  auto callback = [weak_scope, scope_id] {
+    auto scope = weak_scope.lock();
+    if (!scope) {
+      return;
+    }
+    auto context = scope->GetContext();
+    auto wrapper = std::make_unique<FunctionWrapper>(GetTurboModule, reinterpret_cast<void*>(scope_id));
+    auto func = context->CreateFunction(wrapper);
+    scope->SaveFunctionWrapper(std::move(wrapper));
+    auto global_object = context->GetGlobalObject();
+    auto key = context->CreateString(kTurboKey);
+    context->SetProperty(global_object, key, func);
+  };
+  runner->PostTask(std::move(callback));
+  return 0;
+}
+
+REGISTER_OH_NAPI("TurboModuleManager", "TurboModuleManager_Install", Install)
+}
+}
+}

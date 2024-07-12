@@ -104,4 +104,5 @@ export interface HippyLibrary {
   VfsManager_OnJniDelegateInvokeAsync(id: number, holder: ResourceDataHolder, callback: FetchResourceCallback): void;
   VfsManager_OnJniDelegateInvokeSync(id: number, holder: ResourceDataHolder): void;
 
+  TurboModuleManager_Install(v8RuntimeId: number): void;
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { HippyLibrary } from '../../../hippy_library/HippyLibrary';
 import { LogUtils } from '../../../support/utils/LogUtils';
 import { HippyEngineContext } from '../../HippyEngineContext';
 import { HippyModuleManager } from '../HippyModuleManager';
@@ -23,9 +24,11 @@ export class TurboModuleManager {
   public static TAG: string = "TurboModuleManager";
   private mModuleMap: Map<string, HippyNativeModuleBase> = new Map<string, HippyNativeModuleBase>();
   private mHippyEngineContext: HippyEngineContext;
+  private libHippy: HippyLibrary;
 
-  public constructor(context: HippyEngineContext) {
+  public constructor(context: HippyEngineContext, libHippy: HippyLibrary) {
     this.mHippyEngineContext = context;
+    this.libHippy = libHippy;
   }
 
   public get(name: string): HippyNativeModuleBase | null {
@@ -62,6 +65,6 @@ export class TurboModuleManager {
   }
 
   public install(runtimeId: number) {
-
+    return this.libHippy?.TurboModuleManager_Install(runtimeId);
   }
 }

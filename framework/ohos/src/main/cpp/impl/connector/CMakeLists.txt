@@ -76,6 +76,9 @@ set(PUBLIC_SOURCE_SET
   src/ark2js.cc
   src/js2ark.cc
   src/exception_handler.cc
-  src/native_renderer_napi.cc)
+  src/native_renderer_napi.cc
+  src/turbo_module_manager.cc
+  src/java_turbo_module.cc
+  src/scoped_java_ref.cc)
 target_sources(${PROJECT_NAME} PUBLIC ${PUBLIC_SOURCE_SET})
 # endregion
