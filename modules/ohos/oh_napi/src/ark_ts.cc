@@ -25,8 +25,10 @@
 #include "oh_napi/oh_napi_object_builder.h"
 #include "footstone/logging.h"
 #include <bits/alltypes.h>
+#include <future>
 #include <napi/native_api.h>
 #include <string>
+#include <thread>
 
 ArkTS::ArkTS(napi_env env) {
   env_ = env;
@@ -250,6 +252,91 @@ uint32_t ArkTS::GetArrayLength(napi_value array) {
   auto status = napi_get_array_length(env_, array, &length);
   this->MaybeThrowFromStatus(status, "Failed to read array length");
   return length;
+}
+
+void ArkTS::CreateCB(napi_value &callback, NapiCallback callbackC,
+                     std::function<void()> scopeCallback) {
+
+  //   auto cb = [](napi_env env, napi_callback_info info) -> napi_value {
+  //         return nullptr;
+  //   };
+  napi_create_function(env_, nullptr, 0, callbackC, &scopeCallback, &callback);
+}
+
+std::vector<std::pair<napi_value, napi_value>> ArkTS::GetALLObjectProperties(napi_value object) {
+//   std::atomic<int> sharedValue{0};
+//   auto asyncTask = [&sharedValue, &object, this]() {
+//     for (int ii = 0; ii < 100; ++ii) {
+//       napi_value propertyNames;
+//       auto status = napi_get_all_property_names(
+//           env_, object, napi_key_collection_mode::napi_key_include_prototypes,
+//           napi_key_filter::napi_key_all_properties,
+//           napi_key_conversion::napi_key_numbers_to_strings, &propertyNames);
+//       uint32_t length = this->GetArrayLength(propertyNames);
+//       std::vector<std::pair<napi_value, napi_value>> result;
+//       for (uint32_t i = 0; i < length; i++) {
+//         napi_value propertyName = this->GetArrayElement(propertyNames, i);
+// //         napi_value propertyValue = this->GetObjectProperty(object, propertyName);
+//         char name_buffer[1024];
+//         size_t name_size;
+//         status = napi_get_value_string_utf8(env_, propertyName, name_buffer, sizeof(name_buffer),
+//                                             &name_size);
+//         if (status == napi_ok) {
+//           FOOTSTONE_LOG(ERROR) << "wangz::asyncTask:" << name_buffer;
+//         }
+//       }
+//       sharedValue.store(ii);
+//       FOOTSTONE_LOG(ERROR) << "wangz::Thread value: " << sharedValue.load();
+//       std::this_thread::sleep_for(std::chrono::seconds(3)); // 暂停3秒
+//     }
+//   };
+//   std::future<void> fut = std::async(std::launch::async, asyncTask);
+//   fut.get();
+
+  napi_value result3;
+  napi_call_function(env_, nullptr, object, 1, &result3, nullptr);
+
+  napi_value propertyNames;
+  auto status = napi_get_all_property_names(
+      env_, object, napi_key_collection_mode::napi_key_include_prototypes,
+      napi_key_filter::napi_key_all_properties, napi_key_conversion::napi_key_numbers_to_strings,
+      &propertyNames);
+  bool ispromise = false;
+  napi_is_promise(env_, object, &ispromise);
+  FOOTSTONE_LOG(ERROR) << "wangz::object_ispromise::" << ispromise;
+    
+  this->MaybeThrowFromStatus(status, "Failed to retrieve property names");
+  uint32_t length = this->GetArrayLength(propertyNames);
+  std::vector<std::pair<napi_value, napi_value>> result;
+  for (uint32_t i = 0; i < length; i++) {
+    napi_value propertyName = this->GetArrayElement(propertyNames, i);
+    napi_value propertyValue = this->GetObjectProperty(object, propertyName);
+    char name_buffer[1024];
+    size_t name_size;
+    status = napi_get_value_string_utf8(env_, propertyName, name_buffer, sizeof(name_buffer),
+                                        &name_size);
+    if (status == napi_ok) {
+      FOOTSTONE_LOG(ERROR) << "wangz::napi_get_all_property::names:" << name_buffer;
+    }
+    std::string name(name_buffer);
+    bool ispromise2 = false;
+    napi_is_promise(env_, propertyValue, &ispromise2);
+    FOOTSTONE_LOG(ERROR) << "wangz::" << name_buffer << "_ispromise::" << ispromise2;
+
+//     if (name == "then") {
+//       std::vector<napi_value> args = {};
+//       napi_value result2;
+//       auto status2 =
+//           napi_call_function(env_, object, propertyValue, args.size(), args.data(), &result2);
+//      
+//       FOOTSTONE_DLOG(INFO) << "wangz::then, status:" << status2;
+//       this->MaybeThrowFromStatus(status2, "Couldn't call a callback");
+// //       this->GetALLObjectProperties(result2);
+//       FOOTSTONE_DLOG(INFO) << "wangz::end:";      
+//     }
+    result.emplace_back(propertyName, propertyValue);
+  }
+  return result;
 }
 
 std::vector<std::pair<napi_value, napi_value>> ArkTS::GetObjectProperties(napi_value object) {

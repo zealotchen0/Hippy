@@ -36,3 +36,11 @@ napi_value OhNapiObject::GetProperty(napi_value key) {
 std::vector<std::pair<napi_value, napi_value>> OhNapiObject::GetKeyValuePairs() {
     return arkTs_.GetObjectProperties(object_);
 }
+
+std::vector<std::pair<napi_value, napi_value>> OhNapiObject::GetAllKeyValuePairs() {
+    return arkTs_.GetALLObjectProperties(object_);
+}
+
+std::vector<std::pair<napi_value, napi_value>> OhNapiObject::GetALLObjectProperties() {
+    return arkTs_.GetALLObjectProperties(object_);
+}

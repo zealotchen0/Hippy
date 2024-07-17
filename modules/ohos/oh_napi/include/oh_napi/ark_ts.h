@@ -32,6 +32,8 @@
 #include "footstone/string_view.h"
 
 using string_view = footstone::string_view;
+using NapiCallback = napi_value (*)(napi_env, napi_callback_info);
+// using NapiCallback = std::function<napi_value(napi_env env, napi_callback_info info)>;
 
 class OhNapiObjectBuilder;
 class OhNapiObject;
@@ -115,6 +117,8 @@ class ArkTS {
   napi_value GetArrayElement(napi_value array, uint32_t index);
 
   uint32_t GetArrayLength(napi_value array);
+    
+  std::vector<std::pair<napi_value, napi_value>> GetALLObjectProperties(napi_value object);  
 
   std::vector<std::pair<napi_value, napi_value>> GetObjectProperties(napi_value object);
 
@@ -132,7 +136,9 @@ class ArkTS {
 
   void PrintValue(napi_value value);
 
- private:
+  void CreateCB(napi_value &callback, NapiCallback callbackC, std::function<void()> scopeCallback);
+
+  private:
   napi_env env_;
 
   void MaybeThrowFromStatus(napi_status status, const char *message);
