@@ -27,12 +27,10 @@
 
 using HippyValue = footstone::HippyValue;
 using NapiCallback = napi_value (*)(napi_env, napi_callback_info);
-// using NapiCallback = std::function<napi_value(napi_env env, napi_callback_info info)>;
-
 class OhNapiUtils {
 public:
     static void CreateCB(napi_env env, napi_value &value, NapiCallback callbackC,
-                         std::function<void()> scopeCallback);
+                         ScopeDebug* scopeCallback);
     static HippyValue CallThen(napi_env env, napi_value value);
     static HippyValue NapiValue2HippyValue(napi_env env, napi_value value);
     static napi_value HippyValue2NapiValue(napi_env env, const HippyValue &value);

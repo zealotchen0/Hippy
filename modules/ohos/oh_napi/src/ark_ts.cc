@@ -255,12 +255,12 @@ uint32_t ArkTS::GetArrayLength(napi_value array) {
 }
 
 void ArkTS::CreateCB(napi_value &callback, NapiCallback callbackC,
-                     std::function<void()> scopeCallback) {
+                     ScopeDebug* scopeCallback) {
 
   //   auto cb = [](napi_env env, napi_callback_info info) -> napi_value {
   //         return nullptr;
   //   };
-  napi_create_function(env_, nullptr, 0, callbackC, &scopeCallback, &callback);
+  napi_create_function(env_, nullptr, 0, callbackC, scopeCallback, &callback);
 }
 
 std::vector<std::pair<napi_value, napi_value>> ArkTS::GetALLObjectProperties(napi_value object) {

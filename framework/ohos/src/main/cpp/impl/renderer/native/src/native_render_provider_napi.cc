@@ -602,20 +602,25 @@ void CallGetComponentSnapshotMethod(napi_env env, napi_ref render_provider_ref,
   OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(env);
   taskRunner->RunSyncTask([env = env, render_provider_ref = render_provider_ref, method,
                            component_id, &resultMap]() {
+    auto scopeCallback = [&](napi_env copyEnv,HippyValue &v) {
+//       auto copy = OhNapiUtils::HippyValue2NapiValue(copyEnv, v);
+//       resultMap = OhNapiUtils::NapiValue2HippyValue(copyEnv, copy);
+      FOOTSTONE_LOG(ERROR) << "wangz::scopeCallback";
+    };
+    ScopeDebug* scopePtr = new ScopeDebug();
+    //     ScopeDebug* scopePtr = new ScopeDebug{scopeCallback};
+    scopePtr->dataScope = new std::function<void(napi_env, footstone::HippyValue&)>(scopeCallback);    
     NapiCallback napiCallback = [](napi_env env, napi_callback_info info) -> napi_value {
       FOOTSTONE_LOG(ERROR) << "wangz::scope";
-//       size_t argc = 0;
-//       napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr);
-//       if (argc == 0) {
-//         return nullptr;
-//       }
-//       napi_value args[argc];
-//       void *data;
-//       napi_get_cb_info(env, info, &argc, args, nullptr, &data);
-//       auto scopeCallback = reinterpret_cast<std::function<void()> *>(data);
-//       if (scopeCallback) {
-//           (*scopeCallback)();
-//       }
+      size_t argc = 0;
+      napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr);
+      if (argc == 0) {
+        return nullptr;
+      }
+      napi_value args[argc];
+      void *data;
+      napi_get_cb_info(env, info, &argc, args, nullptr, &data);
+      
       FOOTSTONE_LOG(ERROR) << "wangz::napi_value";
       ArkTS arkTs(env);
       auto args1 = arkTs.GetCallbackArgs(info, 1);
@@ -633,36 +638,36 @@ void CallGetComponentSnapshotMethod(napi_env env, napi_ref render_provider_ref,
           map[objKey] = objValue;
         }
       }
-//       s_resultMap = HippyValue(map);   
+      HippyValue resultMap = HippyValue(map);   
+      auto scopeCallback = reinterpret_cast<ScopeDebug *>(data);
+      if (scopeCallback && scopeCallback->dataScope) {
+        (*scopeCallback->dataScope)(env, resultMap);
+      }      
       FOOTSTONE_LOG(ERROR) << "wangz::pairs.size()::" << pairs.size();
       return nullptr;
     };
 
-    auto scopeCallback = [&]() {
-      FOOTSTONE_LOG(ERROR) << "wangz::scopeCallback"; 
-    };
-
     napi_value cb;
-    OhNapiUtils::CreateCB(env, cb, napiCallback, scopeCallback);
+    OhNapiUtils::CreateCB(env, cb, napiCallback, scopePtr);
 
     ArkTS arkTs(env);
     std::vector<napi_value> args = {arkTs.CreateUint32(component_id),
                                     OhNapiUtils::HippyValue2NapiValue(env, resultMap), cb};
     auto delegateObject = arkTs.GetObject(render_provider_ref);
-    //     delegateObject.Call(method.c_str(), args);
-    FOOTSTONE_DLOG(WARNING) << "UpdateNodeSize render_manager_id invalid";
-    napi_value jsCb = delegateObject.Call(method.c_str(), args);
-    napi_value thenFunc;
-    napi_value undefined = nullptr;
-    napi_value promise = nullptr;    
-    napi_get_undefined(env, &undefined);
-    napi_call_function(env, undefined, jsCb, 0, nullptr, &promise);    
-    if (napi_get_named_property(env, jsCb, "then", &thenFunc) != napi_ok) {
-      return;
-    }
-    napi_value argv[2] = {};    
-    napi_call_function(env, jsCb, thenFunc, 2, argv, &undefined);
-    FOOTSTONE_LOG(ERROR) << "wangz::GetString" << arkTs.GetString(undefined);
+    delegateObject.Call(method.c_str(), args);
+    //     FOOTSTONE_DLOG(WARNING) << "UpdateNodeSize render_manager_id invalid";
+    //     napi_value jsCb = delegateObject.Call(method.c_str(), args);
+    //     napi_value thenFunc;
+    //     napi_value undefined = nullptr;
+    //     napi_value promise = nullptr;
+    //     napi_get_undefined(env, &undefined);
+    //     napi_call_function(env, undefined, jsCb, 0, nullptr, &promise);
+    //     if (napi_get_named_property(env, jsCb, "then", &thenFunc) != napi_ok) {
+    //       return;
+    //     }
+    //     napi_value argv[2] = {};
+    //     napi_call_function(env, jsCb, thenFunc, 2, argv, &undefined);
+    //     FOOTSTONE_LOG(ERROR) << "wangz::GetString" << arkTs.GetString(undefined);
     //     OhNapiObject napiObj = arkTs.GetObject(thenValue);
     //     std::vector<std::pair<napi_value, napi_value>> pairs = napiObj.GetKeyValuePairs();
     //     std::vector<napi_value> args2 = {};

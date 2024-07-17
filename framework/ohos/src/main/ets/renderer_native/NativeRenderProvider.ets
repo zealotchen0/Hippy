@@ -219,44 +219,6 @@ export class NativeRenderProvider {
     this.libHippy?.NativeRenderProvider_DoCallBack(this.instanceId, result, functionName, rootId, nodeId, callbackId, buffer)
   }
 
-  // async getComponentSnapshot(componentId: string, resultMap: HippyMap,
-  //   cb: Function): Promise<object | null> {
-  //   interface HippyResult {
-  //     screenShot?: string;
-  //     width?: number;
-  //     height?: number;
-  //     screenScale?: number;
-  //   }
-  //   LogUtils.d(this.TAG, "wangz::componentId::" + JSON.stringify(componentId));
-  //   let pixmap: PixelMap = await componentSnapshot.get("HippyId" + componentId);
-  //   const imagePackageApi: image.ImagePacker = image.createImagePacker()
-  //   let packOpts: image.PackingOption = {
-  //     format: 'image/png',
-  //     quality: 30,
-  //   }
-  //   const readBuffer = await imagePackageApi.packing(pixmap, packOpts);
-  //   let base64Helper = new util.Base64Helper();
-  //   let uint8Arr = new Uint8Array(readBuffer);
-  //   let pixelStr = base64Helper.encodeToStringSync(uint8Arr);
-  //   LogUtils.d(this.TAG, "wangz::pixelStr::" + pixelStr);
-  //   let rsMap = new Map<string, HippyValue>();
-  //   rsMap.set("screenShot", pixelStr);
-  //   rsMap.set("width", 50);
-  //   rsMap.set("height", 50);
-  //   rsMap.set("screenScale", 1.0);
-  //   LogUtils.d(this.TAG, "wangz::" + JSON.stringify(rsMap));
-  //   LogUtils.d(this.TAG, "wangz::cb::defore");
-  //   let hippyResult: HippyResult = {};
-  //   hippyResult.screenShot = pixelStr;
-  //   hippyResult.width = 50;
-  //   hippyResult.height = 50;
-  //   hippyResult.screenScale = 1.0;
-  //   cb(hippyResult);
-  //   LogUtils.d(this.TAG, "wangz::cb::after");
-  //   return hippyResult;
-  // }
-
-  // for devtools
   async getComponentSnapshot(componentId: string, resultMap: HippyMap,
     cb: Function): Promise<object | null> {
     interface HippyResult {
@@ -265,33 +227,71 @@ export class NativeRenderProvider {
       height?: number;
       screenScale?: number;
     }
-    return new Promise(async (resolve, reject) => {
-      LogUtils.d(this.TAG, "wangz::componentId::" + JSON.stringify(componentId));
-      let pixmap: PixelMap = await componentSnapshot.get("HippyId" + componentId);
-      const imagePackageApi: image.ImagePacker = image.createImagePacker()
-      let packOpts: image.PackingOption = {
-        format: 'image/png',
-        quality: 30,
-      }
-      const readBuffer = await imagePackageApi.packing(pixmap, packOpts);
-      let base64Helper = new util.Base64Helper();
-      let uint8Arr = new Uint8Array(readBuffer);
-      let pixelStr = base64Helper.encodeToStringSync(uint8Arr);
-      LogUtils.d(this.TAG, "wangz::pixelStr::" + pixelStr);
-      let rsMap = new Map<string, HippyValue>();
-      rsMap.set("screenShot", pixelStr);
-      rsMap.set("width", 50);
-      rsMap.set("height", 50);
-      rsMap.set("screenScale", 1.0);
-      LogUtils.d(this.TAG, "wangz::" + JSON.stringify(rsMap));
-      let hippyResult: HippyResult = {};
-      hippyResult.screenShot = pixelStr;
-      hippyResult.width = 50;
-      hippyResult.height = 50;
-      hippyResult.screenScale = 1.0;
-      resolve(hippyResult);
-    });
+    LogUtils.d(this.TAG, "wangz::componentId::" + JSON.stringify(componentId));
+    let pixmap: PixelMap = await componentSnapshot.get("HippyId" + componentId);
+    const imagePackageApi: image.ImagePacker = image.createImagePacker()
+    let packOpts: image.PackingOption = {
+      format: 'image/png',
+      quality: 30,
+    }
+    const readBuffer = await imagePackageApi.packing(pixmap, packOpts);
+    let base64Helper = new util.Base64Helper();
+    let uint8Arr = new Uint8Array(readBuffer);
+    let pixelStr = base64Helper.encodeToStringSync(uint8Arr);
+    LogUtils.d(this.TAG, "wangz::pixelStr::" + pixelStr);
+    let rsMap = new Map<string, HippyValue>();
+    rsMap.set("screenShot", pixelStr);
+    rsMap.set("width", 50);
+    rsMap.set("height", 50);
+    rsMap.set("screenScale", 1.0);
+    LogUtils.d(this.TAG, "wangz::" + JSON.stringify(rsMap));
+    LogUtils.d(this.TAG, "wangz::cb::defore");
+    let hippyResult: HippyResult = {};
+    hippyResult.screenShot = pixelStr;
+    hippyResult.width = 50;
+    hippyResult.height = 50;
+    hippyResult.screenScale = 2.0;
+    cb(hippyResult);
+    LogUtils.d(this.TAG, "wangz::cb::after");
+    return hippyResult;
   }
+
+  // for devtools
+  // async getComponentSnapshot(componentId: string, resultMap: HippyMap,
+  //   cb: Function): Promise<object | null> {
+  //   interface HippyResult {
+  //     screenShot?: string;
+  //     width?: number;
+  //     height?: number;
+  //     screenScale?: number;
+  //   }
+  //   return new Promise(async (resolve, reject) => {
+  //     LogUtils.d(this.TAG, "wangz::componentId::" + JSON.stringify(componentId));
+  //     let pixmap: PixelMap = await componentSnapshot.get("HippyId" + componentId);
+  //     const imagePackageApi: image.ImagePacker = image.createImagePacker()
+  //     let packOpts: image.PackingOption = {
+  //       format: 'image/png',
+  //       quality: 30,
+  //     }
+  //     const readBuffer = await imagePackageApi.packing(pixmap, packOpts);
+  //     let base64Helper = new util.Base64Helper();
+  //     let uint8Arr = new Uint8Array(readBuffer);
+  //     let pixelStr = base64Helper.encodeToStringSync(uint8Arr);
+  //     LogUtils.d(this.TAG, "wangz::pixelStr::" + pixelStr);
+  //     let rsMap = new Map<string, HippyValue>();
+  //     rsMap.set("screenShot", pixelStr);
+  //     rsMap.set("width", 50);
+  //     rsMap.set("height", 50);
+  //     rsMap.set("screenScale", 1.0);
+  //     LogUtils.d(this.TAG, "wangz::" + JSON.stringify(rsMap));
+  //     let hippyResult: HippyResult = {};
+  //     hippyResult.screenShot = pixelStr;
+  //     hippyResult.width = 50;
+  //     hippyResult.height = 50;
+  //     hippyResult.screenScale = 1.0;
+  //     resolve(hippyResult);
+  //   });
+  // }
 
   // for devtools
   // async getComponentSnapshot(componentId: string, resultMap: HippyMap): Promise<HippyMap | null> {

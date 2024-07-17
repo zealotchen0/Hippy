@@ -29,10 +29,15 @@
 #include <string>
 #include <functional>
 #include <variant>
+#include "footstone/hippy_value.h"
 #include "footstone/string_view.h"
 
 using string_view = footstone::string_view;
 using NapiCallback = napi_value (*)(napi_env, napi_callback_info);
+struct ScopeDebug {
+    std::function<void(napi_env, footstone::HippyValue&)>* dataScope;
+//   std::function<void(footstone::HippyValue)> dataScope;
+};
 // using NapiCallback = std::function<napi_value(napi_env env, napi_callback_info info)>;
 
 class OhNapiObjectBuilder;
@@ -136,7 +141,7 @@ class ArkTS {
 
   void PrintValue(napi_value value);
 
-  void CreateCB(napi_value &callback, NapiCallback callbackC, std::function<void()> scopeCallback);
+  void CreateCB(napi_value &callback, NapiCallback callbackC, ScopeDebug* scopeCallback);
 
   private:
   napi_env env_;

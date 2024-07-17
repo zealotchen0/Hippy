@@ -26,7 +26,7 @@
 using HippyValueObjectType = HippyValue::HippyValueObjectType;
 
 void OhNapiUtils::CreateCB(napi_env env, napi_value &value, NapiCallback callbackC,
-                           std::function<void()> scopeCallback) {
+                           ScopeDebug* scopeCallback) {
   ArkTS arkTs(env);
   arkTs.CreateCB(value, callbackC, scopeCallback);
 }
