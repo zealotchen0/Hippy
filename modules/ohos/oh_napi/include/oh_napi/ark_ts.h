@@ -34,10 +34,21 @@
 
 using string_view = footstone::string_view;
 using NapiCallback = napi_value (*)(napi_env, napi_callback_info);
-struct ScopeDebug {
-    std::function<void(napi_env, footstone::HippyValue&)>* dataScope;
-//   std::function<void(footstone::HippyValue)> dataScope;
+struct SnapshotResult {
+  std::string screenShot;
+  std::double_t width;
+  std::double_t height;
+  std::double_t screenScale;
 };
+struct ScopeDebug {
+  std::function<void(napi_env, footstone::HippyValue &)> *dataScope;
+};
+// struct ScopeDebug {
+//   footstone::HippyValue *hippyValue;
+//   std::function<void(napi_env, footstone::HippyValue &, footstone::HippyValue *)> *dataScope;
+//   std::string name;  
+//   //   std::function<void(footstone::HippyValue)> dataScope;
+// };
 // using NapiCallback = std::function<napi_value(napi_env env, napi_callback_info info)>;
 
 class OhNapiObjectBuilder;

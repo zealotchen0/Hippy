@@ -2134,8 +2134,14 @@ void NativeRenderManager::CallFunction_C(std::weak_ptr<RootNode> root_node, std:
     hiType["height"] = HippyValue(50);
     hiType["screenScale"] = HippyValue(1.0);
     auto resultMap = HippyValue(hiType);
+//     CallGetComponentSnapshotMethod(ts_env_, ts_render_provider_ref_, "getComponentSnapshot",
+//                                    root->GetId(), resultMap);
+    SnapshotResult result;
+    result.width = 100;
+    result.height = 200;
+    std::shared_ptr<SnapshotResult> snapshotResult = std::make_shared<SnapshotResult>(result);    
     CallGetComponentSnapshotMethod(ts_env_, ts_render_provider_ref_, "getComponentSnapshot",
-                                   root->GetId(), resultMap);
+                                   root->GetId(), snapshotResult);
     params.emplace_back(resultMap);        
   }
 
