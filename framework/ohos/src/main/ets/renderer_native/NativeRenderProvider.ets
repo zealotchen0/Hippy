@@ -231,7 +231,7 @@ export class NativeRenderProvider {
     let base64Helper = new util.Base64Helper();
     let uint8Arr = new Uint8Array(readBuffer);
     let pixelStr = base64Helper.encodeToStringSync(uint8Arr);
-    LogUtils.d(this.TAG, "wangz::pixelStr::" + pixelStr);
+    LogUtils.d(this.TAG, "pixelStr::" + pixelStr);
     interface HippyResult {
       screenShot?: string;
       width?: number;
