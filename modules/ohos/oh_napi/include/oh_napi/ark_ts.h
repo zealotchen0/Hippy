@@ -35,21 +35,14 @@
 using string_view = footstone::string_view;
 using NapiCallback = napi_value (*)(napi_env, napi_callback_info);
 struct SnapshotResult {
-  std::string screenShot;
-  std::double_t width;
-  std::double_t height;
-  std::double_t screenScale;
+  std::string screenShot = "";
+  std::double_t width = 0;
+  std::double_t height = 0;
+  std::double_t screenScale = 0;
 };
-struct ScopeDebug {
+struct ScopeNapiAsynCall {
   std::function<void(napi_env, footstone::HippyValue &)> *dataScope;
 };
-// struct ScopeDebug {
-//   footstone::HippyValue *hippyValue;
-//   std::function<void(napi_env, footstone::HippyValue &, footstone::HippyValue *)> *dataScope;
-//   std::string name;  
-//   //   std::function<void(footstone::HippyValue)> dataScope;
-// };
-// using NapiCallback = std::function<napi_value(napi_env env, napi_callback_info info)>;
 
 class OhNapiObjectBuilder;
 class OhNapiObject;
@@ -134,8 +127,6 @@ class ArkTS {
 
   uint32_t GetArrayLength(napi_value array);
     
-  std::vector<std::pair<napi_value, napi_value>> GetALLObjectProperties(napi_value object);  
-
   std::vector<std::pair<napi_value, napi_value>> GetObjectProperties(napi_value object);
 
   std::string GetString(napi_value value);
@@ -150,9 +141,8 @@ class ArkTS {
 
   void ThrowError(const char *message);
 
-  void PrintValue(napi_value value);
-
-  void CreateCB(napi_value &callback, NapiCallback callbackC, ScopeDebug* scopeCallback);
+  void CreateArkts2CCallback(napi_value &callback, NapiCallback callbackC,
+                              ScopeNapiAsynCall *scopeCallback);
 
   private:
   napi_env env_;

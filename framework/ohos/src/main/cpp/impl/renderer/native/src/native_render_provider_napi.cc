@@ -47,6 +47,11 @@ inline namespace framework {
 inline namespace renderer {
 inline namespace native {
 
+std::mutex napiAsyncCallMutex;
+std::condition_variable napiAsyncCallCondition;
+enum class NapiAsyncCallStatus { Waiting, Success };
+NapiAsyncCallStatus napiAsyncCallStatus = NapiAsyncCallStatus::Waiting;
+
 void CallRenderDelegateSetIdMethod(napi_env env, napi_ref render_provider_ref,
   const std::string& method, uint32_t id) {
   ArkTS arkTs(env);
@@ -450,85 +455,6 @@ static napi_value DoMeasureText(napi_env env, napi_callback_info info) {
   return arkTs.CreateArray(pack);
 }
 
-void NapiValue2HippyValue(struct napi_env__ * env, napi_value__ * pairItem2) {
-
-}
-
-// HippyValue CallGetLocationOnScreenMethod(napi_env env, napi_ref render_provider_ref,
-//                                          const std::string &method, uint32_t component_id) {
-//   //   std::future<HippyValue> futHippyValue;
-//   //   auto asyncTask = [&]() {
-//   //     ArkTS arkTs(env);
-//   //     std::vector<napi_value> args = {arkTs.CreateUint32(component_id)};
-//   //     auto delegateObject = arkTs.GetObject(render_provider_ref);
-//   //     auto napiValue = delegateObject.Call(method.c_str(), args);
-//   //     return OhNapiUtils::NapiValue2HippyValue(env, napiValue);
-//   //   };
-//   //   futHippyValue = std::async(std::launch::async, asyncTask);
-//   //   return futHippyValue.get();
-//   HippyValue futHippyValue;
-//   OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(env);
-//   taskRunner->RunSyncTask([env = env, render_provider_ref = render_provider_ref, method,
-//                            component_id, &futHippyValue]() {
-//     ArkTS arkTs(env);
-//     std::vector<napi_value> args = {arkTs.CreateUint32(component_id)};
-//     auto delegateObject = arkTs.GetObject(render_provider_ref);
-//     auto napiValue = delegateObject.Call(method.c_str(), args);
-//    
-//     HippyValueObjectType map;
-//     OhNapiObject napiObj = arkTs.GetObject(napiValue);
-//     std::vector<napi_value> napiObjArgs0 = {arkTs.CreateString("xOnScreen")};
-//     auto napiCallValue0 = napiObj.Call("get", napiObjArgs0);
-//     double ohNapiCallValue0 = arkTs.GetDouble(napiCallValue0);
-//     map["xOnScreen"].ToDouble(ohNapiCallValue0);
-//
-//     std::vector<napi_value> napiObjArgs1 = {arkTs.CreateString("yOnScreen")};
-//     auto napiCallValue1 = napiObj.Call("get", napiObjArgs1);
-//     double ohNapiCallValue1 = arkTs.GetDouble(napiCallValue1);
-//     map["yOnScreen"].ToDouble(ohNapiCallValue1);
-//
-//     std::vector<napi_value> napiObjArgs2 = {arkTs.CreateString("viewWidth")};
-//     auto napiCallValue2 = napiObj.Call("get", napiObjArgs2);
-//     double ohNapiCallValue2 = arkTs.GetDouble(napiCallValue2);
-//     map["viewWidth"].ToDouble(ohNapiCallValue2);
-//
-//     std::vector<napi_value> napiObjArgs3 = {arkTs.CreateString("viewHeight")};
-//     auto napiCallValue3 = napiObj.Call("get", napiObjArgs3);
-//     double ohNapiCallValue3 = arkTs.GetDouble(napiCallValue3);
-//     map["viewHeight"].ToDouble(ohNapiCallValue3);
-//
-//     ohNapiCallValue0 = 30;
-//     ohNapiCallValue1 = 40;
-//     ohNapiCallValue2 = 100;
-//     ohNapiCallValue3 = 60;
-//     map["xOnScreen"] = ohNapiCallValue0;
-//     map["yOnScreen"] = ohNapiCallValue1;
-//     map["viewWidth"] = ohNapiCallValue2;
-//     map["viewHeight"] = ohNapiCallValue3;
-//     //     std::vector<std::pair<napi_value, napi_value>> pairs = napiObj.GetALLObjectProperties();
-//     //     for (auto it = pairs.begin(); it != pairs.end(); it++) {
-//     //       auto &pair = *it;
-//     //       auto &pairItem1 = pair.first;
-//     //       auto objKey = arkTs.GetString(pairItem1);
-//     //       if (objKey.length() > 0) {
-//     //         auto &pairItem2 = pair.second;
-//     //                 OhNapiObject callNapi = arkTs.GetObject(pairItem2);
-//     //                 std::vector<napi_value> callNapiArgs = {};
-//     //                 std::vector<napi_value> args =
-//     //                 callNapi.Call("", )
-//     //         auto objValue = OhNapiUtils::NapiValue2HippyValue(env, pairItem2);
-//     //         map[objKey] = objValue;
-//     //       }
-//     //     }
-//     futHippyValue = HippyValue(map);
-//     //         ohNapiObject.GetKeyValuePairs();
-//     //     futHippyValue = OhNapiUtils::NapiValue2HippyValue(env, napiValue);
-//   });
-//   //     HippyValue hippyValue = HippyValue();
-//   return futHippyValue;
-// }
-
-
 HippyValue CallGetLocationOnScreenMethod(napi_env env, napi_ref render_provider_ref,
                                          const std::string &method, uint32_t component_id) {
   HippyValue futHippyValue;
@@ -558,262 +484,72 @@ HippyValue CallGetLocationOnScreenMethod(napi_env env, napi_ref render_provider_
   return futHippyValue;
 }
 
-napi_value HanderCallback(napi_env env, napi_callback_info info) {
-
-  size_t argc = 0;
-  napi_value args[0];
-  void *data;
-  napi_get_cb_info(env, info, &argc, args, nullptr, &data);
-  auto scopeCallback = reinterpret_cast<std::function<void()> *>(data);
-  if (scopeCallback) {
-    (*scopeCallback)();
-  }
-
-
-  FOOTSTONE_LOG(ERROR) << "wangz::napi_value";
-  ArkTS arkTs(env);
-  auto args1 = arkTs.GetCallbackArgs(info, 1);
-  HippyValueObjectType map;
-  OhNapiObject napiObj = arkTs.GetObject(args1[0]);
-  std::vector<std::pair<napi_value, napi_value>> pairs = napiObj.GetKeyValuePairs();
-  for (auto it = pairs.begin(); it != pairs.end(); it++) {
-    auto &pair = *it;
-    auto &pairItem1 = pair.first;
-    auto objKey = arkTs.GetString(pairItem1);
-    if (objKey.length() > 0) {
-      auto &pairItem2 = pair.second;
-      auto objValue = OhNapiUtils::NapiValue2HippyValue(env, pairItem2);
-      map[objKey] = objValue;
-    }
-  }
-  //       HippyValue(map);
-  FOOTSTONE_LOG(ERROR) << "wangz::pairs.size()::" << pairs.size();
-  return nullptr;
-}
-
-struct CallbackData {
-    napi_threadsafe_function tsfn;
-    napi_async_work work;
-};
-
-// void CallGetComponentSnapshotMethod(napi_env env, napi_ref render_provider_ref,
-//                                     const std::string &method, uint32_t component_id,
-//                                     HippyValue &resultMap) {
-//   OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(env);
-//   taskRunner->RunSyncTask([env = env, render_provider_ref = render_provider_ref, method,
-//                            component_id, &resultMap]() {
-//     HippyValue& innerValue = resultMap;    
-//     auto scopeCallback = [&innerValue](napi_env copyEnv, HippyValue &v, HippyValue *vPtr) {
-//       HippyValueObjectType m;
-//       v.ToObject(m);
-//       std::string screenShot = "";
-//       auto angleIt = m.find("screenShot");
-//       if (angleIt == m.end()) {
-//       } else {
-//         HippyValue hippyValue = angleIt->second;
-//         hippyValue.ToString(screenShot);
-//       }
-//       FOOTSTONE_LOG(ERROR) << "wangz::scopeCallback::" << screenShot;
-//       //       OhNapiUtils::HippyValue2NapiValue(copyEnv, resultMap);
-//       //         auto copy = OhNapiUtils::HippyValue2NapiValue(copyEnv, v);
-//       //     resultMap = OhNapiUtils::NapiValue2HippyValue(copyEnv, copy);
-//       HippyValueObjectType m2;
-// //       vPtr->ToObject(m2);
-//       innerValue.ToObject(m2);
-//       std::string screenShot2 = "";
-//       auto angleIt2 = m.find("screenShot");
-//       if (angleIt2 == m.end()) {
-//       } else {
-//         HippyValue hippyValue2 = angleIt2->second;
-//         hippyValue2.ToString(screenShot2);
-//       }
-//       FOOTSTONE_LOG(ERROR) << "wangz::scopeCallback222::" << screenShot2;
-//     };
-//     ScopeDebug* scopePtr = new ScopeDebug();
-//     //     ScopeDebug* scopePtr = new ScopeDebug{scopeCallback};
-//     scopePtr->name = "12345";
-//     scopePtr->hippyValue = &resultMap;
-//     scopePtr->dataScope =
-//         new std::function<void(napi_env, footstone::HippyValue &, footstone::HippyValue *)>(
-//             scopeCallback);
-//     NapiCallback napiCallback = [](napi_env env, napi_callback_info info) -> napi_value {
-//       FOOTSTONE_LOG(ERROR) << "wangz::scope";
-//       size_t argc = 0;
-//       napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr);
-//       if (argc == 0) {
-//         return nullptr;
-//       }
-//       napi_value args[argc];
-//       void *data;
-//       napi_get_cb_info(env, info, &argc, args, nullptr, &data);
-//      
-//       FOOTSTONE_LOG(ERROR) << "wangz::napi_value";
-//       ArkTS arkTs(env);
-//       auto args1 = arkTs.GetCallbackArgs(info, 1);
-//       HippyValueObjectType map;
-//       OhNapiObject napiObj = arkTs.GetObject(args1[0]);
-//       std::vector<std::pair<napi_value, napi_value>> pairs = napiObj.GetKeyValuePairs();
-//       for (auto it = pairs.begin(); it != pairs.end(); it++) {
-//         auto &pair = *it;
-//         auto &pairItem1 = pair.first;
-//         auto objKey = arkTs.GetString(pairItem1);
-//         if (objKey.length() > 0) {
-//           FOOTSTONE_LOG(ERROR) << "wangz::pairs.name::" << objKey;
-//           auto &pairItem2 = pair.second;
-//           auto objValue = OhNapiUtils::NapiValue2HippyValue(env, pairItem2);
-//           map[objKey] = objValue;
-//         }
-//       }
-//       HippyValue resultMap = HippyValue(map);   
-//       auto scopeCallback = reinterpret_cast<ScopeDebug *>(data);
-//       if (scopeCallback && scopeCallback->dataScope) {
-//         (*scopeCallback->dataScope)(env, resultMap, scopeCallback->hippyValue);
-//       }      
-//       FOOTSTONE_LOG(ERROR) << "wangz::pairs.size()::" << pairs.size();
-//       return nullptr;
-//     };
-//
-//     napi_value cb;
-//     OhNapiUtils::CreateCB(env, cb, napiCallback, scopePtr);
-//
-//     ArkTS arkTs(env);
-//     std::vector<napi_value> args = {arkTs.CreateUint32(component_id),
-//                                     OhNapiUtils::HippyValue2NapiValue(env, resultMap), cb};
-//     auto delegateObject = arkTs.GetObject(render_provider_ref);
-//     delegateObject.Call(method.c_str(), args);
-//     //     FOOTSTONE_DLOG(WARNING) << "UpdateNodeSize render_manager_id invalid";
-//     //     napi_value jsCb = delegateObject.Call(method.c_str(), args);
-//     //     napi_value thenFunc;
-//     //     napi_value undefined = nullptr;
-//     //     napi_value promise = nullptr;
-//     //     napi_get_undefined(env, &undefined);
-//     //     napi_call_function(env, undefined, jsCb, 0, nullptr, &promise);
-//     //     if (napi_get_named_property(env, jsCb, "then", &thenFunc) != napi_ok) {
-//     //       return;
-//     //     }
-//     //     napi_value argv[2] = {};
-//     //     napi_call_function(env, jsCb, thenFunc, 2, argv, &undefined);
-//     //     FOOTSTONE_LOG(ERROR) << "wangz::GetString" << arkTs.GetString(undefined);
-//     //     OhNapiObject napiObj = arkTs.GetObject(thenValue);
-//     //     std::vector<std::pair<napi_value, napi_value>> pairs = napiObj.GetKeyValuePairs();
-//     //     std::vector<napi_value> args2 = {};
-//     //     napi_value resultNapiValue2 = napiObj.Call("then", args2);
-//     //     auto hvalue = OhNapiUtils::NapiValue2HippyValue(env, resultNapiValue2);
-//     //     for (auto it = pairs.begin(); it != pairs.end(); it++) {
-//     //             hvalue.ToStringChecked();
-//     //     }
-//
-//     //       auto &pair = *it;
-//     //       auto &pairItem1 = pair.first;
-//     //       auto objKey = arkTs.GetString(pairItem1);
-//     //       if (objKey.length() > 0) {
-//     //         auto &pairItem2 = pair.second;
-//     //         auto objValue = OhNapiUtils::NapiValue2HippyValue(env, pairItem2);
-//     //       }
-//     //       if (objKey == "then") {
-//     //         std::vector<napi_value> args2 = {};
-//     //         auto promObject = arkTs.GetObject(thenValue);
-//     //         napi_value resultNapiValue2 = promObject.Call(objKey, args2);
-//     //         OhNapiUtils::NapiValue2HippyValue(env, resultNapiValue2);
-//     //       }
-//     //     }
-//
-//     //     OhNapiUtils::CallThen(env, thenValue);
-//     //     OhNapiUtils::CallThen(env, arkTs.GetReferenceValue(render_provider_ref));
-//     //         auto hippyThenValue = OhNapiUtils::NapiValue2HippyValue(env, thenValue);
-//     //
-//     //         auto promObject = arkTs.GetObject(thenValue);
-//     //         std::vector<napi_value> args2 = {};
-//     //         napi_value resultNapiValue2 = promObject.Call("then", args2);
-//     //         hippyThenValue = OhNapiUtils::NapiValue2HippyValue(env, resultNapiValue2);
-//     //
-//     //         HippyValueObjectType resultType;
-//     //         hippyThenValue.ToObject(resultType);
-//     //         std::string screenShot;
-//     //         int width;
-//     //         int height;
-//     //         double screenScale;
-//     //         resultType["screenShot"].ToString(screenShot);
-//     //         resultType["width"].ToInt32(width);
-//     //         resultType["height"].ToInt32(height);
-//     //         resultType["screenScale"].ToDouble(screenScale);
-//        
-//        
-//   });
-// }
-
 void CallGetComponentSnapshotMethod(napi_env env, napi_ref render_provider_ref,
-  const std::string &method, uint32_t component_id, std::shared_ptr<SnapshotResult> snapshotResult) {
+  const std::string &method, uint32_t componentId, std::shared_ptr<SnapshotResult> snapshotResult) {
   OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(env);
-  auto scopeCallback = [&](napi_env copyEnv, HippyValue &v) {
-    HippyValueObjectType m;
-    v.ToObject(m);
-    std::string screenShot = "";
-    auto angleIt = m.find("screenShot");
-    if (angleIt == m.end()) {
-    } else {
-      HippyValue hippyValue = angleIt->second;
-      hippyValue.ToString(screenShot);
+  auto scopeCallback = [&](napi_env copyEnv, HippyValue &value) {
+    HippyValueObjectType resultMap;
+    if (value.ToObject(resultMap)) {
+      auto screenShotIter = resultMap.find("screenShot");
+      auto heightIter = resultMap.find("height");
+      auto widthIter = resultMap.find("width");
+      auto screenScaleIter = resultMap.find("screenScale");
+
+      if (screenShotIter != resultMap.end())
+        screenShotIter->second.ToString(snapshotResult->screenShot);
+      if (heightIter != resultMap.end())
+        heightIter->second.ToDouble(snapshotResult->height);
+      if (widthIter != resultMap.end())
+        widthIter->second.ToDouble(snapshotResult->width);
+      if (screenScaleIter != resultMap.end())
+        screenScaleIter->second.ToDouble(snapshotResult->screenScale);
+
+      std::lock_guard<std::mutex> lock(napiAsyncCallMutex);
+      napiAsyncCallStatus = NapiAsyncCallStatus::Success;
     }
-    FOOTSTONE_LOG(ERROR) << "wangz::scopeCallback::" << screenShot;
-        
-    //下面代码会出现内存访问错误   
-    FOOTSTONE_LOG(ERROR) << "wangz::in::snapshotResult.height::" << snapshotResult->height;
-    FOOTSTONE_LOG(ERROR) << "wangz::in::snapshotResult.width::" << snapshotResult->width;
-    snapshotResult->height = 55;    
+    napiAsyncCallCondition.notify_all();
   };
 
-  NapiCallback napiCallback = [](napi_env env, napi_callback_info info) -> napi_value {
-    FOOTSTONE_LOG(ERROR) << "wangz::scope";
+  auto jsCallback = [](napi_env env, napi_callback_info info) -> napi_value {
     size_t argc = 0;
     napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr);
-    if (argc == 0) {
-      return nullptr;
-    }
+    if (argc == 0) return nullptr;
     napi_value args[argc];
     void *data;
     napi_get_cb_info(env, info, &argc, args, nullptr, &data);
-
-    FOOTSTONE_LOG(ERROR) << "wangz::napi_value";
     ArkTS arkTs(env);
-    auto args1 = arkTs.GetCallbackArgs(info, 1);
-    HippyValueObjectType map;
-    OhNapiObject napiObj = arkTs.GetObject(args1[0]);
-    std::vector<std::pair<napi_value, napi_value>> pairs = napiObj.GetKeyValuePairs();
-    for (auto it = pairs.begin(); it != pairs.end(); it++) {
-      auto &pair = *it;
-      auto &pairItem1 = pair.first;
-      auto objKey = arkTs.GetString(pairItem1);
-      if (objKey.length() > 0) {
-        FOOTSTONE_LOG(ERROR) << "wangz::pairs.name::" << objKey;
-        auto &pairItem2 = pair.second;
-        auto objValue = OhNapiUtils::NapiValue2HippyValue(env, pairItem2);
-        map[objKey] = objValue;
+    HippyValueObjectType jsMap;
+    OhNapiObject napiObj = arkTs.GetObject(args[0]);
+    for (const auto &pair : napiObj.GetKeyValuePairs()) {
+      auto key = arkTs.GetString(pair.first);
+      if (!key.empty()) {
+        auto value = OhNapiUtils::NapiValue2HippyValue(env, pair.second);
+        jsMap[key] = value;
       }
     }
-    HippyValue resultMap = HippyValue(map);
-    auto scopeCallback = reinterpret_cast<ScopeDebug *>(data);
+    HippyValue resultMap(jsMap);
+    auto scopeCallback = reinterpret_cast<ScopeNapiAsynCall *>(data);
     if (scopeCallback && scopeCallback->dataScope) {
       (*scopeCallback->dataScope)(env, resultMap);
     }
-    FOOTSTONE_LOG(ERROR) << "wangz::pairs.size()::" << pairs.size();
     return nullptr;
   };
 
   taskRunner->RunSyncTask([env = env, render_provider_ref = render_provider_ref, method,
-                           component_id, &scopeCallback, &napiCallback]() {
-    ScopeDebug* scopePtr = new ScopeDebug();
+                           componentId, &scopeCallback, &jsCallback]() {
+    ScopeNapiAsynCall *scopePtr = new ScopeNapiAsynCall();
     scopePtr->dataScope = new std::function<void(napi_env, footstone::HippyValue &)>(scopeCallback);
-    napi_value cb;
-    OhNapiUtils::CreateCB(env, cb, napiCallback, scopePtr); //CreateCB封装了napi_create_function(env, nullptr, 0, napiCallback, scopePtr, &cb)   
-
+    napi_value callback;
+    OhNapiUtils::CreateArkts2CCallback(env, callback, jsCallback, scopePtr);
     ArkTS arkTs(env);
-    HippyValue resultMap;
-    std::vector<napi_value> args = {arkTs.CreateUint32(component_id),
-                                    OhNapiUtils::HippyValue2NapiValue(env, resultMap), cb};
+    std::vector<napi_value> args = {arkTs.CreateUint32(componentId), callback};
     auto delegateObject = arkTs.GetObject(render_provider_ref);
     delegateObject.Call(method.c_str(), args);
   });
+
+  std::unique_lock<std::mutex> lock(napiAsyncCallMutex);
+  napiAsyncCallCondition.wait(lock, [=]{ return napiAsyncCallStatus == NapiAsyncCallStatus::Success; });
+  napiAsyncCallStatus = NapiAsyncCallStatus::Waiting;
 }
 
 REGISTER_OH_NAPI("NativeRenderProvider", "NativeRenderProvider_UpdateRootSize", UpdateRootSize)

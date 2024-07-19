@@ -34,7 +34,7 @@ import { CreateRenderViewParamsForCApi,
   UpdatePropsParamsForCApi} from './NativeRenderBuilderForCApi';
 import { componentSnapshot, componentUtils, display, FrameNode } from '@kit.ArkUI';
 import { image } from '@kit.ImageKit';
-import { HashMap, util } from '@kit.ArkTS';
+import { util } from '@kit.ArkTS';
 
 export class NativeRenderProvider {
   private readonly TAG = "NativeRenderProvider"
@@ -219,15 +219,8 @@ export class NativeRenderProvider {
     this.libHippy?.NativeRenderProvider_DoCallBack(this.instanceId, result, functionName, rootId, nodeId, callbackId, buffer)
   }
 
-  async getComponentSnapshot(componentId: string, resultMap: HippyMap,
-    cb: Function): Promise<object | null> {
-    interface HippyResult {
-      screenShot?: string;
-      width?: number;
-      height?: number;
-      screenScale?: number;
-    }
-    LogUtils.d(this.TAG, "wangz::componentId::" + JSON.stringify(componentId));
+  // for devtools
+  async getComponentSnapshot(componentId: string, callback: Function) {
     let pixmap: PixelMap = await componentSnapshot.get("HippyId" + componentId);
     const imagePackageApi: image.ImagePacker = image.createImagePacker()
     let packOpts: image.PackingOption = {
@@ -239,100 +232,19 @@ export class NativeRenderProvider {
     let uint8Arr = new Uint8Array(readBuffer);
     let pixelStr = base64Helper.encodeToStringSync(uint8Arr);
     LogUtils.d(this.TAG, "wangz::pixelStr::" + pixelStr);
-    let rsMap = new Map<string, HippyValue>();
-    rsMap.set("screenShot", pixelStr);
-    rsMap.set("width", 50);
-    rsMap.set("height", 50);
-    rsMap.set("screenScale", 1.0);
-    LogUtils.d(this.TAG, "wangz::" + JSON.stringify(rsMap));
-    LogUtils.d(this.TAG, "wangz::cb::defore");
+    interface HippyResult {
+      screenShot?: string;
+      width?: number;
+      height?: number;
+      screenScale?: number;
+    }
     let hippyResult: HippyResult = {};
     hippyResult.screenShot = pixelStr;
-    hippyResult.width = 50;
-    hippyResult.height = 50;
+    hippyResult.width = 40;
+    hippyResult.height = 90;
     hippyResult.screenScale = 2.0;
-    cb(hippyResult);
-    LogUtils.d(this.TAG, "wangz::cb::after");
-    return hippyResult;
+    callback(hippyResult);
   }
-
-  // for devtools
-  // async getComponentSnapshot(componentId: string, resultMap: HippyMap,
-  //   cb: Function): Promise<object | null> {
-  //   interface HippyResult {
-  //     screenShot?: string;
-  //     width?: number;
-  //     height?: number;
-  //     screenScale?: number;
-  //   }
-  //   return new Promise(async (resolve, reject) => {
-  //     LogUtils.d(this.TAG, "wangz::componentId::" + JSON.stringify(componentId));
-  //     let pixmap: PixelMap = await componentSnapshot.get("HippyId" + componentId);
-  //     const imagePackageApi: image.ImagePacker = image.createImagePacker()
-  //     let packOpts: image.PackingOption = {
-  //       format: 'image/png',
-  //       quality: 30,
-  //     }
-  //     const readBuffer = await imagePackageApi.packing(pixmap, packOpts);
-  //     let base64Helper = new util.Base64Helper();
-  //     let uint8Arr = new Uint8Array(readBuffer);
-  //     let pixelStr = base64Helper.encodeToStringSync(uint8Arr);
-  //     LogUtils.d(this.TAG, "wangz::pixelStr::" + pixelStr);
-  //     let rsMap = new Map<string, HippyValue>();
-  //     rsMap.set("screenShot", pixelStr);
-  //     rsMap.set("width", 50);
-  //     rsMap.set("height", 50);
-  //     rsMap.set("screenScale", 1.0);
-  //     LogUtils.d(this.TAG, "wangz::" + JSON.stringify(rsMap));
-  //     let hippyResult: HippyResult = {};
-  //     hippyResult.screenShot = pixelStr;
-  //     hippyResult.width = 50;
-  //     hippyResult.height = 50;
-  //     hippyResult.screenScale = 1.0;
-  //     resolve(hippyResult);
-  //   });
-  // }
-
-  // for devtools
-  // async getComponentSnapshot(componentId: string, resultMap: HippyMap): Promise<HippyMap | null> {
-  //   LogUtils.d(this.TAG, "wangz::componentId::" + JSON.stringify(componentId));
-  //   try {
-  //     let pixmap: PixelMap = await componentSnapshot.get("HippyId" + componentId);
-  //     const imagePackageApi: image.ImagePacker = image.createImagePacker()
-  //     let packOpts: image.PackingOption = {
-  //       format: 'image/png',
-  //       quality: 30,
-  //     }
-  //     const readBuffer = await imagePackageApi.packing(pixmap, packOpts);
-  //     let base64Helper = new util.Base64Helper();
-  //     let uint8Arr = new Uint8Array(readBuffer);
-  //     let pixelStr = base64Helper.encodeToStringSync(uint8Arr);
-  //     LogUtils.d(this.TAG, "wangz::pixelStr::" + pixelStr);
-  //     let rsMap = new Map<string, HippyValue>();
-  //     rsMap.set("screenShot", pixelStr);
-  //     rsMap.set("width", 50);
-  //     rsMap.set("height", 50);
-  //     rsMap.set("screenScale", 1.0);
-  //     LogUtils.d(this.TAG, "wangz::" + JSON.stringify(rsMap));
-  //     return rsMap;
-  //   } catch (e) {
-  //     LogUtils.d(this.TAG, "wangz::error::" + JSON.stringify(e));
-  //   }
-  //   LogUtils.d(this.TAG, "wangz::return::" + JSON.stringify(componentId));
-  //   return null;
-  // }
-
-  // getLocationOnScreen(componentId: string): HippyMap {
-  //   let info = componentUtils.getRectangleById("HippyId" + componentId);
-  //   LogUtils.d(this.TAG, "wangz::info::" + JSON.stringify(info));
-  //   let rsMap = new Map<string, HippyAny>();
-  //   rsMap.set("xOnScreen", info.screenOffset.x as HippyValue);
-  //   rsMap.set("yOnScreen", info.screenOffset.y as HippyValue);
-  //   rsMap.set("viewWidth", info.size.width as HippyValue);
-  //   rsMap.set("viewHeight", info.size.height as HippyValue);
-  //   LogUtils.d(this.TAG, "wangz::return::");
-  //   return rsMap as HippyMap;
-  // }
 
   getLocationOnScreen(componentId: string): object {
     interface HippyResult {
@@ -342,13 +254,11 @@ export class NativeRenderProvider {
       viewHeight?: number;
     }
     let info = componentUtils.getRectangleById("HippyId" + componentId);
-    LogUtils.d(this.TAG, "wangz::info::" + "HippyId" + componentId + "::" + JSON.stringify(info));
     let hippyResult: HippyResult = {};
     hippyResult.xOnScreen = info.screenOffset.x;
     hippyResult.yOnScreen = info.screenOffset.y;
     hippyResult.viewWidth = info.size.width;
     hippyResult.viewHeight = info.size.height;
-    LogUtils.d(this.TAG, "wangz::return::"+JSON.stringify(hippyResult));
     return hippyResult as object;
   }
 

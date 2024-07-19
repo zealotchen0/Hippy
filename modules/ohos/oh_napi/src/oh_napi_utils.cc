@@ -25,56 +25,10 @@
 
 using HippyValueObjectType = HippyValue::HippyValueObjectType;
 
-void OhNapiUtils::CreateCB(napi_env env, napi_value &value, NapiCallback callbackC,
-                           ScopeDebug* scopeCallback) {
+void OhNapiUtils::CreateArkts2CCallback(napi_env env, napi_value &value, NapiCallback callbackC,
+                                         ScopeNapiAsynCall *scopeCallback) {
   ArkTS arkTs(env);
-  arkTs.CreateCB(value, callbackC, scopeCallback);
-}
-
-HippyValue OhNapiUtils::CallThen(napi_env env, napi_value value) {
-  ArkTS arkTs(env);
-  auto type = arkTs.GetType(value);
-  switch (type) {
-    case napi_undefined: {
-      return HippyValue::Undefined();
-    }
-    case napi_null: {
-      return HippyValue::Null();
-    }
-    case napi_boolean: {
-      bool result = arkTs.GetBoolean(value);
-      return HippyValue(result);
-    }
-    case napi_number: {
-      double result = arkTs.GetDouble(value);
-      return HippyValue(result);
-    }
-    case napi_string: {
-      std::string result = arkTs.GetString(value);
-      return HippyValue(result);
-    }
-    case napi_symbol: {
-      return HippyValue::Undefined();
-    }
-    case napi_object: {
-      HippyValueObjectType map;
-      OhNapiObject napiObj = arkTs.GetObject(value);
-      std::vector<std::pair<napi_value, napi_value>> pairs = napiObj.GetAllKeyValuePairs();
-      return HippyValue(map);
-    }
-    case napi_function: {
-      return HippyValue::Undefined();
-    }
-    case napi_external: {
-      return HippyValue::Undefined();
-    }
-    case napi_bigint: {
-      int64_t result = arkTs.GetInt64(value);
-      return HippyValue(static_cast<int32_t>(result));
-    }
-    default:
-      break;
-  }
+  arkTs.CreateArkts2CCallback(value, callbackC, scopeCallback);
 }
 
 HippyValue OhNapiUtils::NapiValue2HippyValue(napi_env env, napi_value value) {
