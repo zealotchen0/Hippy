@@ -63,6 +63,12 @@ add_subdirectory(${PROJECT_ROOT_DIR}/driver/js ${CMAKE_CURRENT_BINARY_DIR}/_deps
 target_link_libraries(${PROJECT_NAME} PUBLIC js_driver)
 # endregion
 
+GlobalPackages_Add_devtools_backend()
+target_include_directories(${PROJECT_NAME} PUBLIC $<TARGET_PROPERTY:devtools_backend,INTERFACE_INCLUDE_DIRECTORIES>)
+
+GlobalPackages_Add_devtools_integration()
+target_include_directories(${PROJECT_NAME} PRIVATE $<TARGET_PROPERTY:devtools_integration,INTERFACE_INCLUDE_DIRECTORIES>)
+
 # region native_renderer
 add_subdirectory(${CPP_ROOT_DIR}/../renderer/native
   ${CMAKE_CURRENT_BINARY_DIR}/_deps/renderer/native)
@@ -79,5 +85,6 @@ set(PUBLIC_SOURCE_SET
   src/native_renderer_napi.cc
   src/turbo_module_manager.cc
   src/arkts_turbo_module.cc)
+  
 target_sources(${PROJECT_NAME} PUBLIC ${PUBLIC_SOURCE_SET})
 # endregion

@@ -69,6 +69,7 @@ class NativeRenderManager : public RenderManager, public std::enable_shared_from
                          std::set<std::string> &custom_views, std::set<std::string> &custom_measure_views, std::map<std::string, std::string> &mapping_views,
                          std::string &bundle_path);
   void InitDensity(double density);
+  void AddCustomFontPath(const std::string &fontFamilyName, const std::string &fontPath);
   
   void CreateRenderNode(std::weak_ptr<RootNode> root_node, std::vector<std::shared_ptr<DomNode>>&& nodes) override;
   void UpdateRenderNode(std::weak_ptr<RootNode> root_node, std::vector<std::shared_ptr<DomNode>>&& nodes) override;
@@ -106,14 +107,18 @@ class NativeRenderManager : public RenderManager, public std::enable_shared_from
     return style_filter;
   }
 
-  void RegisterNativeXComponentHandle(OH_NativeXComponent *nativeXComponent, uint32_t root_id, uint32_t node_id);
+  void BindNativeRoot(ArkUI_NodeContentHandle contentHandle, uint32_t root_id, uint32_t node_id);
+  void UnbindNativeRoot(uint32_t root_id, uint32_t node_id);
 
   void DestroyRoot(uint32_t root_id);
+  
+  void DoCallbackForCallCustomTsView(uint32_t root_id, uint32_t node_id, uint32_t callback_id, const HippyValue &result);
   
   bool GetViewParent(uint32_t root_id, uint32_t node_id, uint32_t &parent_id, std::string &parent_view_type);
   bool GetViewChildren(uint32_t root_id, uint32_t node_id, std::vector<uint32_t> &children_ids, std::vector<std::string> &children_view_types);
   void CallViewMethod(uint32_t root_id, uint32_t node_id, const std::string &method, const std::vector<HippyValue> params, std::function<void(const HippyValue &result)> callback);
-
+  void SetViewEventListener(uint32_t root_id, uint32_t node_id, napi_ref callback_ref);
+  
 private:
   inline void MarkTextDirty(std::weak_ptr<RootNode> weak_root_node, uint32_t node_id);
 
@@ -186,6 +191,7 @@ private:
   napi_ref ts_render_provider_ref_ = 0;
   
   std::set<std::string> custom_measure_views_;
+  std::unordered_map<std::string, std::string> custom_font_path_map_;
   
   std::shared_ptr<footstone::value::Serializer> serializer_;
   std::map<uint32_t, std::vector<ListenerOp>> event_listener_ops_;

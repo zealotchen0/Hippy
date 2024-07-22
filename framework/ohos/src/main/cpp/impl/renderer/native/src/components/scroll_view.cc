@@ -31,6 +31,7 @@ inline namespace native {
 ScrollView::ScrollView(std::shared_ptr<NativeRenderContext> &ctx) : BaseView(ctx) {
   GetLocalRootArkUINode().SetScrollEnabled(true);
   GetLocalRootArkUINode().SetHorizontal(false);
+  GetLocalRootArkUINode().SetShowScrollIndicator(false);
   isDragging_ = false;
   lastScrollOffset_ = 0;
   lastScrollTime_ = 0;
@@ -103,8 +104,8 @@ void ScrollView::OnChildInserted(std::shared_ptr<BaseView> const &childView, int
   stackNode_.InsertChild(childView->GetLocalRootArkUINode(), index);
 }
 
-void ScrollView::OnChildRemoved(std::shared_ptr<BaseView> const &childView) {
-  BaseView::OnChildRemoved(childView);
+void ScrollView::OnChildRemoved(std::shared_ptr<BaseView> const &childView, int32_t index) {
+  BaseView::OnChildRemoved(childView, index);
   stackNode_.RemoveChild(childView->GetLocalRootArkUINode());
 }
 
@@ -233,6 +234,8 @@ void ScrollView::Call(const std::string &method, const std::vector<HippyValue> p
     } else {
       scrollNode_.ScrollTo(xOffset, yOffset, false);
     }
+  } else {
+    BaseView::Call(method, params, callback);
   }
 }
 

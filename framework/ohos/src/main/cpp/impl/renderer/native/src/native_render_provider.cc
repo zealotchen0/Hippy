@@ -35,12 +35,12 @@ NativeRenderProvider::NativeRenderProvider(uint32_t instance_id, const std::stri
   render_impl_->InitRenderManager();
 }
 
-void NativeRenderProvider::RegisterNativeXComponentHandle(OH_NativeXComponent *nativeXComponent, uint32_t root_id, uint32_t node_id) {
-  // 说明：虽然该注册方法来自主线程调用，但也需要异步，否则 rootView 不能 attach 到 xcomponent 上。
-  OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(ts_env_);
-  taskRunner->RunAsyncTask([render_impl = render_impl_, nativeXComponent, root_id, node_id]() {
-    render_impl->RegisterNativeXComponentHandle(nativeXComponent, root_id, node_id);
-  });
+void NativeRenderProvider::BindNativeRoot(ArkUI_NodeContentHandle contentHandle, uint32_t root_id, uint32_t node_id) {
+  render_impl_->BindNativeRoot(contentHandle, root_id, node_id);
+}
+
+void NativeRenderProvider::UnbindNativeRoot(uint32_t root_id, uint32_t node_id) {
+  render_impl_->UnbindNativeRoot(root_id, node_id);
 }
 
 void NativeRenderProvider::RegisterCustomTsRenderViews(napi_env ts_env, napi_ref ts_render_provider_ref, std::set<std::string> &custom_views, std::map<std::string, std::string> &mapping_views) {
@@ -49,6 +49,10 @@ void NativeRenderProvider::RegisterCustomTsRenderViews(napi_env ts_env, napi_ref
 
 void NativeRenderProvider::DestroyRoot(uint32_t root_id) {
   render_impl_->DestroyRoot(root_id);
+}
+
+void NativeRenderProvider::DoCallbackForCallCustomTsView(uint32_t root_id, uint32_t node_id, uint32_t callback_id, const HippyValue &result) {
+  render_impl_->DoCallbackForCallCustomTsView(root_id, node_id, callback_id, result);
 }
 
 void NativeRenderProvider::CreateNode(uint32_t root_id, const std::vector<std::shared_ptr<HRCreateMutation>> &mutations) {
@@ -178,6 +182,10 @@ bool NativeRenderProvider::GetViewChildren(uint32_t root_id, uint32_t node_id, s
 
 void NativeRenderProvider::CallViewMethod(uint32_t root_id, uint32_t node_id, const std::string &method, const std::vector<HippyValue> params, std::function<void(const HippyValue &result)> callback) {
   render_impl_->CallViewMethod(root_id, node_id, method, params, callback);
+}
+
+void NativeRenderProvider::SetViewEventListener(uint32_t root_id, uint32_t node_id, napi_ref callback_ref) {
+  render_impl_->SetViewEventListener(root_id, node_id, callback_ref);
 }
 
 } // namespace native

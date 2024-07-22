@@ -24,7 +24,7 @@ import { HippyExceptionHandlerAdapter } from './HippyExceptionHandlerAdapter';
 
 export class DefaultExceptionHandler implements HippyExceptionHandlerAdapter {
   handleJsException(exception: HippyJsException) {
-
+    LogUtils.e('JsException', `message:${exception.message} stack: ${exception.stack}`)
   }
 
   handleNativeException(exception: HippyException, haveCaught: boolean) {

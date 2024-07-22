@@ -27,6 +27,7 @@
 #include <js_native_api_types.h>
 #include <map>
 #include "footstone/serializer.h"
+#include "renderer/components/custom_ts_view.h"
 #include "renderer/components/custom_view.h"
 #include "renderer/components/root_view.h"
 #include "renderer/uimanager/hr_mutation.h"
@@ -44,10 +45,15 @@ public:
     std::set<std::string> &custom_views, std::map<std::string, std::string> &mapping_views);
   ~HRViewManager() = default;
   
-  void AttachToNativeXComponent(OH_NativeXComponent* nativeXComponent, uint32_t node_id);
+  void BindNativeRoot(ArkUI_NodeContentHandle contentHandle, uint32_t node_id);
+  void UnbindNativeRoot(uint32_t node_id);
 
   int GetRootTag() {
     return (int)root_id_;
+  }
+  
+  std::shared_ptr<RootView> &GetRootView() {
+    return root_view_;
   }
 
   void AddMutations(std::shared_ptr<HRMutation> &m);
@@ -78,24 +84,26 @@ public:
   void RemoveEndBatchCallback(uint64_t cbId);
   void NotifyEndBatchCallbacks();
   
+  void DoCallbackForCallCustomTsView(uint32_t node_id, uint32_t callback_id, const HippyValue &result);
+  
   bool GetViewParent(uint32_t node_id, uint32_t &parent_id, std::string &parent_view_type);
   bool GetViewChildren(uint32_t node_id, std::vector<uint32_t> &children_ids, std::vector<std::string> &children_view_types);
+  void SetViewEventListener(uint32_t node_id, napi_ref callback_ref);
 
 private:
-  void MaybeAttachRootNode(OH_NativeXComponent *nativeXComponent, bool isRoot, std::shared_ptr<BaseView> &view);
-  void MaybeDetachRootNode(OH_NativeXComponent *nativeXComponent, bool isRoot, std::shared_ptr<BaseView> &view);
-  
   bool IsCustomTsRenderView(std::string &view_name);
   std::shared_ptr<BaseView> CreateCustomTsRenderView(uint32_t tag, std::string &view_name, bool is_parent_text);
   void UpdateCustomTsProps(std::shared_ptr<BaseView> &view, const HippyValueObjectType &props, const std::vector<std::string> &deleteProps = std::vector<std::string>());
   void UpdateCustomTsEventListener(uint32_t tag, HippyValueObjectType &props);
   void SetCustomTsRenderViewFrame(uint32_t tag, const HRRect &frame, const HRPadding &padding);
+  void CallCustomTsRenderViewMethod(uint32_t tag, const std::string &method, const std::vector<HippyValue> params,
+                                    std::function<void(const HippyValue &result)> callback);
   
   std::shared_ptr<BaseView> CreateCustomRenderView(uint32_t tag, std::string &view_name, bool is_parent_text);
   
   std::shared_ptr<NativeRenderContext> ctx_;
   uint32_t root_id_;
-  std::unordered_map<uint32_t, OH_NativeXComponent *> nativeXComponentMap_;
+  std::unordered_map<uint32_t, ArkUI_NodeContentHandle> nodeContentMap_;
   std::shared_ptr<RootView> root_view_;
   std::map<uint32_t, std::shared_ptr<BaseView>> view_registry_;
   std::vector<std::shared_ptr<HRMutation>> mutations_;
@@ -108,6 +116,9 @@ private:
   std::set<std::string> custom_ts_render_views_;
   napi_env ts_env_ = nullptr;
   napi_ref ts_render_provider_ref_ = nullptr;
+  
+  uint32_t callCustomTsCallbackId_ = 0;
+  std::unordered_map<uint32_t, std::function<void(const HippyValue &result)>> callCustomTsCallbackMap_;
 };
 
 } // namespace native

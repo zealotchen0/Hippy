@@ -59,14 +59,6 @@ void OhMeasureText::CheckUnusedProp(const char *tag, std::map<std::string, std::
 }
 #endif
 
-std::map<std::string, std::string> OhMeasureText::fontFamilyList_ = {
-    {"TTTGB", "/data/storage/el1/bundle/entry/resources/resfile/fonts/TTTGB.otf"}};
-// todo 这里暂时写死了字体路径，实际用到了哪些字体需要ArkTS告知
-
-void OhMeasureText::RegisterFont(std::string familyName, std::string familySrc) {
-    fontFamilyList_[familyName] = familySrc;
-}
-
 void OhMeasureText::StartMeasure(std::map<std::string, std::string> &propMap) {
 #ifdef MEASURE_TEXT_CHECK_PROP
     StartCollectProp();
@@ -120,6 +112,8 @@ void OhMeasureText::StartMeasure(std::map<std::string, std::string> &propMap) {
                                                    fontFamilyList_[fontFamilyName].c_str());
             FOOTSTONE_DLOG(WARNING) << "Measure Text OH_Drawing_RegisterFont(" << fontFamilyName << ","
                                     << fontFamilyList_[fontFamilyName] << ") " << (ret == 0 ? "succ" : "fail");
+        } else {
+            FOOTSTONE_LOG(ERROR) << "Measure Text OH_Drawing_RegisterFont not found font:" << fontFamilyName;
         }
     }
     handler_ = OH_Drawing_CreateTypographyHandler(typoStyle_, fontCollection_);
@@ -217,8 +211,12 @@ void OhMeasureText::AddText(std::map<std::string, std::string> &propMap) {
         fontStyle = FONT_STYLE_ITALIC;
     }
     OH_Drawing_SetTextStyleFontStyle(txtStyle, fontStyle);
-    OH_Drawing_SetTextStyleLocale(txtStyle, "en");
-    // OH_Drawing_SetTextStyleDecorationStyle(txtStyle, );
+    
+    // use default locale,
+    // If en is set, measure results for Chinese characters will be inaccurate.
+    // OH_Drawing_SetTextStyleLocale(txtStyle, "zh");
+    
+    // OH_Drawing_SetTextStyleDecorationStyle(txtStyle, ); 
     // OH_Drawing_SetTextStyleDecorationThicknessScale(txtStyle, );
     if (HasProp(propMap, "letterSpacing") && propMap["letterSpacing"].size() > 0) {
         double letterSpacing = std::stod(propMap["letterSpacing"]);
@@ -401,7 +399,7 @@ OhMeasureResult OhMeasureText::EndMeasure(int width, int widthMode, int height, 
     size_t lineCount;
   
     auto typography = OH_Drawing_CreateTypography(handler_);
-    double maxWidth = float(width) / density;
+    double maxWidth = double(width) / density;
     if (maxWidth == 0 || std::isnan(maxWidth)) {
         // fix text measure width wrong when maxWidth is nan or 0
         maxWidth = std::numeric_limits<double>::max();
@@ -411,7 +409,7 @@ OhMeasureResult OhMeasureText::EndMeasure(int width, int widthMode, int height, 
 
     // double realWidth = OH_Drawing_TypographyGetLongestLine(typography); // 实际有像素的宽度
     // ret.width = fmax(realWidth, maxWidth);                   // 宽度
-    ret.width = OH_Drawing_TypographyGetLongestLine(typography);
+    ret.width = ceil(OH_Drawing_TypographyGetLongestLine(typography));
     ret.height = OH_Drawing_TypographyGetHeight(typography); // 高度
     lineCount = OH_Drawing_TypographyGetLineCount(typography);
 
@@ -431,7 +429,7 @@ OhMeasureResult OhMeasureText::EndMeasure(int width, int widthMode, int height, 
 #ifdef MEASURE_TEXT_LOG_RESULT
     FOOTSTONE_DLOG(INFO) << "hippy text - measure result, maxWidth: " << maxWidth
       << ", result: (" << ret.width << ", " << ret.height << "), "
-      << logTextContent_.c_str();
+      << logTextContent_.c_str() << ", lineCount: " << lineCount;
 #endif
   
     ret.width *= density;

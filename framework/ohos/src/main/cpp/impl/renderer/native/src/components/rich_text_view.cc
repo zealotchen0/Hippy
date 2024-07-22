@@ -66,7 +66,7 @@ bool RichTextView::SetProp(const std::string &propKey, const HippyValue &propVal
   } else if (propKey == HRNodeProps::FONT_FAMILY) {
     std::string value = HRValueUtils::GetString(propValue);
     if (!fontFamily_.has_value() || value != fontFamily_) {
-      // TODO(hot):
+      GetLocalRootArkUINode().SetFontFamily(value);
       fontFamily_ = value;
     }
     return true;
@@ -205,8 +205,8 @@ void RichTextView::OnChildInserted(std::shared_ptr<BaseView> const &childView, i
   textNode_.InsertChild(childView->GetLocalRootArkUINode(), index);
 }
 
-void RichTextView::OnChildRemoved(std::shared_ptr<BaseView> const &childView) {
-  BaseView::OnChildRemoved(childView);
+void RichTextView::OnChildRemoved(std::shared_ptr<BaseView> const &childView, int32_t index) {
+  BaseView::OnChildRemoved(childView, index);
   textNode_.RemoveChild(childView->GetLocalRootArkUINode());
 }
 

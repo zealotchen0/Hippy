@@ -31,6 +31,7 @@ import { image } from '@kit.ImageKit'
 import { HippyValue } from 'hippy/src/main/ets/support/common/HippyTypes'
 import { buildCustomRenderView, ExampleAPIProvider } from '../hippy_extend/ExampleAPIProvider'
 import { HippyLibrary } from 'hippy/src/main/ets/hippy_library/HippyLibrary'
+import { LogUtils } from 'hippy/src/main/ets/support/utils/LogUtils'
 
 export enum DriverMode {
   JS_REACT,
@@ -101,7 +102,7 @@ struct PageConfiguration {
     let params = new EngineInitParams(this.libHippy!, this.abilityContext!)
     params.debugServerHost = info.debugServerHost as string
     params.debugMode = info.isDebugMode as boolean
-    //params.enableLog = true
+    // params.enableLog = true
 
     params.providers = new Array(new ExampleAPIProvider())
     params.enableTurbo = true
@@ -145,7 +146,7 @@ struct PageConfiguration {
         let rootView = hippyEngine?.loadModule(
           loadParams,
           (statusCode: ModuleLoadStatus, msg: string) => {
-
+              LogUtils.i('hippy demo', 'loadModule status: ' + statusCode + ' msg:' + msg);
           })
         if (rootView) {
           info.rootViewWrapper?.setRootView(rootView)

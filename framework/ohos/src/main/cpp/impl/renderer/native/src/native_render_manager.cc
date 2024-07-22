@@ -24,6 +24,7 @@
 #include "renderer/native_render_provider_napi.h"
 #include "renderer/native_render_provider_manager.h"
 #include "renderer/api/hippy_view_provider.h"
+#include "renderer/utils/hr_pixel_utils.h"
 #include <cstdint>
 #include <iostream>
 #include <utility>
@@ -200,6 +201,13 @@ void NativeRenderManager::SetRenderDelegate(napi_env ts_env, bool enable_ark_c_a
 
 void NativeRenderManager::InitDensity(double density) {
   density_ = static_cast<float>(density);
+  HRPixelUtils::InitDensity(density);
+}
+
+void NativeRenderManager::AddCustomFontPath(const std::string &fontFamilyName, const std::string &fontPath) {
+    if (fontFamilyName.length() && fontPath.length()) {
+        custom_font_path_map_[fontFamilyName] = fontPath;
+    }
 }
 
 void NativeRenderManager::CreateRenderNode(std::weak_ptr<RootNode> root_node,
@@ -989,7 +997,7 @@ void NativeRenderManager::DoMeasureText(const std::weak_ptr<RootNode> root_node,
   CollectAllProps(textPropMap, node);
 
   float density = GetDensity();
-  OhMeasureText measureInst;
+  OhMeasureText measureInst(custom_font_path_map_);
   OhMeasureResult measureResult;
 
   measureInst.StartMeasure(textPropMap);
@@ -1171,15 +1179,27 @@ bool NativeRenderManager::IsCustomMeasureCNode(const std::string &name) {
   return false;
 }
 
-void NativeRenderManager::RegisterNativeXComponentHandle(OH_NativeXComponent *nativeXComponent, uint32_t root_id, uint32_t node_id) {
+void NativeRenderManager::BindNativeRoot(ArkUI_NodeContentHandle contentHandle, uint32_t root_id, uint32_t node_id) {
   if (enable_ark_c_api_) {
-    c_render_provider_->RegisterNativeXComponentHandle(nativeXComponent, root_id, node_id);
+    c_render_provider_->BindNativeRoot(contentHandle, root_id, node_id);
+  }
+}
+  
+void NativeRenderManager::UnbindNativeRoot(uint32_t root_id, uint32_t node_id) {
+  if (enable_ark_c_api_) {
+    c_render_provider_->UnbindNativeRoot(root_id, node_id);
   }
 }
 
 void NativeRenderManager::DestroyRoot(uint32_t root_id) {
   if (enable_ark_c_api_) {
     c_render_provider_->DestroyRoot(root_id);
+  }
+}
+
+void NativeRenderManager::DoCallbackForCallCustomTsView(uint32_t root_id, uint32_t node_id, uint32_t callback_id, const HippyValue &result) {
+  if (enable_ark_c_api_) {
+    c_render_provider_->DoCallbackForCallCustomTsView(root_id, node_id, callback_id, result);
   }
 }
 
@@ -1200,6 +1220,12 @@ bool NativeRenderManager::GetViewChildren(uint32_t root_id, uint32_t node_id, st
 void NativeRenderManager::CallViewMethod(uint32_t root_id, uint32_t node_id, const std::string &method, const std::vector<HippyValue> params, std::function<void(const HippyValue &result)> callback) {
   if (enable_ark_c_api_) {
     c_render_provider_->CallViewMethod(root_id, node_id, method, params, callback);
+  }
+}
+
+void NativeRenderManager::SetViewEventListener(uint32_t root_id, uint32_t node_id, napi_ref callback_ref) {
+  if (enable_ark_c_api_) {
+    c_render_provider_->SetViewEventListener(root_id, node_id, callback_ref);
   }
 }
 

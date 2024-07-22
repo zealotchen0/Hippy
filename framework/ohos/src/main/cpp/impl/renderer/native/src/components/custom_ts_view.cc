@@ -20,7 +20,11 @@
  *
  */
 
+#include <arkui/native_node_napi.h>
 #include "renderer/components/custom_ts_view.h"
+#include "oh_napi/ark_ts.h"
+#include "oh_napi/oh_napi_object.h"
+#include "oh_napi/oh_napi_object_builder.h"
 #include "renderer/utils/hr_value_utils.h"
 
 namespace hippy {
@@ -30,8 +34,6 @@ inline namespace native {
 CustomTsView::CustomTsView(std::shared_ptr<NativeRenderContext> &ctx, ArkUI_NodeHandle nodeHandle) : BaseView(ctx), tsNode_(nodeHandle) {
   containerNode_.AddChild(tsNode_);
   containerNode_.AddChild(subContainerNode_);
-  tsNode_.SetWidthPercent(1.f);
-  tsNode_.SetHeightPercent(1.f);
   subContainerNode_.SetWidthPercent(1.f);
   subContainerNode_.SetHeightPercent(1.f);
   subContainerNode_.SetHitTestMode(ARKUI_HIT_TEST_MODE_NONE);
@@ -63,11 +65,51 @@ void CustomTsView::UpdateRenderViewFrame(const HRRect &frame, const HRPadding &p
 void CustomTsView::OnChildInserted(std::shared_ptr<BaseView> const &childView, int32_t index) {
   BaseView::OnChildInserted(childView, index);
   subContainerNode_.InsertChild(childView->GetLocalRootArkUINode(), index);
+  
+  OnCustomTsViewChildInserted(tag_, childView, index);
 }
 
-void CustomTsView::OnChildRemoved(std::shared_ptr<BaseView> const &childView) {
-  BaseView::OnChildRemoved(childView);
+void CustomTsView::OnChildRemoved(std::shared_ptr<BaseView> const &childView, int32_t index) {
+  BaseView::OnChildRemoved(childView, index);
   subContainerNode_.RemoveChild(childView->GetLocalRootArkUINode());
+  
+  OnCustomTsViewChildRemoved(tag_, childView, index);
+}
+
+void CustomTsView::OnCustomTsViewChildInserted(uint32_t tag, std::shared_ptr<BaseView> const &childView, int32_t index) {
+  ArkTS arkTs(ts_env_);
+
+  auto params_builder = arkTs.CreateObjectBuilder();
+  params_builder.AddProperty("rootTag", ctx_->GetRootId());
+  params_builder.AddProperty("tag", tag);
+  params_builder.AddProperty("childTag", childView->GetTag());
+  params_builder.AddProperty("childViewName", childView->GetViewType());
+  params_builder.AddProperty("childIndex", index);
+  
+  std::vector<napi_value> args = {
+    params_builder.Build()
+  };
+  
+  auto delegateObject = arkTs.GetObject(ts_render_provider_ref_);
+  delegateObject.Call("onChildInsertedForCApi", args);
+}
+
+void CustomTsView::OnCustomTsViewChildRemoved(uint32_t tag, std::shared_ptr<BaseView> const &childView, int32_t index) {
+  ArkTS arkTs(ts_env_);
+
+  auto params_builder = arkTs.CreateObjectBuilder();
+  params_builder.AddProperty("rootTag", ctx_->GetRootId());
+  params_builder.AddProperty("tag", tag);
+  params_builder.AddProperty("childTag", childView->GetTag());
+  params_builder.AddProperty("childViewName", childView->GetViewType());
+  params_builder.AddProperty("childIndex", index);
+  
+  std::vector<napi_value> args = {
+    params_builder.Build()
+  };
+  
+  auto delegateObject = arkTs.GetObject(ts_render_provider_ref_);
+  delegateObject.Call("onChildRemovedForCApi", args);
 }
 
 } // namespace native

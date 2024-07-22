@@ -22,8 +22,11 @@
 
 #pragma once
 
+#include <js_native_api.h>
+#include <js_native_api_types.h>
 #include <string>
 #include <sys/types.h>
+#include "footstone/serializer.h"
 #include "renderer/arkui/arkui_node.h"
 #include "renderer/native_render_context.h"
 #include "footstone/hippy_value.h"
@@ -58,7 +61,7 @@ public:
   virtual void OnSetPropsEnd();
 
   virtual void Call(const std::string &method, const std::vector<HippyValue> params,
-                    std::function<void(const HippyValue &result)> callback) {}
+                    std::function<void(const HippyValue &result)> callback);
 
   void AddSubRenderView(std::shared_ptr<BaseView> &subView, int32_t index);
   void RemoveSubView(std::shared_ptr<BaseView> &subView);
@@ -67,6 +70,9 @@ public:
   void UpdateEventListener(HippyValueObjectType &newEvents);
   bool CheckRegisteredEvent(std::string &eventName);
   
+  void SetTsRenderProvider(napi_env ts_env, napi_ref ts_render_provider_ref);
+  void SetTsEventCallback(napi_ref ts_event_callback_ref);
+  
   virtual void OnClick() override;
   virtual void OnAppear() override;
   virtual void OnDisappear() override;
@@ -74,7 +80,7 @@ public:
   
 protected:
   virtual void OnChildInserted(std::shared_ptr<BaseView> const &childView, int index) {}
-  virtual void OnChildRemoved(std::shared_ptr<BaseView> const &childView) {}
+  virtual void OnChildRemoved(std::shared_ptr<BaseView> const &childView, int32_t index) {}
   virtual void UpdateRenderViewFrame(const HRRect &frame, const HRPadding &padding);
   virtual bool HandleGestureBySelf() { return false; }
 
@@ -101,12 +107,22 @@ protected:
   void HandleInterceptPullUp();
   std::string ConvertToLocalPathIfNeeded(const std::string &uri);
   int64_t GetTimeMilliSeconds();
+  
+  std::shared_ptr<footstone::value::Serializer> &GetSerializer();
+  
+  void OnViewComponentEvent(const std::string &event_name, const HippyValueObjectType &hippy_object);
 
   std::shared_ptr<NativeRenderContext> ctx_;
   uint32_t tag_;
   std::string view_type_;
   std::vector<std::shared_ptr<BaseView>> children_;
   std::weak_ptr<BaseView> parent_;
+  
+  napi_env ts_env_ = nullptr;
+  napi_ref ts_render_provider_ref_ = nullptr;
+  napi_ref ts_event_callback_ref_ = nullptr;
+  
+  static std::shared_ptr<footstone::value::Serializer> serializer_;
   
   HRPosition backgroundImagePosition_ = {0, 0};
   

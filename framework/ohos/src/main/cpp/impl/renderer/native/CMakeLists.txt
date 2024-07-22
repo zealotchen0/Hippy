@@ -59,12 +59,14 @@ set(SOURCE_SET
   src/native_render_provider_manager.cc
   src/native_render_impl.cc
   src/native_render_context.cc
+  src/native_render_params.cc
   src/uimanager/hr_mutation.cc
   src/uimanager/hr_manager.cc
   src/uimanager/hr_view_manager.cc
   src/uimanager/hr_gesture_dispatcher.cc
   src/utils/hr_event_utils.cc
   src/utils/hr_convert_utils.cc
+  src/utils/hr_pixel_utils.cc
   src/utils/hr_text_convert_utils.cc
   src/utils/hr_url_utils.cc
   src/virtual/hr_virtual_view_manager.cc
@@ -90,6 +92,7 @@ set(SOURCE_SET
   src/arkui/text_input_base_node.cc
   src/arkui/text_node.cc
   src/arkui/water_flow_node.cc
+  src/arkui/water_flow_item_node.cc
   src/arkui/dialog_controller.cc
   src/components/hippy_render_view_creator.cc
   src/components/base_view.cc
@@ -97,6 +100,7 @@ set(SOURCE_SET
   src/components/custom_view.cc
   src/components/div_view.cc
   src/components/image_view.cc
+  src/components/list_item_adapter.cc
   src/components/list_item_view.cc
   src/components/list_view.cc
   src/components/modal_view.cc

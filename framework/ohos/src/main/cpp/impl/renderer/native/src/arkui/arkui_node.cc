@@ -25,6 +25,7 @@
 #include "renderer/arkui/arkui_node_registry.h"
 #include "renderer/arkui/native_node_api.h"
 #include "renderer/utils/hr_convert_utils.h"
+#include "renderer/utils/hr_pixel_utils.h"
 
 namespace hippy {
 inline namespace render {
@@ -98,6 +99,52 @@ ArkUINode &ArkUINode::SetPosition(const HRPosition &position) {
   return *this;
 }
 
+HRPosition ArkUINode::GetPostion() const {
+  auto posValue = NativeNodeApi::GetInstance()->getAttribute(nodeHandle_, NODE_POSITION);
+  if (posValue) {
+    return HRPosition(posValue->value[0].f32, posValue->value[1].f32);
+  }
+  return HRPosition{0, 0};
+}
+
+HRPosition ArkUINode::GetAbsolutePosition() const {
+  float x = 0;
+  float y = 0;
+  auto posValue = NativeNodeApi::GetInstance()->getAttribute(nodeHandle_, NODE_POSITION);
+  if (posValue) {
+    x = posValue->value[0].f32;
+    y = posValue->value[1].f32;
+  }
+  auto parentHandle = NativeNodeApi::GetInstance()->getParent(nodeHandle_);
+  while (parentHandle) {
+    auto parentPosValue = NativeNodeApi::GetInstance()->getAttribute(parentHandle, NODE_POSITION);
+    if (parentPosValue) {
+      x += parentPosValue->value[0].f32;
+      y += parentPosValue->value[1].f32;
+    }
+    parentHandle = NativeNodeApi::GetInstance()->getParent(parentHandle);
+  }
+  return HRPosition{x, y};
+}
+
+HRPosition ArkUINode::GetLayoutPositionInScreen() const {
+  ArkUI_IntOffset offset;
+  auto status = OH_ArkUI_NodeUtils_GetLayoutPositionInScreen(nodeHandle_, &offset);
+  if (status == ARKUI_ERROR_CODE_NO_ERROR) {
+    return HRPosition{ HRPixelUtils::PxToDp((float)offset.x), HRPixelUtils::PxToDp((float)offset.y) };
+  }
+  return HRPosition{0, 0};
+}
+
+HRPosition ArkUINode::GetLayoutPositionInWindow() const {
+  ArkUI_IntOffset offset;
+  auto status = OH_ArkUI_NodeUtils_GetLayoutPositionInWindow(nodeHandle_, &offset);
+  if (status == ARKUI_ERROR_CODE_NO_ERROR) {
+    return HRPosition{ HRPixelUtils::PxToDp((float)offset.x), HRPixelUtils::PxToDp((float)offset.y) };
+  }
+  return HRPosition{0, 0};
+}
+
 ArkUINode &ArkUINode::SetSize(const HRSize &size) {
   ArkUI_NumberValue widthValue[] = {{size.width}};
   ArkUI_AttributeItem widthItem = {widthValue, sizeof(widthValue) / sizeof(ArkUI_NumberValue), nullptr, nullptr};
@@ -140,6 +187,25 @@ HRSize ArkUINode::GetSize() const {
 uint32_t ArkUINode::GetTotalChildCount() const {
   return NativeNodeApi::GetInstance()->getTotalChildCount(nodeHandle_);
 }
+
+ArkUI_NodeHandle ArkUINode::GetFirstChild() const{
+  return NativeNodeApi::GetInstance()->getFirstChild(nodeHandle_);   
+}
+
+ArkUI_NodeHandle ArkUINode::GetLastChild() const{ 
+  return NativeNodeApi::GetInstance()->getLastChild(nodeHandle_);  
+}
+
+ArkUI_NodeHandle ArkUINode::GetChildAt(int32_t postion) const{
+  return NativeNodeApi::GetInstance()->getChildAt(nodeHandle_,postion);  
+}
+
+//ArkUINode &ArkUINode::SetPadding(float top, float right, float bottom, float left){
+//  ArkUI_NumberValue value[] = {{.f32 = top}, {.f32 = right}, {.f32 = bottom}, {.f32 = left}};
+//  ArkUI_AttributeItem item = {value, sizeof(value) / sizeof(ArkUI_NumberValue), nullptr, nullptr};
+//  MaybeThrow(NativeNodeApi::GetInstance()->setAttribute(nodeHandle_, NODE_PADDING, &item));
+//  return *this;
+//}
 
 ArkUINode &ArkUINode::SetSizePercent(const HRSize &size) {
   ArkUI_NumberValue widthValue[] = {{size.width}};

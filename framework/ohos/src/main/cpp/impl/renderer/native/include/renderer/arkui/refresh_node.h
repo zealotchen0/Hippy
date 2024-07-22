@@ -23,6 +23,8 @@
 #pragma once
 
 #include "renderer/arkui/arkui_node.h"
+#include <cmath>
+#include <cstdint>
 
 namespace hippy {
 inline namespace render {
@@ -42,8 +44,16 @@ protected:
 public:
   RefreshNode();
   ~RefreshNode();
+  
+  void SetRefreshRefreshing(bool flag);
+  void SetRefreshContent(ArkUI_NodeHandle nodeHandle);
+  void SetRefreshPullDownRatio(float ratio);
+  void SetRefreshOffset(float offset);
+  void SetRefreshPullToRefresh(bool flag);
+  
   void OnNodeEvent(ArkUI_NodeEvent *event) override;
-  void SetNodeDelegate(RefreshNodeDelegate *refreshNodeDelegate);    
+  void SetNodeDelegate(RefreshNodeDelegate *refreshNodeDelegate);
+  void SetRefreshing(bool beRefreshed);
 };
 
 } // namespace native
