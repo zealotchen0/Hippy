@@ -22,27 +22,23 @@
 
 #pragma once
 
-#include <any>
-#include <js_native_api_types.h>
+#include "oh_napi/ark_ts.h"
 
 namespace hippy {
 inline namespace framework {
-inline namespace jni {
+inline namespace turbo {
 
-//class _jobject {};
-//typedef _jobject *jobject;
+void InitTurbo(napi_env env);
 
-class JavaRef {
+class Turbo {
  public:
-  JavaRef(napi_env env, std::any obj);
-  ~JavaRef();
-  JavaRef(const JavaRef &) = delete;
-  JavaRef &operator=(const JavaRef &) = delete;
+  Turbo(napi_ref ref) : ref_(ref) {}
 
-  std::any GetObj() { return obj_; }
-
+  inline napi_ref GetRef() {
+    return ref_;
+  }
  private:
-  std::any obj_;
+  napi_ref ref_;
 };
 
 }

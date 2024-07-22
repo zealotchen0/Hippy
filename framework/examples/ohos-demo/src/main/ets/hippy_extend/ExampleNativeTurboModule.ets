@@ -33,14 +33,14 @@ export class ExampleNativeTurboModule extends HippyNativeModuleBase {
     super(ctx)
   }
 
+  isTurbo(): boolean {
+    return true
+  }
+
   public call(method: string, params: Array<HippyAny>, promise: HippyModulePromise): HippyAny {
     switch (method) {
-      case 'test': {
-        this.test();
-        break;
-      }
-      case 'testPromise': {
-        this.testPromise(params, promise);
+      case 'getString': {
+        this.getString(params[0] as string);
         break;
       }
       default:
@@ -49,11 +49,7 @@ export class ExampleNativeTurboModule extends HippyNativeModuleBase {
     return null;
   }
 
-  public test() {
-    LogUtils.i(ExampleNativeTurboModule.NAME, 'module test');
-  }
-
-  public testPromise(params: Array<HippyAny>, promise: HippyModulePromise) {
-      promise.resolve('test');
+  public getString(info: string): string {
+    return 'demoTurbo' + info;
   }
 }

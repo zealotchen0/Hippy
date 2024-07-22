@@ -26,41 +26,32 @@
  *
  */
 
-#include "connector/js_driver_napi.h"
-#include "connector/ark2js.h"
-#include "connector/js2ark.h"
-#include "connector/bridge.h"
+#include "connector/arkts_turbo_module.h"
 #include "connector/exception_handler.h"
+#include "connector/turbo_module_manager.h"
 #include <js_native_api.h>
 #include <js_native_api_types.h>
+#include "connector/turbo.h"
+#include "driver/scope.h"
 #include "oh_napi/data_holder.h"
 #include "oh_napi/oh_napi_invocation.h"
 #include "oh_napi/oh_napi_register.h"
 #include "oh_napi/ark_ts.h"
-#include "driver/js_driver_utils.h"
-#include "footstone/check.h"
-#include "footstone/logging.h"
-#include "footstone/persistent_object_map.h"
-#include "footstone/string_view_utils.h"
-#include "footstone/worker_manager.h"
-#include "vfs/handler/asset_handler.h"
-
+#include "oh_napi/oh_napi_object.h"
 #include "oh_napi/oh_napi_register.h"
-#include "connector/turbo_module_manager.h"
+
+#include "oh_napi/oh_napi_task_runner.h"
+
 
 #include <cstdint>
-#include <memory>
+#include <codecvt>
 
-#include "oh_napi/oh_napi_register.h"
-#include "oh_napi/ark_ts.h"
 #include "footstone/logging.h"
 #include "footstone/string_view.h"
 #include "footstone/string_view_utils.h"
 #include "driver/napi/v8/v8_ctx.h"
 
-#include "scoped_java_ref.h"
 
-#include "connector/java_turbo_module.h"
 
 using namespace hippy::napi;
 using string_view = footstone::string_view;
@@ -73,17 +64,34 @@ namespace hippy {
 inline namespace framework {
 inline namespace turbo {
 
+static napi_env s_env = 0;
+
+void InitTurbo(napi_env env) {
+  s_env = env;
+}
+
 /**
  * com.tencent.mtt.hippy.bridge.jsi.TurboModuleManager.get
  */
-std::shared_ptr<JavaRef> QueryTurboModuleImpl(std::shared_ptr<Scope>& scope,
-                                              const std::string& module_name) {
+std::shared_ptr<Turbo> QueryTurboModuleImpl(std::shared_ptr<Scope>& scope, const std::string& module_name) {
   FOOTSTONE_DLOG(INFO) << "enter QueryTurboModuleImpl " << module_name.c_str();
-  if (scope->HasTurboInstance(module_name)) {
-      auto obj = scope->GetTurboInstance(module_name);
-  }
-  auto turbo_manager = std::any_cast<std::shared_ptr<JavaRef>>(scope->GetTurbo());
- return turbo_manager;
+  auto turbo = std::any_cast<std::shared_ptr<Turbo>>(scope->GetTurbo());
+  napi_ref object_ref = turbo->GetRef();
+  auto env = s_env;
+  ArkTS arkTs(env);
+  auto turboManager = arkTs.GetObject(object_ref);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+#pragma clang diagnostic pop
+  std::vector<napi_value> args = {
+    arkTs.CreateStringUtf16(converter.from_bytes(module_name)),
+  };
+  auto module = turboManager.Call("get", args);
+  auto module_object_ref = arkTs.CreateReference(module);
+  auto module_object = std::make_shared<Turbo>(module_object_ref);
+// });
+  return module_object;
 }
 
 void GetTurboModule(CallbackInfo& info, void* data) {
@@ -100,37 +108,39 @@ void GetTurboModule(CallbackInfo& info, void* data) {
 
   string_view name;
   ctx->GetValueString(info[0], &name);
-  auto turbo_manager = std::any_cast<std::shared_ptr<JavaRef>>(scope->GetTurbo());//
+  auto turbo_manager = std::any_cast<std::shared_ptr<Turbo>>(scope->GetTurbo());
   if (!turbo_manager) {
     FOOTSTONE_LOG(ERROR) << "turbo_manager error";
     info.GetReturnValue()->SetUndefined();
     return;
   }
-  auto u8_name = StringViewUtils::ToStdString(
-      StringViewUtils::ConvertEncoding(name, string_view::Encoding::Utf8).utf8_value());
+  auto u8_name = StringViewUtils::ToStdString(StringViewUtils::ConvertEncoding(name, string_view::Encoding::Utf8).utf8_value());
   std::shared_ptr<CtxValue> result;
   auto has_instance = scope->HasTurboInstance(u8_name);
   if (!has_instance) {
-    // 2. if not cached, query from Java
+    // 2. if not cached, query from ArkTs
+    auto env = s_env;
+    OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(env);
+    taskRunner->RunAsyncTask([info, scope, u8_name, name, ctx, result]() {    
     auto module_impl = QueryTurboModuleImpl(scope, u8_name);
-    if (!module_impl->GetObj().has_value()) { //need confirm
-      FOOTSTONE_LOG(ERROR) << "cannot find TurboModule = " << name;
+    if (!module_impl) { 
+      FOOTSTONE_LOG(ERROR) << "Cannot find TurboModule = " << name;
       ctx->ThrowException("Cannot find TurboModule: " + name);
       return info.GetReturnValue()->SetUndefined();
     }
 
     // 3. constructor c++ JavaTurboModule
-    auto java_turbo_module = std::make_shared<JavaTurboModule>(u8_name, module_impl, ctx);
+    auto arkTs_turbo_module = std::make_shared<ArkTsTurboModule>(u8_name, module_impl, ctx);
 
     // 4. bind c++ JavaTurboModule to js
-    result = ctx->NewInstance(java_turbo_module->constructor, 0, nullptr, java_turbo_module.get());
-    // call js function
+    result = ctx->NewInstance(arkTs_turbo_module->constructor, 0, nullptr, arkTs_turbo_module.get());
 
     // 5. add To Cache
     scope->SetTurboInstance(u8_name, result);
-    scope->SetTurboHostObject(u8_name, java_turbo_module);
+    scope->SetTurboHostObject(u8_name, arkTs_turbo_module);
 
     FOOTSTONE_DLOG(INFO) << "return module = " << name;
+     });
   } else {
     result = scope->GetTurboInstance(u8_name);
     FOOTSTONE_DLOG(INFO) << "return cached module = " << name;
@@ -148,15 +158,18 @@ void TurboModuleManager::Destroy(napi_env env, napi_callback_info info) {
 int Install(napi_env env, napi_callback_info info) {
   ArkTS arkTs(env);
   auto args = arkTs.GetCallbackArgs(info);
-  uint32_t ori_scope_id = static_cast<uint32_t>(arkTs.GetInteger(args[0]));
+  auto object_ref = arkTs.CreateReference(args[0]);
+  uint32_t ori_scope_id = static_cast<uint32_t>(arkTs.GetInteger(args[1]));
   FOOTSTONE_LOG(INFO) << "install TurboModuleManager";
   std::any scope_object;
-  auto scope_id = footstone::checked_numeric_cast<long, uint32_t>(ori_scope_id);//should use jlong
+  auto scope_id = footstone::checked_numeric_cast<long, uint32_t>(ori_scope_id);
   auto flag = hippy::global_data_holder.Find(scope_id, scope_object);
   FOOTSTONE_CHECK(flag);
   auto scope = std::any_cast<std::shared_ptr<Scope>>(scope_object);
-  scope->SetTurbo(std::make_shared<JavaRef>(env, scope)); //wrong,should change
-
+  auto turbo = std::make_shared<Turbo>(object_ref);
+  scope->SetTurbo(turbo);
+  InitTurbo(env);
+    
   // v8的操作放到js线程
   auto runner = scope->GetTaskRunner();
   if (!runner) {

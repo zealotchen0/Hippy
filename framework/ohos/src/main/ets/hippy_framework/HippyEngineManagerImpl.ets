@@ -117,10 +117,9 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy {
 
   onBackPressed(handler: BackPressHandler): boolean {
     if (this.mEngineContext != null
-      && this.mEngineContext.getModuleManager().getNativeModule(DeviceEventModule.NAME)
+      && this.mEngineContext.getModuleManager().getNativeModule(DeviceEventModule.NAME, false)
         != null) {
-      let nativeModule = this.mEngineContext.getModuleManager()
-        .getNativeModule(DeviceEventModule.NAME)
+      let nativeModule = this.mEngineContext.getModuleManager().getNativeModule(DeviceEventModule.NAME, false)
       if (nativeModule instanceof DeviceEventModule) {
         return nativeModule.onBackPressed(handler);
       } else return false;

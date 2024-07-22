@@ -22,7 +22,6 @@ import { HippyNativeModuleBase } from '../native';
 
 export class TurboModuleManager {
   public static TAG: string = "TurboModuleManager";
-  private mModuleMap: Map<string, HippyNativeModuleBase> = new Map<string, HippyNativeModuleBase>();
   private mHippyEngineContext: HippyEngineContext;
   private libHippy: HippyLibrary;
 
@@ -33,38 +32,11 @@ export class TurboModuleManager {
 
   public get(name: string): HippyNativeModuleBase | null {
     LogUtils.d("TurboModuleManager", "get " + name);
-    const module: HippyNativeModuleBase | undefined = this.mModuleMap.get(name);
-    if (module !== null && module !== undefined) {
-      return module;
-    }
-
     const hippyModuleManager: HippyModuleManager = this.mHippyEngineContext.getModuleManager();
-    // HippyNativeModuleInfo moduleInfo = hippyModuleManager.getNativeModuleInfo().get(name);
-    // if (moduleInfo == null) {
-    //   return null;
-    // }
-
-    //   try {
-    //   moduleInfo.initialize();
-    // }
-    //
-    // catch
-    // (
-    // Throwable
-    // throwable
-    // )
-    // {
-    //   LogUtils.e(TAG, throwable.getMessage());
-    //   return null;
-    // }
-
-    // module = moduleInfo.getInstance();
-    // mModuleMap.put(name, module);
-    // return module;
-    return null;
+    return hippyModuleManager.getNativeModule(name, true);
   }
 
   public install(runtimeId: number) {
-    return this.libHippy?.TurboModuleManager_Install(runtimeId);
+    return this.libHippy?.TurboModuleManager_Install(this, runtimeId);
   }
 }
