@@ -221,11 +221,14 @@ export class NativeRenderProvider {
 
   // for devtools
   async getComponentSnapshot(componentId: string, callback: Function) {
+    const scale = 0.3;
     let pixmap: PixelMap = await componentSnapshot.get("HippyId" + componentId);
+    pixmap.scaleSync(scale, scale);
+    const info = pixmap.getImageInfoSync();
     const imagePackageApi: image.ImagePacker = image.createImagePacker()
     let packOpts: image.PackingOption = {
-      format: 'image/png',
-      quality: 30,
+      format: 'image/jpeg',
+      quality: 80,
     }
     const readBuffer = await imagePackageApi.packing(pixmap, packOpts);
     let base64Helper = new util.Base64Helper();
@@ -240,9 +243,11 @@ export class NativeRenderProvider {
     }
     let hippyResult: HippyResult = {};
     hippyResult.screenShot = pixelStr;
-    hippyResult.width = 40;
-    hippyResult.height = 90;
-    hippyResult.screenScale = 2.0;
+    hippyResult.width = info.size.width;
+    hippyResult.height = info.size.height;
+    hippyResult.screenScale = scale;
+    imagePackageApi.release();
+    pixmap.release();
     callback(hippyResult);
   }
 

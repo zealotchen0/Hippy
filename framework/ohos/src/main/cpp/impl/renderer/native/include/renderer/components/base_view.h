@@ -64,8 +64,7 @@ public:
     if (method == "getScreenShot") {
       callback(params.back());
     } else if (method == "addFrameCallback") {
-      auto resultMap = HippyValue();
-      callback(resultMap);
+            
     } else if (method == "removeFrameCallback") {
       auto resultMap = HippyValue();
       callback(resultMap);
