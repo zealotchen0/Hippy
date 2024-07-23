@@ -14,7 +14,7 @@ import { EngineInitParams, ModuleLoadParams } from './HippyEngine';
 import { HippyEngineContext } from './HippyEngineContext';
 import { HippyGlobalConfigs } from './HippyGlobalConfigs';
 import { HippyModuleManagerImpl, HippyNativeModuleCreator } from './modules/HippyModuleManagerImpl';
-import { HippyResourceLoader } from './adapter/http/HippyResourceLoader';
+import { HippyResourceLoader } from './HippyResourceLoader';
 import { DefaultProcessor } from '../vfs/DefaultProcessor';
 import { HippyModuleManager } from './modules/HippyModuleManager';
 import { HippyAPIProvider } from './bridge/HippyAPIProvider';

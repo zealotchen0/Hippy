@@ -121,10 +121,10 @@ export class NetworkModule extends HippyNativeModuleBase {
     return new Map<string, string>();
   }
 
-  private handleFetchResponse(dataHolder: ResourceDataHolder): Map<string, HippyValue> {
+  private handleFetchResponse(dataHolder: ResourceDataHolder): Map<string, HippyAny> {
     let resHeader = dataHolder.responseHeaders
     let headerMap: Map<string, HippyValue> = new Map<string, HippyValue>();
-    let responseMap: Map<string, HippyValue> = new Map<string, HippyValue>();
+    let responseMap: Map<string, HippyAny> = new Map<string, HippyAny>();
     let statusCode = -1;
     let responseMessage = "";
     if (resHeader != null) {
@@ -148,7 +148,7 @@ export class NetworkModule extends HippyNativeModuleBase {
     }
     responseMap.set(HippyHttpResponse.HTTP_RESPONSE_STATUS_CODE, statusCode);
     responseMap.set("statusLine", responseMessage);
-    responseMap.set("respHeaders", JSON.stringify(ArgumentUtils.mapToRecord(headerMap)));
+    responseMap.set("respHeaders", ArgumentUtils.mapToRecord(headerMap));
     let body = "";
     try {
       let buffer = dataHolder.getBuffer();

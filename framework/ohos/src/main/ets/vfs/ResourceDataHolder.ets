@@ -60,7 +60,6 @@ export class ResourceDataHolder {
   public requestId: string | null = null
   public errorMessage: string | null = null
   public processorTag: string | null = null
-  // 文件存储路径
   public filePath = ""
 
   constructor(uri: string,

@@ -248,11 +248,11 @@ export class HRTextInputView extends HippyRenderBaseView {
     let result: HippyAny = null
     if (method === "getValue" && callback) {
       result = new Map<string, HippyValue>() as HippyMap;
-      result.set("text", this.value);
+      (result as HippyMap).set("text", this.value);
       callback(result)
     } else if (method === "isFocused" && callback) {
       result = new Map<string, HippyValue>() as HippyMap;
-      result.set("value", this.focus);
+      (result as HippyMap).set("value", this.focus);
       callback(result)
     } else if (method === "focusTextInput") {
       this.focusTextInput(params)
