@@ -24,8 +24,6 @@ import { ProcessorCallback } from '../../../vfs/ProcessorCallback';
 import { ResourceDataHolder } from '../../../vfs/ResourceDataHolder';
 import { FetchResultCode } from '../../HippyResourceLoader';
 import { HippyException } from '../../../support/common/HippyException';
-import web_webview from '@ohos.web.webview';
-import { HttpHeaderResponse } from './HippyHttpHeader';
 import { LogUtils } from '../../../support/utils/LogUtils';
 
 const HTTP_TASK_CALLBACK_IMPL_TAG = "HttpTaskCallbackImpl"
@@ -42,19 +40,23 @@ export class HttpTaskCallbackImpl implements HttpTaskCallback {
   onTaskSuccess(request: HippyHttpRequest, response: HippyHttpResponse) {
     this.mDataHolder.resultCode = FetchResultCode.OK.valueOf();
     this.mDataHolder.addResponseHeaderProperty(HippyHttpResponse.HTTP_RESPONSE_STATUS_CODE, response.getStatusCode().toString());
-    this.mDataHolder.addResponseHeaderProperty(HippyHttpResponse.HTTP_RESPONSE_RESPONSE_MESSAGE, response.getResponseMessage());
     if (response.getStatusCode() != 200) {
       this.mDataHolder.errorMessage = "request status code is: " + response.getStatusCode();
       this.mCallback.onHandleCompleted();
       return;
     }
     let headers = response.getRspHeaderMaps();
+    if (headers) {
+      Object.entries(headers as Record<string, string>).forEach((item) => {
+        this.mDataHolder.addResponseHeaderProperty(item[0], item[1])
+      })
+    }
+    this.mDataHolder.requestResult = response.result ?? "";
     this.mCallback.onHandleCompleted();
   }
 
 
-  onTaskFailed(request: HippyHttpRequest
-    , error: HippyException) {
+  onTaskFailed(request: HippyHttpRequest, error: HippyException) {
     this.mDataHolder.resultCode = FetchResultCode.ERR_REMOTE_REQUEST_FAILED.valueOf();
     if (error != null) {
       this.mDataHolder.errorMessage = error.message;

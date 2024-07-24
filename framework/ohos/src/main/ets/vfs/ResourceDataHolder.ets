@@ -47,6 +47,7 @@ export class ResourceDataHolder {
   public uri: string
   public uriType: UriType
   public buffer: ArrayBuffer | null = null
+  public requestResult: string = ""
   public requestHeaders: Map<string, string> | null
   public requestParams: Map<string, string> | null
   public responseHeaders: Map<string, string> | null = null
