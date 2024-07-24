@@ -140,7 +140,7 @@ export class HRScrollView extends HippyRenderBaseView {
     let xOffset: number = 0
     let yOffset: number = 0
     let duration: number = 0
-    let value = (element as HippyMap).get("x")
+    let value = element.get("x")
     if (typeof value == 'number') {
       xOffset = Math.round(value)
     }

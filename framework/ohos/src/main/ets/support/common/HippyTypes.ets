@@ -21,7 +21,7 @@ export type HippyValue = number | string | boolean | Uint8Array | bigint | Array
 export type HippyRecord = Record<string, HippyValue>
 export type HippyArray = Array<HippyAny>
 export type HippyMap = Map<string, HippyAny>
-export type HippyAny = HippyValue | HippyMap | HippyRecord | HippyArray | null | undefined | Object
+export type HippyAny = HippyValue | HippyMap | HippyRecord | HippyArray | null | undefined
 
 export type HippyRenderCallback = (result: HippyAny) => void
 export type HippyModuleCallback = (result: HippyAny) => void

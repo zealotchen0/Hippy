@@ -21,7 +21,7 @@ import { PrimitiveValueSerializer } from '../../serialization/PrimitiveValueSeri
 import { HippySerValue, SharedSerialization } from '../../serialization/SharedSerialization';
 import { BinaryWriter } from '../../serialization/writer/BinaryWriter';
 import { HippyException } from '../../support/common/HippyException';
-import { HippyAny, HippyMap } from '../../support/common/HippyTypes';
+import { HippyAny } from '../../support/common/HippyTypes';
 import { NativeRenderSerializationTag } from './NativeRenderSerializationTag';
 
 export class NativeRenderSerializer extends PrimitiveValueSerializer {
@@ -41,7 +41,7 @@ export class NativeRenderSerializer extends PrimitiveValueSerializer {
     if (object instanceof Map) {
       this.assignId(object)
       if (object.size > 0) {
-        let keys = (object as HippyMap).keys()
+        let keys = object.keys()
         for (let key of keys) {
           if(typeof key == 'string') {
             this.writeObject(object as Map<string, HippyAny>)
