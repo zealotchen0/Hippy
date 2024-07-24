@@ -17,16 +17,72 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { display } from '@kit.ArkUI';
+import { ComponentContent, display } from '@kit.ArkUI';
+class Params {
+  text: string = "";
+  onClickHandle: (event: ClickEvent) => void;
+
+  constructor(text: string, onClickHandle: (event: ClickEvent) => void) {
+    this.text = text;
+    this.onClickHandle = onClickHandle;
+  }
+}
+
+@Builder
+function builderImage(params: Params) {
+  Column() {
+    Text(params.text).margin({ top: 5, bottom: 5 }).fontSize(18)
+    Image($r('app.media.background'))
+      .width(100)
+      .margin({ top: 5, bottom: 5 })
+      .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.8 })
+      .onClick((event: ClickEvent) => {
+        console.debug("wangz::builderImage");
+        params.onClickHandle(event);
+      })
+      .onDrop((event?: DragEvent, extraParams?: string) => {
+        console.debug("wangz::onDrop::getDisplayX::" + event?.getDisplayX());
+        console.debug("wangz::onDrop::getDisplayY::" + event?.getDisplayY());
+        console.debug("wangz::onDrop::extraParams::" + extraParams);
+        console.debug("wangz::onDrop::event::" + JSON.stringify(event));
+      })
+      .onDragLeave((event?: DragEvent, extraParams?: string) => {
+        console.debug("wangz::onDragLeave::getDisplayX::" + event?.getDisplayX());
+        console.debug("wangz::onDragLeave::getDisplayY::" + event?.getDisplayY());
+        console.debug("wangz::onDragLeave::extraParams::" + extraParams);
+        console.debug("wangz::onDragLeave::event::" + JSON.stringify(event));
+      })
+  }.margin({ top: 20, bottom: 20 }).height("20%").width("100%")
+}
 
 export class DevFloatButton{
   private mWidth: number;
+  private floatButtonArray: ComponentContent<Params>[] = [];
+  private uiContext: UIContext;
 
-  constructor(context: Context) {
+  constructor(context: Context, uiContext: UIContext, onClickHandle: (event: ClickEvent) => void) {
     // super();
     this.mWidth = this.dip2px(context) as number;
     this.buildBackground();
     // setFocusable(true);
+
+    this.uiContext = uiContext;
+    this.create(onClickHandle);
+  }
+
+  private create(onClickHandle: (event: ClickEvent) => void) {
+    let componentContent = new ComponentContent(
+      this.uiContext, wrapBuilder<[Params]>(builderImage),
+      new Params("wangzTest", onClickHandle)
+    )
+    this.floatButtonArray.push(componentContent);
+    this.uiContext.getOverlayManager().addComponentContent(componentContent, 99);
+  }
+
+  public delete() {
+    if (this.floatButtonArray.length > 0) {
+      this.uiContext.getOverlayManager().removeComponentContent(this.floatButtonArray.pop());
+    }
   }
 
   private dip2px(context: Context): number {

@@ -27,6 +27,7 @@ import { DevServerHelper } from './DevServerHelper';
 import { DevServerInterface } from './DevServerInterface';
 import Stack from '@ohos.util.Stack';
 import { HippyException } from '../../support/common/HippyException';
+import { UIContext } from '@kit.ArkUI';
 
 export class DevServerImpl implements DevServerInterface, OnReloadListener {
   private static TAG = "DevServerImpl";
@@ -35,7 +36,7 @@ export class DevServerImpl implements DevServerInterface, OnReloadListener {
   private mDevButtonMaps: Map<number, DevFloatButton> = new Map();
   private mServerCallBack: DevServerCallBack | null = null
   private mFetchHelper: DevServerHelper
-  private mDevButtonStack: Stack<DevFloatButton> = new Stack();
+  // private mDevButtonStack: Stack<DevFloatButton> = new Stack();
 
   constructor(configs: HippyGlobalConfigs, serverHost: string, bundleName: string,
               remoteServerUrl: string, debugMode: boolean) {
@@ -89,7 +90,7 @@ export class DevServerImpl implements DevServerInterface, OnReloadListener {
     this.mServerCallBack = devServerCallback;
   }
 
-  attachToHost(context: Context, rootId: number): void {
+  attachToHost(uiContext: UIContext, context: Context, rootId: number): void {
     if (!this.mDebugMode) {
       return;
     }
@@ -99,14 +100,18 @@ export class DevServerImpl implements DevServerInterface, OnReloadListener {
     if (this.mDevButtonMaps.get(rootId) != null) {
       return;
     }
-    let devButton: DevFloatButton = new DevFloatButton(context);
+    const onClickHandle = (event: ClickEvent) => {
+      console.debug("wangz::onClickHandle::event" + JSON.stringify(event));
+      this.onReload();
+    }
+    let devButton: DevFloatButton = new DevFloatButton(context, uiContext, onClickHandle);
     // devButton.setOnClickListener(this);
     // if (context instanceof Activity) {
     //   ViewGroup decorView = (ViewGroup) ((Activity) context).getWindow().getDecorView();
     //   decorView.addView(devButton);
     // }
     this.mDevButtonMaps.set(rootId, devButton);
-    this.mDevButtonStack.push(devButton);
+    // this.mDevButtonStack.push(devButton);
   }
 
   detachFromHost(context: Context, rootId: number): void {
@@ -115,9 +120,11 @@ export class DevServerImpl implements DevServerInterface, OnReloadListener {
     }
     let button: DevFloatButton | undefined = this.mDevButtonMaps.get(rootId);
     if (button != undefined) {
-      if (this.mDevButtonStack != null) {
-        this.mDevButtonStack.pop();
-      }
+      button.delete();
+      this.mDevButtonMaps.delete(rootId);
+      // if (this.mDevButtonStack != null) {
+      //   this.mDevButtonStack.pop();
+      // }
       // ViewParent parent = button.getParent();
       // if (parent instanceof ViewGroup) {
       //   ((ViewGroup) parent).removeView(button);

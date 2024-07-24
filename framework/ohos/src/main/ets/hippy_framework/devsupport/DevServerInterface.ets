@@ -31,7 +31,7 @@ export interface DevServerInterface {
 
   setDevServerCallback(devServerCallback: DevServerCallBack): void
 
-  attachToHost(context: Context, rootId: number): void
+  attachToHost(uiContext: UIContext, context: Context, rootId: number): void
 
   detachFromHost(context: Context, rootId: number): void
 

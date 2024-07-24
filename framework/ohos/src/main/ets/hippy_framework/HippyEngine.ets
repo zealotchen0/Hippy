@@ -223,6 +223,7 @@ export class ModuleLoadParams {
   public bundleLoader: HippyBundleLoader | null = null;
 
   public wrappedCustomRenderViewBuilder: WrappedHippyCustomRenderViewBuilder | null = null;
+  public uiContext: UIContext | undefined | null = null;
 
   public constructor(
     jsAssetsPath = '',
@@ -232,6 +233,7 @@ export class ModuleLoadParams {
     jsParams: HippyMap | null,
     nativeParams: HippyMap | null,
     bundleLoader: HippyBundleLoader | null,
+    uiContext?: UIContext | undefined | null,
   ) {
     this.jsAssetsPath = jsAssetsPath;
     this.jsFilePath = jsFilePath;
@@ -240,6 +242,7 @@ export class ModuleLoadParams {
     this.nativeParams = nativeParams;
     this.codeCacheTag = codeCacheTag;
     this.bundleLoader = bundleLoader;
+    this.uiContext = uiContext;
   }
 }
 
