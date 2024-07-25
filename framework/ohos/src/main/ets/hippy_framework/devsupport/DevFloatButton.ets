@@ -30,29 +30,20 @@ class Params {
 
 @Builder
 function builderImage(params: Params) {
-  Column() {
-    Text(params.text).margin({ top: 5, bottom: 5 }).fontSize(18)
-    Image($r('app.media.background'))
-      .width(100)
-      .margin({ top: 5, bottom: 5 })
-      .clickEffect({ level: ClickEffectLevel.LIGHT, scale: 0.8 })
-      .onClick((event: ClickEvent) => {
-        console.debug("wangz::builderImage");
-        params.onClickHandle(event);
-      })
-      .onDrop((event?: DragEvent, extraParams?: string) => {
-        console.debug("wangz::onDrop::getDisplayX::" + event?.getDisplayX());
-        console.debug("wangz::onDrop::getDisplayY::" + event?.getDisplayY());
-        console.debug("wangz::onDrop::extraParams::" + extraParams);
-        console.debug("wangz::onDrop::event::" + JSON.stringify(event));
-      })
-      .onDragLeave((event?: DragEvent, extraParams?: string) => {
-        console.debug("wangz::onDragLeave::getDisplayX::" + event?.getDisplayX());
-        console.debug("wangz::onDragLeave::getDisplayY::" + event?.getDisplayY());
-        console.debug("wangz::onDragLeave::extraParams::" + extraParams);
-        console.debug("wangz::onDragLeave::event::" + JSON.stringify(event));
-      })
-  }.margin({ top: 20, bottom: 20 }).height("20%").width("100%")
+  Image($r('app.media.background'))
+    .width(100)
+    .height(100)
+    .border({ width: 1 })
+    .visibility(Visibility.Visible)
+    .draggable(true)
+    .onDragEnd((event: DragEvent, extraParams) => {
+      let ret = event.getResult();
+      if (ret == 0) {
+        console.log("wangz::Image::onDragEnd::enter ret == 0")
+      } else {
+        console.log("wangz::Image::onDragEnd::enter ret != 0")
+      }
+    });
 }
 
 export class DevFloatButton{
