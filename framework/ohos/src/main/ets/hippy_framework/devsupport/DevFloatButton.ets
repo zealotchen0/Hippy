@@ -36,6 +36,7 @@ function builderImage(params: Params) {
     .border({ width: 1 })
     .visibility(Visibility.Visible)
     .draggable(true)
+    .onClick(params.onClickHandle)
     .onDragEnd((event: DragEvent, extraParams) => {
       let ret = event.getResult();
       if (ret == 0) {
@@ -44,6 +45,14 @@ function builderImage(params: Params) {
         console.log("wangz::Image::onDragEnd::enter ret != 0")
       }
     });
+}
+
+@Builder
+function buildReload(params: Params) {
+  Flex() {
+    Text(params.text).fontSize(20).margin({ left: 20, top: 20 })
+  }.width("85%").height("8%").align(Alignment.Center).backgroundColor(Color.White)
+  .onClick(params.onClickHandle)
 }
 
 export class DevFloatButton{
@@ -64,7 +73,19 @@ export class DevFloatButton{
   private create(onClickHandle: (event: ClickEvent) => void) {
     let componentContent = new ComponentContent(
       this.uiContext, wrapBuilder<[Params]>(builderImage),
-      new Params("wangzTest", onClickHandle)
+      new Params("wangzTest", (event: ClickEvent) => {
+        const action = this.uiContext.getPromptAction();
+        let contentNode =
+          new ComponentContent(this.uiContext, wrapBuilder(buildReload),
+            new Params("Reload", (reloaClickEvent: ClickEvent) => {
+              onClickHandle(reloaClickEvent);
+              action.closeCustomDialog(contentNode);
+            }));
+        action.openCustomDialog(contentNode, {
+          autoCancel: true,
+          alignment: DialogAlignment.Center,
+        });
+      })
     )
     this.floatButtonArray.push(componentContent);
     this.uiContext.getOverlayManager().addComponentContent(componentContent, 99);

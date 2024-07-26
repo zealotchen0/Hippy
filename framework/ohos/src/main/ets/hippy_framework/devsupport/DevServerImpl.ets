@@ -102,7 +102,7 @@ export class DevServerImpl implements DevServerInterface, OnReloadListener {
     }
     const onClickHandle = (event: ClickEvent) => {
       console.debug("wangz::onClickHandle::event" + JSON.stringify(event));
-      this.onReload();
+      // this.onReload();
     }
     let devButton: DevFloatButton = new DevFloatButton(context, uiContext, onClickHandle);
     // devButton.setOnClickListener(this);
