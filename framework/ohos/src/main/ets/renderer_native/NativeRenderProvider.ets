@@ -221,14 +221,14 @@ export class NativeRenderProvider {
 
   // for devtools
   async getComponentSnapshot(componentId: string, callback: Function) {
-    const scale = 0.3;
+    const scale = 0.4;
     let pixmap: PixelMap = await componentSnapshot.get("HippyId" + componentId);
     pixmap.scaleSync(scale, scale);
     const info = pixmap.getImageInfoSync();
     const imagePackageApi: image.ImagePacker = image.createImagePacker()
     let packOpts: image.PackingOption = {
-      format: 'image/jpeg',
-      quality: 80,
+      format: 'image/png',
+      quality: 100,
     }
     const readBuffer = await imagePackageApi.packing(pixmap, packOpts);
     let base64Helper = new util.Base64Helper();
