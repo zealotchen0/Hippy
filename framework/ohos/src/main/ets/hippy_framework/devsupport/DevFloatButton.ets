@@ -18,6 +18,8 @@
  * limitations under the License.
  */
 import { ComponentContent, display } from '@kit.ArkUI';
+import { LogUtils } from '../../support/utils/LogUtils';
+
 class Params {
   text: string = "";
   onClickHandle: (event: ClickEvent) => void;
@@ -30,19 +32,19 @@ class Params {
 
 @Builder
 function builderImage(params: Params) {
-  Image($r('app.media.background'))
-    .width(100)
-    .height(100)
-    .border({ width: 1 })
+  Image($r('app.media.devtool'))
+    .width(30)
+    .height(30)
+    .margin({top: 500, left: 300})
     .visibility(Visibility.Visible)
     .draggable(true)
     .onClick(params.onClickHandle)
     .onDragEnd((event: DragEvent, extraParams) => {
       let ret = event.getResult();
       if (ret == 0) {
-        console.log("wangz::Image::onDragEnd::enter ret == 0")
+        LogUtils.i("DevFloatButton", "Image::onDragEnd::enter ret == 0")
       } else {
-        console.log("wangz::Image::onDragEnd::enter ret != 0")
+        LogUtils.i("DevFloatButton", "Image::onDragEnd::enter ret != 0")
       }
     });
 }
@@ -55,32 +57,33 @@ function buildReload(params: Params) {
   .onClick(params.onClickHandle)
 }
 
-export class DevFloatButton{
+export class DevFloatButton {
   private mWidth: number;
   private floatButtonArray: ComponentContent<Params>[] = [];
   private uiContext: UIContext;
 
-  constructor(context: Context, uiContext: UIContext, onClickHandle: (event: ClickEvent) => void) {
-    // super();
-    this.mWidth = this.dip2px(context) as number;
-    this.buildBackground();
-    // setFocusable(true);
+  constructor(context: Context, uiContext: UIContext, onClickHandler: (event: ClickEvent) => void) {
+    this.mWidth = this.getDensityPixels(context) as number;
 
     this.uiContext = uiContext;
-    this.create(onClickHandle);
+    this.create(onClickHandler);
   }
 
-  private create(onClickHandle: (event: ClickEvent) => void) {
+  private create(onClickHandler: (event: ClickEvent) => void) {
     let componentContent = new ComponentContent(
       this.uiContext, wrapBuilder<[Params]>(builderImage),
-      new Params("wangzTest", (event: ClickEvent) => {
+      new Params("Test", (event: ClickEvent) => {
         const action = this.uiContext.getPromptAction();
         let contentNode =
-          new ComponentContent(this.uiContext, wrapBuilder(buildReload),
-            new Params("Reload", (reloaClickEvent: ClickEvent) => {
-              onClickHandle(reloaClickEvent);
-              action.closeCustomDialog(contentNode);
-            }));
+          new ComponentContent(
+            this.uiContext, wrapBuilder(buildReload),
+            new Params("Reload",
+              (reloadClickEvent: ClickEvent) => {
+                onClickHandler(reloadClickEvent);
+                action.closeCustomDialog(contentNode);
+              }
+            )
+          );
         action.openCustomDialog(contentNode, {
           autoCancel: true,
           alignment: DialogAlignment.Center,
@@ -97,60 +100,9 @@ export class DevFloatButton{
     }
   }
 
-  private dip2px(context: Context): number {
+  private getDensityPixels(context: Context): number {
     let displayClass: display.Display = display.getDefaultDisplaySync();
-    return displayClass.densityPixels
-    // DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
-    // return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, SIZE, displayMetrics);
+    return displayClass.densityPixels;
   }
 
-  private buildBackground() {
-    this.buildDrawableState();
-  }
-
-  /**
-   * 构建背景Drawble
-   */
-  private buildDrawableState() {
-
-    //   let mNormalState = new int[];
-    // let mFocusedSate = new int[]{android.R.attr.state_focused, android.R.attr.state_enabled};
-
-    //默认文字和背景颜色
-    // let mBgNormalColor = Color.parseColor("#ddd9d9");
-    // let mBgFocusedColor = Color.GREEN;
-    //创建状态管理器
-    // StateListDrawable drawable = new StateListDrawable();
-    // int radius = mWidth / 2;
-    // float[] outRect = new float[]{radius, radius, radius, radius, radius, radius, radius,
-    // radius};
-    // RoundRectShape rectShape = new RoundRectShape(outRect, null, null);
-
-    //创建圆弧形状
-    //创建drawable
-    // let pressedDrawable = new ShapeDrawable(rectShape);
-    //设置我们按钮背景的颜色
-    // pressedDrawable.getPaint().setColor(mBgFocusedColor);
-    //添加到状态管理里面
-    // drawable.addState(mFocusedSate, pressedDrawable);
-
-    // ShapeDrawable normalDrawable = new ShapeDrawable(rectShape);
-    // normalDrawable.getPaint().setColor(mBgNormalColor);
-    // drawable.addState(mNormalState, normalDrawable);
-    //设置我们的背景，就是xml里面的selector
-    // this.setBackgroundDrawable(drawable);
-
-    // Looper.getMainLooper().myQueue().addIdleHandler(new MessageQueue.IdleHandler() {
-    //             @Override
-    //             public boolean queueIdle() {
-    //                 boolean result = requestFocusFromTouch();
-    //                 LogUtils.d("requestFocus", "requestFocusFromTouch result:" + result);
-    //                 if (!result) {
-    //                     result = requestFocus();
-    //                     LogUtils.d("requestFocus", "requestFocus result:" + result);
-    //                 }
-    // return false;
-    // }
-    // });
-  }
 }

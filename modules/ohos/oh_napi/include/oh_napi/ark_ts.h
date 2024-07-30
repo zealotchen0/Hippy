@@ -141,7 +141,7 @@ class ArkTS {
 
   void ThrowError(const char *message);
 
-  void CreateArkts2CCallback(napi_value &callback, NapiCallback callbackC,
+  void CreateArkTs2Callback(napi_value &callback, NapiCallback callbackC,
                               ScopeNapiAsynCall *scopeCallback);
 
   private:

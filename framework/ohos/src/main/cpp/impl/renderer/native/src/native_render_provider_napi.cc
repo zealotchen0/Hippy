@@ -540,7 +540,7 @@ void CallGetComponentSnapshotMethod(napi_env env, napi_ref render_provider_ref,
     ScopeNapiAsynCall *scopePtr = new ScopeNapiAsynCall();
     scopePtr->dataScope = new std::function<void(napi_env, footstone::HippyValue &)>(scopeCallback);
     napi_value callback;
-    OhNapiUtils::CreateArkts2CCallback(env, callback, jsCallback, scopePtr);
+    OhNapiUtils::CreateArkTs2Callback(env, callback, jsCallback, scopePtr);
     ArkTS arkTs(env);
     std::vector<napi_value> args = {arkTs.CreateUint32(componentId), callback};
     auto delegateObject = arkTs.GetObject(render_provider_ref);

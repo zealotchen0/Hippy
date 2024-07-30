@@ -256,8 +256,7 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy, DevS
     this.rootView = rootView;
     this.loadJsModule(loadParams, rootView.getRootId(), loadCallback)
     if (this.params.debugMode && this.mDevSupportManager && loadParams.uiContext) {
-      this.mDevSupportManager.attachToHost(loadParams.uiContext, this.params.context,
-        rootView.getRootId());
+      this.mDevSupportManager.attachToHost(loadParams.uiContext, this.params.context, rootView.getRootId());
     }
     return rootView;
   }

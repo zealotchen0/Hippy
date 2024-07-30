@@ -25,10 +25,10 @@
 
 using HippyValueObjectType = HippyValue::HippyValueObjectType;
 
-void OhNapiUtils::CreateArkts2CCallback(napi_env env, napi_value &value, NapiCallback callbackC,
+void OhNapiUtils::CreateArkTs2Callback(napi_env env, napi_value &value, NapiCallback callbackC,
                                          ScopeNapiAsynCall *scopeCallback) {
   ArkTS arkTs(env);
-  arkTs.CreateArkts2CCallback(value, callbackC, scopeCallback);
+  arkTs.CreateArkTs2Callback(value, callbackC, scopeCallback);
 }
 
 HippyValue OhNapiUtils::NapiValue2HippyValue(napi_env env, napi_value value) {

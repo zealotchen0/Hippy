@@ -254,7 +254,7 @@ uint32_t ArkTS::GetArrayLength(napi_value array) {
   return length;
 }
 
-void ArkTS::CreateArkts2CCallback(napi_value &callback, NapiCallback callbackC,
+void ArkTS::CreateArkTs2Callback(napi_value &callback, NapiCallback callbackC,
                                    ScopeNapiAsynCall *scopeCallback) {
   napi_create_function(env_, nullptr, 0, callbackC, scopeCallback, &callback);
 }
