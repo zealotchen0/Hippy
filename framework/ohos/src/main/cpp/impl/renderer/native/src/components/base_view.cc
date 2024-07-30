@@ -628,6 +628,24 @@ void BaseView::AddSubRenderView(std::shared_ptr<BaseView> &subView, int32_t inde
   OnChildInserted(subView, index);
 }
 
+void BaseView::Call(const std::string &method, const std::vector<HippyValue> params,
+                    std::function<void(const HippyValue &result)> callback) {
+  FOOTSTONE_DLOG(INFO) << "BaseView::Call::tag_::" << tag_ << ", view_type_::" << view_type_
+                       << ", method::" << method;
+  if (method == "getScreenShot") {
+    callback(params.back());
+  } else if (method == "addFrameCallback") {
+
+  } else if (method == "removeFrameCallback") {
+    auto resultMap = HippyValue();
+    callback(resultMap);
+  } else if (method == "getLocationOnScreen") {
+    callback(params.back());
+  } else {
+    FOOTSTONE_DLOG(INFO) << "Unsupported method called: " << method;
+  }
+}
+
 void BaseView::RemoveSubView(std::shared_ptr<BaseView> &subView) {
   auto it = std::find(children_.begin(), children_.end(), subView);
   if (it != children_.end()) {
