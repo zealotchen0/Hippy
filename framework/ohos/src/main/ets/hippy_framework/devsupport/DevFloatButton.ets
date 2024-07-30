@@ -73,7 +73,7 @@ function buildReload(params: Params) {
 export class DevFloatButton {
   private mWidth: number;
   private floatButtonArray: ComponentContent<Params>[] = [];
-  private uiContext: UIContext;
+  private uiContext?: UIContext;
   private btnPosition: Position = {
     x: 0,
     y: 0,
@@ -88,15 +88,15 @@ export class DevFloatButton {
   private winWidth: number = 0 //窗口宽度
   private winHeight: number = 0 //窗口高度
 
-  constructor(context: Context, uiContext: UIContext, onClickHandle: (event: ClickEvent) => void) {
+  constructor(context: Context, onClickHandle: (event: ClickEvent) => void) {
     this.mWidth = this.getDensityPixels(context) as number;
-    this.uiContext = uiContext;
     this.getWindowInfo(onClickHandle);
   }
 
   getWindowInfo(onClickHandle: (event: ClickEvent) => void) {
     window.getLastWindow(getContext(this), (err, windowClass) => {
       if (!err.code) {
+        this.uiContext = windowClass.getUIContext();
         //状态栏高度
         this.statusHeight =
           px2vp(windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM).topRect.height)
@@ -140,17 +140,19 @@ export class DevFloatButton {
 
   private create(onClickHandle: (event: ClickEvent) => void) {
     let params = new Params("Test", this.btnPosition, this.radius, (event: ClickEvent) => {
-      const action = this.uiContext.getPromptAction();
-      let contentNode = new ComponentContent(this.uiContext, wrapBuilder(buildReload),
-        new Params("Reload", null, this.radius, (reloaClickEvent: ClickEvent) => {
-          onClickHandle(reloaClickEvent);
-          action.closeCustomDialog(contentNode);
-        }, (event: TouchEvent) => {
-        }));
-      action.openCustomDialog(contentNode, {
-        autoCancel: true,
-        alignment: DialogAlignment.Center,
-      });
+      const action = this.uiContext?.getPromptAction();
+      if (this.uiContext != null) {
+        let contentNode = new ComponentContent(this.uiContext, wrapBuilder(buildReload),
+          new Params("Reload", null, this.radius, (reloaClickEvent: ClickEvent) => {
+            onClickHandle(reloaClickEvent);
+            action?.closeCustomDialog(contentNode);
+          }, (event: TouchEvent) => {
+          }));
+        action?.openCustomDialog(contentNode, {
+          autoCancel: true,
+          alignment: DialogAlignment.Center,
+        });
+      }
     },
       (event: TouchEvent) => {
         //手指按下记录初始触摸点坐标、悬浮按钮位置
@@ -164,15 +166,17 @@ export class DevFloatButton {
         }
       }
     );
-    let componentContent =
-      new ComponentContent(this.uiContext, wrapBuilder<[Params]>(buildeFloatBtn), params);
-    this.floatButtonArray.push(componentContent);
-    this.uiContext.getOverlayManager().addComponentContent(componentContent, 99);
+    if (this.uiContext != null) {
+      let componentContent =
+        new ComponentContent(this.uiContext, wrapBuilder<[Params]>(buildeFloatBtn), params);
+      this.floatButtonArray.push(componentContent);
+      this.uiContext?.getOverlayManager().addComponentContent(componentContent, 99);
+    }
   }
 
   public delete() {
     if (this.floatButtonArray.length > 0) {
-      this.uiContext.getOverlayManager().removeComponentContent(this.floatButtonArray.pop());
+      this.uiContext?.getOverlayManager().removeComponentContent(this.floatButtonArray.pop());
     }
   }
 

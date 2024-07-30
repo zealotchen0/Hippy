@@ -43,8 +43,8 @@ export class DevSupportManager {
     this.mDevImp.setDevServerCallback(devCallback);
   }
 
-  public attachToHost(uiContext: UIContext, context: Context, rootId: number) {
-    this.mDevImp.attachToHost(uiContext, context, rootId);
+  public attachToHost(context: Context, rootId: number) {
+    this.mDevImp.attachToHost(context, rootId);
   }
 
   public detachFromHost(context: Context, rootId: number) {

@@ -88,7 +88,7 @@ export class DevServerImpl implements DevServerInterface, OnReloadListener {
     this.mServerCallBack = devServerCallback;
   }
 
-  attachToHost(uiContext: UIContext, context: Context, rootId: number): void {
+  attachToHost(context: Context, rootId: number): void {
     if (!this.mDebugMode) {
       return;
     }
@@ -102,7 +102,7 @@ export class DevServerImpl implements DevServerInterface, OnReloadListener {
       LogUtils.d(DevServerImpl.TAG, "onClickHandle::event" + JSON.stringify(event));
       // this.onReload();
     }
-    let devButton: DevFloatButton = new DevFloatButton(context, uiContext, onClickHandle);
+    let devButton: DevFloatButton = new DevFloatButton(context, onClickHandle);
 
     this.mDevButtonMaps.set(rootId, devButton);
   }
