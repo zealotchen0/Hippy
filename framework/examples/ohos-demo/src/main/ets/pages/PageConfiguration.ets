@@ -81,8 +81,6 @@ struct PageConfiguration {
 
   private debugServerHost:string = DEFAULT_DEBUG_SERVER_HOST
 
-  private uiContext: UIContext = this.getUIContext()
-
   onDriverSettingDlgCancel() {
     switch (this.driverMode) {
       case DriverMode.JS_REACT:
