@@ -41,10 +41,13 @@ public:
   
   uint32_t GetInstanceId() { return instance_id_; }
   
-  void RegisterNativeXComponentHandle(OH_NativeXComponent *nativeXComponent, uint32_t root_id, uint32_t node_id);
+  void BindNativeRoot(ArkUI_NodeContentHandle contentHandle, uint32_t root_id, uint32_t node_id);
+  void UnbindNativeRoot(uint32_t root_id, uint32_t node_id);
   void RegisterCustomTsRenderViews(napi_env ts_env, napi_ref ts_render_provider_ref, std::set<std::string> &custom_views, std::map<std::string, std::string> &mapping_views);
   
   void DestroyRoot(uint32_t root_id);
+  
+  void DoCallbackForCallCustomTsView(uint32_t root_id, uint32_t node_id, uint32_t callback_id, const HippyValue &result);
 
   void CreateNode(uint32_t root_id, const std::vector<std::shared_ptr<HRCreateMutation>> &mutations);
   void UpdateNode(uint32_t root_id, const std::vector<std::shared_ptr<HRUpdateMutation>> &mutations);
@@ -67,12 +70,16 @@ public:
   void SpanPosition(uint32_t root_id, uint32_t node_id, float x, float y);
   
   std::string GetBundlePath() override;
+  HRPosition GetRootViewtPositionInWindow(uint32_t root_id) override;
+  
   uint64_t AddEndBatchCallback(uint32_t root_id, const EndBatchCallback &cb) override;
   void RemoveEndBatchCallback(uint32_t root_id, uint64_t cbId) override;
 
   bool GetViewParent(uint32_t root_id, uint32_t node_id, uint32_t &parent_id, std::string &parent_view_type);
   bool GetViewChildren(uint32_t root_id, uint32_t node_id, std::vector<uint32_t> &children_ids, std::vector<std::string> &children_view_types);
   void CallViewMethod(uint32_t root_id, uint32_t node_id, const std::string &method, const std::vector<HippyValue> params, std::function<void(const HippyValue &result)> callback);
+  void SetViewEventListener(uint32_t root_id, uint32_t node_id, napi_ref callback_ref);
+  std::shared_ptr<HRManager> &GetHRManager() { return hr_manager_; }
   
 private:
   uint32_t instance_id_;

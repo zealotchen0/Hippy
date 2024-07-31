@@ -24,6 +24,7 @@
 #include "renderer/native_render_provider_napi.h"
 #include "renderer/native_render_provider_manager.h"
 #include "renderer/api/hippy_view_provider.h"
+#include "renderer/utils/hr_pixel_utils.h"
 #include <cstdint>
 #include <iostream>
 #include <utility>
@@ -200,6 +201,13 @@ void NativeRenderManager::SetRenderDelegate(napi_env ts_env, bool enable_ark_c_a
 
 void NativeRenderManager::InitDensity(double density) {
   density_ = static_cast<float>(density);
+  HRPixelUtils::InitDensity(density);
+}
+
+void NativeRenderManager::AddCustomFontPath(const std::string &fontFamilyName, const std::string &fontPath) {
+    if (fontFamilyName.length() && fontPath.length()) {
+        custom_font_path_map_[fontFamilyName] = fontPath;
+    }
 }
 
 void NativeRenderManager::CreateRenderNode(std::weak_ptr<RootNode> root_node,
@@ -578,22 +586,32 @@ void NativeRenderManager::MoveRenderNode_TS(std::weak_ptr<RootNode> root_node, s
   CallRenderDelegateMoveNodeMethod(ts_env_, ts_render_provider_ref_, "moveNode", root->GetId(), pid, buffer_pair);
 }
 
+static bool SortMoveNodes(const std::shared_ptr<DomNode> &lhs, const std::shared_ptr<DomNode> &rhs) {
+  return lhs->GetPid() < rhs->GetPid();
+}
+
 void NativeRenderManager::MoveRenderNode_C(std::weak_ptr<RootNode> root_node, std::vector<std::shared_ptr<DomNode>> &&nodes) {
   auto root = root_node.lock();
   if (!root) {
     return;
   }
 
+  std::sort(nodes.begin(), nodes.end(), SortMoveNodes);
   uint32_t root_id = root->GetId();
   auto len = nodes.size();
-  auto m = std::make_shared<HRMoveMutation>();
-  std::vector<HRMoveNodeInfo> node_infos;
+  std::shared_ptr<HRMoveMutation> m;
   for (uint32_t i = 0; i < len; i++) {
     const auto &render_info = nodes[i]->GetRenderInfo();
-    m->parent_tag_ = render_info.pid;
-    node_infos.push_back(HRMoveNodeInfo(render_info.id, render_info.index));
+    if (m && m->parent_tag_ != render_info.pid) {
+      c_render_provider_->MoveNode(root_id, m);
+      m = nullptr;
+    }
+    if (!m) {
+      m = std::make_shared<HRMoveMutation>();
+      m->parent_tag_ = render_info.pid;
+    }
+    m->node_infos_.push_back(HRMoveNodeInfo(render_info.id, render_info.index));
   }
-  m->node_infos_ = node_infos;
   c_render_provider_->MoveNode(root_id, m);
 }
 
@@ -1004,7 +1022,7 @@ void NativeRenderManager::DoMeasureText(const std::weak_ptr<RootNode> root_node,
   CollectAllProps(textPropMap, node);
 
   float density = GetDensity();
-  OhMeasureText measureInst;
+  OhMeasureText measureInst(custom_font_path_map_);
   OhMeasureResult measureResult;
 
   measureInst.StartMeasure(textPropMap);
@@ -1186,15 +1204,27 @@ bool NativeRenderManager::IsCustomMeasureCNode(const std::string &name) {
   return false;
 }
 
-void NativeRenderManager::RegisterNativeXComponentHandle(OH_NativeXComponent *nativeXComponent, uint32_t root_id, uint32_t node_id) {
+void NativeRenderManager::BindNativeRoot(ArkUI_NodeContentHandle contentHandle, uint32_t root_id, uint32_t node_id) {
   if (enable_ark_c_api_) {
-    c_render_provider_->RegisterNativeXComponentHandle(nativeXComponent, root_id, node_id);
+    c_render_provider_->BindNativeRoot(contentHandle, root_id, node_id);
+  }
+}
+  
+void NativeRenderManager::UnbindNativeRoot(uint32_t root_id, uint32_t node_id) {
+  if (enable_ark_c_api_) {
+    c_render_provider_->UnbindNativeRoot(root_id, node_id);
   }
 }
 
 void NativeRenderManager::DestroyRoot(uint32_t root_id) {
   if (enable_ark_c_api_) {
     c_render_provider_->DestroyRoot(root_id);
+  }
+}
+
+void NativeRenderManager::DoCallbackForCallCustomTsView(uint32_t root_id, uint32_t node_id, uint32_t callback_id, const HippyValue &result) {
+  if (enable_ark_c_api_) {
+    c_render_provider_->DoCallbackForCallCustomTsView(root_id, node_id, callback_id, result);
   }
 }
 
@@ -1215,6 +1245,12 @@ bool NativeRenderManager::GetViewChildren(uint32_t root_id, uint32_t node_id, st
 void NativeRenderManager::CallViewMethod(uint32_t root_id, uint32_t node_id, const std::string &method, const std::vector<HippyValue> params, std::function<void(const HippyValue &result)> callback) {
   if (enable_ark_c_api_) {
     c_render_provider_->CallViewMethod(root_id, node_id, method, params, callback);
+  }
+}
+
+void NativeRenderManager::SetViewEventListener(uint32_t root_id, uint32_t node_id, napi_ref callback_ref) {
+  if (enable_ark_c_api_) {
+    c_render_provider_->SetViewEventListener(root_id, node_id, callback_ref);
   }
 }
 

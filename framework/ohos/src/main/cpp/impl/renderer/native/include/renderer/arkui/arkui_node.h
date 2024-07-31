@@ -26,6 +26,7 @@
 #include <arkui/native_type.h>
 #include <memory>
 #include <string>
+#include <sys/stat.h>
 #include "footstone/logging.h"
 #include "renderer/utils/hr_types.h"
 
@@ -56,8 +57,6 @@ protected:
   ArkUINode(ArkUINode &&other) noexcept;
 
 public:
-  using Alignment = ArkUI_Alignment;
-  
   ArkUINode(ArkUI_NodeHandle nodeHandle);
   virtual ~ArkUINode();
 
@@ -103,17 +102,26 @@ public:
   virtual ArkUINode &SetBorderStyle(ArkUI_BorderStyle top, ArkUI_BorderStyle right, ArkUI_BorderStyle bottom, ArkUI_BorderStyle left);
   virtual ArkUINode &SetShadow(const HRShadow &shadow);
   virtual ArkUINode &SetMargin(float left, float top, float right, float bottom);
+  virtual ArkUINode &SetAlignment(ArkUI_Alignment align);
   virtual ArkUINode &SetExpandSafeArea();//TODO will update when NODE_EXPAND_SAFE_AREA add in sdk
   virtual ArkUINode &SetTransitionMove(const ArkUI_TransitionEdge edgeType,int32_t duration,ArkUI_AnimationCurve curveType = ARKUI_CURVE_EASE);  
   virtual ArkUINode &SetTransitionOpacity(const ArkUI_AnimationCurve curveType,int32_t duration);
-  virtual ArkUINode &SetTransitionTranslate(float distanceX,float distanceY,float distanceZ,ArkUI_AnimationCurve curveType,int32_t duration);   
+  virtual ArkUINode &SetTransitionTranslate(float distanceX,float distanceY,float distanceZ,ArkUI_AnimationCurve curveType,int32_t duration);
+//  virtual ArkUINode &SetPadding(float top, float right, float bottom, float left);
   virtual void ResetNodeAttribute(ArkUI_NodeAttributeType type);
   virtual HRSize GetSize() const;
   virtual uint32_t GetTotalChildCount() const;
+  virtual HRPosition GetPostion() const;
+  virtual HRPosition GetAbsolutePosition() const;
+  virtual HRPosition GetLayoutPositionInScreen() const;
+  virtual HRPosition GetLayoutPositionInWindow() const;
   
   void SetArkUINodeDelegate(ArkUINodeDelegate *arkUINodeDelegate);
   virtual void OnNodeEvent(ArkUI_NodeEvent *event);
-  
+    
+  virtual ArkUI_NodeHandle GetFirstChild() const;
+  virtual ArkUI_NodeHandle GetLastChild() const;
+  virtual ArkUI_NodeHandle GetChildAt(int32_t postion) const;
   void RegisterClickEvent();
   void UnregisterClickEvent();
   void RegisterAppearEvent();
@@ -126,9 +134,17 @@ protected:
   void MaybeThrow(int32_t status) {
     if (status != 0) {
       auto message = std::string("ArkUINode operation failed with status: ") + std::to_string(status);
-      FOOTSTONE_LOG(ERROR) << message;
-      // TODO(hot):
-      //throw std::runtime_error(std::move(message));
+      if (status == ARKUI_ERROR_CODE_PARAM_INVALID) {
+        FOOTSTONE_LOG(ERROR) << message;
+      } else if (status == ARKUI_ERROR_CODE_ATTRIBUTE_OR_EVENT_NOT_SUPPORTED) {
+        // Comment for too many log.
+        // FOOTSTONE_LOG(ERROR) << message;
+      } else if (status == ARKUI_ERROR_CODE_ARKTS_NODE_NOT_SUPPORTED) {
+        FOOTSTONE_LOG(ERROR) << message;
+      } else if (status == ARKUI_ERROR_CODE_ADAPTER_NOT_BOUND || status == ARKUI_ERROR_CODE_ADAPTER_EXIST) {
+        FOOTSTONE_LOG(ERROR) << message;
+      }
+      // throw std::runtime_error(std::move(message));
     }
   }
 

@@ -59,14 +59,6 @@ void OhMeasureText::CheckUnusedProp(const char *tag, std::map<std::string, std::
 }
 #endif
 
-std::map<std::string, std::string> OhMeasureText::fontFamilyList_ = {
-    {"TTTGB", "/data/storage/el1/bundle/entry/resources/resfile/fonts/TTTGB.otf"}};
-// todo 这里暂时写死了字体路径，实际用到了哪些字体需要ArkTS告知
-
-void OhMeasureText::RegisterFont(std::string familyName, std::string familySrc) {
-    fontFamilyList_[familyName] = familySrc;
-}
-
 void OhMeasureText::StartMeasure(std::map<std::string, std::string> &propMap) {
 #ifdef MEASURE_TEXT_CHECK_PROP
     StartCollectProp();
@@ -120,6 +112,8 @@ void OhMeasureText::StartMeasure(std::map<std::string, std::string> &propMap) {
                                                    fontFamilyList_[fontFamilyName].c_str());
             FOOTSTONE_DLOG(WARNING) << "Measure Text OH_Drawing_RegisterFont(" << fontFamilyName << ","
                                     << fontFamilyList_[fontFamilyName] << ") " << (ret == 0 ? "succ" : "fail");
+        } else {
+            FOOTSTONE_LOG(ERROR) << "Measure Text OH_Drawing_RegisterFont not found font:" << fontFamilyName;
         }
     }
     handler_ = OH_Drawing_CreateTypographyHandler(typoStyle_, fontCollection_);

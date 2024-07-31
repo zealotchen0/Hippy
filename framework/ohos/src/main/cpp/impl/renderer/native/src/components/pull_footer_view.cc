@@ -21,6 +21,7 @@
  */
 
 #include "renderer/components/pull_footer_view.h"
+#include "renderer/components/list_view.h"
 #include "renderer/utils/hr_value_utils.h"
 
 namespace hippy {
@@ -42,11 +43,29 @@ bool PullFooterView::SetProp(const std::string &propKey, const HippyValue &propV
   return ListItemView::SetProp(propKey, propValue);
 }
 
+void PullFooterView::OnSetPropsEnd(){
+   return ListItemView::OnSetPropsEnd(); 
+}
+
 void PullFooterView::Call(const std::string &method, const std::vector<HippyValue> params,
                           std::function<void(const HippyValue &result)> callback) {
+  FOOTSTONE_DLOG(INFO)<<__FUNCTION__<<" method = "<<method; 
   if (method == "collapsePullFooter") {
-    // nothing to do
+    Show(false);
+  } else {
+    BaseView::Call(method, params, callback);
   }
+}
+
+void PullFooterView::Show(bool show) {
+  if (show != isVisible_) {
+    isVisible_ = show;
+    GetLocalRootArkUINode().SetVisibility(show);
+  }
+}
+
+void PullFooterView::UpdateRenderViewFrame(const HRRect &frame, const HRPadding &padding){
+//  BaseView::UpdateRenderViewFrame(frame, padding);
 }
 
 } // namespace native

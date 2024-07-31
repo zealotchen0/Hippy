@@ -14,7 +14,7 @@ import { EngineInitParams, ModuleLoadParams } from './HippyEngine';
 import { HippyEngineContext } from './HippyEngineContext';
 import { HippyGlobalConfigs } from './HippyGlobalConfigs';
 import { HippyModuleManagerImpl, HippyNativeModuleCreator } from './modules/HippyModuleManagerImpl';
-import { HippyResourceLoader } from './adapter/http/HippyResourceLoader';
+import { HippyResourceLoader } from './HippyResourceLoader';
 import { DefaultProcessor } from '../vfs/DefaultProcessor';
 import { HippyModuleManager } from './modules/HippyModuleManager';
 import { HippyAPIProvider } from './bridge/HippyAPIProvider';
@@ -42,6 +42,7 @@ export class HippyEngineContextImpl implements HippyEngineContext {
   private mDevSupportManager: DevSupportManager | null = null;
   private mDevtoolsManager: DevtoolsManager | null = null;
   private mDebugMode: boolean;
+  private loadModuleCallback: Function | null = null;
 
   public constructor(
     params: EngineInitParams,
@@ -70,12 +71,14 @@ export class HippyEngineContextImpl implements HippyEngineContext {
     let customMeasureRenderViews: Array<string> | null = null;
     let mappingRenderViews: Array<string> | null = null;
     let customNativeModules: Map<string, HippyNativeModuleCreator> | null = null;
+    let customFontPathMap: Map<string, string> | null = null;
     if (this.providers) {
       customRenderViewCreatorMap = new Map();
       customRenderViews = new Array();
       customMeasureRenderViews = new Array();
       mappingRenderViews = new Array();
       customNativeModules = new Map();
+      customFontPathMap = new Map();
       for (let provider of this.providers) {
         let apiProviderRenderMap = provider.getCustomRenderViewCreatorMap()
         if (apiProviderRenderMap) {
@@ -103,6 +106,12 @@ export class HippyEngineContextImpl implements HippyEngineContext {
             customNativeModules?.set(key, value)
           })
         }
+        let apiProviderFontPaths = provider.getCustomFontPathMap();
+        if (apiProviderFontPaths) {
+          apiProviderFontPaths.forEach((value, key) => {
+            customFontPathMap?.set(key, value)
+          })
+        }
       }
     }
 
@@ -116,11 +125,12 @@ export class HippyEngineContextImpl implements HippyEngineContext {
     let enableArkCApi = globalConfigs.enableArkCApi()
     this.nativeRenderer = new NativeRenderer(this.libHippy, enableArkCApi, this.nativeRenderProvider,
       customRenderViews, customMeasureRenderViews, mappingRenderViews, bundlePath)
+    this.nativeRenderer.registerCustomFontPaths(customFontPathMap)
     this.nativeRenderer.attachToDom(this.mDomManager.instanceId)
     // DomManager挂载
     this.mDomManager.attachToRenderer(this.nativeRenderer.instanceId)
     // ModuleManager注册
-    this.mModuleManager = new HippyModuleManagerImpl(this);
+    this.mModuleManager = new HippyModuleManagerImpl(this, params.enableV8Serialization);
     this.mModuleManager.addModules(customNativeModules);
     // JsDriver注册
     this.mJsDriver = new JsDriver(this.libHippy, this.mModuleManager)
@@ -157,8 +167,14 @@ export class HippyEngineContextImpl implements HippyEngineContext {
     // }
   }
 
+  setLoadModuleCallback(loadModuleCallback: Function | null) {
+    this.loadModuleCallback = loadModuleCallback;
+  }
+
   onLoadModuleCompleted(statusCode: number, msg: string): void {
-    throw new Error('Method not implemented.');
+    if (this.loadModuleCallback) {
+        this.loadModuleCallback(statusCode, msg);
+    }
   }
 
   getLibHippy(): HippyLibrary {
@@ -264,6 +280,7 @@ export class HippyEngineContextImpl implements HippyEngineContext {
   handleException(error: HippyJsException): void {
     if (this.mDebugMode && this.mDevSupportManager != null) {
       this.mDevSupportManager.handleException(error);
+      this.mGlobalConfigs.getExceptionHandler()?.handleJsException(error);
     } else {
       if (error instanceof HippyJsException) {
         this.mGlobalConfigs.getExceptionHandler()?.handleJsException(error);

@@ -34,13 +34,22 @@ void NativeRenderImpl::InitRenderManager() {
   hr_manager_ = std::make_shared<HRManager>(instance_id_, native_render);
 }
 
-void NativeRenderImpl::RegisterNativeXComponentHandle(OH_NativeXComponent *nativeXComponent, uint32_t root_id, uint32_t node_id) {
+void NativeRenderImpl::BindNativeRoot(ArkUI_NodeContentHandle contentHandle, uint32_t root_id, uint32_t node_id) {
   auto view_manager = hr_manager_->GetViewManager(root_id);
   if (!view_manager) {
     return;
   }
   
-  view_manager->AttachToNativeXComponent(nativeXComponent, node_id);
+  view_manager->BindNativeRoot(contentHandle, node_id);
+}
+
+void NativeRenderImpl::UnbindNativeRoot(uint32_t root_id, uint32_t node_id) {
+  auto view_manager = hr_manager_->GetViewManager(root_id);
+  if (!view_manager) {
+    return;
+  }
+  
+  view_manager->UnbindNativeRoot(node_id);
 }
 
 void NativeRenderImpl::RegisterCustomTsRenderViews(napi_env ts_env, napi_ref ts_render_provider_ref, std::set<std::string> &custom_views, std::map<std::string, std::string> &mapping_views) {
@@ -50,6 +59,14 @@ void NativeRenderImpl::RegisterCustomTsRenderViews(napi_env ts_env, napi_ref ts_
 void NativeRenderImpl::DestroyRoot(uint32_t root_id) {
   hr_manager_->RemoveViewManager(root_id);
   hr_manager_->RemoveVirtualNodeManager(root_id);
+}
+
+void NativeRenderImpl::DoCallbackForCallCustomTsView(uint32_t root_id, uint32_t node_id, uint32_t callback_id, const HippyValue &result) {
+  auto view_manager = hr_manager_->GetViewManager(root_id);
+  if (!view_manager) {
+    return;
+  }
+  view_manager->DoCallbackForCallCustomTsView(node_id, callback_id, result);
 }
 
 void NativeRenderImpl::CreateNode(uint32_t root_id, const std::vector<std::shared_ptr<HRCreateMutation>> &mutations) {
@@ -209,6 +226,18 @@ std::string NativeRenderImpl::GetBundlePath() {
   return bundle_path_;
 }
 
+HRPosition NativeRenderImpl::GetRootViewtPositionInWindow(uint32_t root_id) {
+  auto view_manager = hr_manager_->GetViewManager(root_id);
+  if (!view_manager) {
+    return HRPosition{0, 0};
+  }
+  auto rootView = view_manager->GetRootView();
+  if (!rootView) {
+    return HRPosition{0, 0};
+  }
+  return rootView->GetLocalRootArkUINode().GetLayoutPositionInWindow();
+}
+
 uint64_t NativeRenderImpl::AddEndBatchCallback(uint32_t root_id, const EndBatchCallback &cb) {
   auto view_manager = hr_manager_->GetViewManager(root_id);
   if (!view_manager) {
@@ -247,6 +276,14 @@ void NativeRenderImpl::CallViewMethod(uint32_t root_id, uint32_t node_id, const 
     return;
   }
   view_manager->CallViewMethod(node_id, method, params, callback);
+}
+
+void NativeRenderImpl::SetViewEventListener(uint32_t root_id, uint32_t node_id, napi_ref callback_ref) {
+  auto view_manager = hr_manager_->GetViewManager(root_id);
+  if (!view_manager) {
+    return;
+  }
+  view_manager->SetViewEventListener(node_id, callback_ref);
 }
 
 } // namespace native

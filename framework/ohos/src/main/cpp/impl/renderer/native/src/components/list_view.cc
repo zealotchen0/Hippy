@@ -25,6 +25,8 @@
 #include "renderer/utils/hr_event_utils.h"
 #include "renderer/utils/hr_value_utils.h"
 
+// #define LIST_VIEW_DEBUG_LOG
+
 namespace hippy {
 inline namespace render {
 inline namespace native {
@@ -35,6 +37,7 @@ ListView::ListView(std::shared_ptr<NativeRenderContext> &ctx) : BaseView(ctx) {
   listNode_.SetSizePercent(HRSize(1.f, 1.f));
   listNode_.SetScrollBarDisplayMode(ARKUI_SCROLL_BAR_DISPLAY_MODE_OFF);
   listNode_.SetListCachedCount(4);
+  listNode_.SetScrollNestedScroll(ARKUI_SCROLL_NESTED_MODE_SELF_FIRST, ARKUI_SCROLL_NESTED_MODE_SELF_FIRST);
   adapter_ = std::make_shared<ListItemAdapter>(children_);
   listNode_.SetLazyAdapter(adapter_->GetHandle());
 }
@@ -152,16 +155,23 @@ void ListView::Call(const std::string &method, const std::vector<HippyValue> par
     listNode_.ScrollTo(xOffset, yOffset, animated);
   } else if (method == "scrollToTop") {
     listNode_.ScrollToIndex(hasPullHeader_ ? 1 : 0, true, true);
+  } else {
+    BaseView::Call(method, params, callback);
   }
 }
 
 void ListView::OnChildInserted(std::shared_ptr<BaseView> const &childView, int32_t index) {
   BaseView::OnChildInserted(childView, index);
-  adapter_->InsertItem(index);
+
+#ifdef LIST_VIEW_DEBUG_LOG
+  FOOTSTONE_DLOG(INFO) << "hippy ListView - on child inserted: " << index;
+#endif
+
+  if (index == 0 && childView->GetViewType() == PULL_HEADER_VIEW_TYPE) {
+    listNode_.SetListInitialIndex(1);
+  }
   
-  auto itemView = std::static_pointer_cast<ListItemView>(childView);
-  itemView->GetLocalRootArkUINode().SetNodeDelegate(this);
-  itemView->GetLocalRootArkUINode().SetItemIndex(static_cast<int32_t>(index));
+  adapter_->InsertItem(index);
 }
 
 void ListView::OnChildRemoved(std::shared_ptr<BaseView> const &childView, int32_t index) {
@@ -179,6 +189,10 @@ void ListView::ScrollToIndex(int32_t index, bool animated) {
   listNode_.ScrollToIndex(index, animated, true);
 }
 
+void ListView::SetScrollNestedMode(ArkUI_ScrollNestedMode scrollForward, ArkUI_ScrollNestedMode scrollBackward) {
+  listNode_.SetScrollNestedScroll(scrollForward, scrollBackward);
+}
+
 void ListView::OnAppear() {
   
 }
@@ -188,7 +202,18 @@ void ListView::OnDisappear() {
 }
 
 void ListView::OnScrollIndex(int32_t firstIndex, int32_t lastIndex, int32_t centerIndex) {
+#ifdef LIST_VIEW_DEBUG_LOG
+  FOOTSTONE_DLOG(INFO) << "hippy ListView - on scroll index, first: " << firstIndex << ", last: " << lastIndex;
+#endif
   CheckSendReachEndEvent(lastIndex);
+}
+
+void ListView::OnWillScroll(float offset, ArkUI_ScrollState state) {
+  if (offset > 0) {
+    if (footerView_) {
+      footerView_->Show(true);
+    }
+  }
 }
 
 void ListView::OnScroll(float scrollOffsetX, float scrollOffsetY) {
@@ -197,11 +222,15 @@ void ListView::OnScroll(float scrollOffsetX, float scrollOffsetY) {
 }
 
 void ListView::OnScrollStart() {
-  FOOTSTONE_DLOG(INFO) << "ListView onScroll: onScrollStart=";
+#ifdef LIST_VIEW_DEBUG_LOG
+  FOOTSTONE_DLOG(INFO) << "hippy ListView on scroll start";
+#endif
 }
 
 void ListView::OnScrollStop() {
-  FOOTSTONE_DLOG(INFO) << "ListView onScroll: onScrollStop=";
+#ifdef LIST_VIEW_DEBUG_LOG
+  FOOTSTONE_DLOG(INFO) << "hippy ListView on scroll stop";
+#endif
   if (momentumScrollEndEventEnable_) {
     EmitScrollEvent(HREventUtils::EVENT_SCROLLER_MOMENTUM_END);
   }
@@ -228,6 +257,12 @@ void ListView::OnTouch(int32_t actionType) {
 }
 
 void ListView::OnItemVisibleAreaChange(int32_t index, bool isVisible, float currentRatio) {
+#ifdef LIST_VIEW_DEBUG_LOG
+  FOOTSTONE_DLOG(INFO) << "hippy ListView - on item visible area change, index: " << index
+    << ", isVisible: " << isVisible << ", currentRatio: " << currentRatio
+    << ", lastIndex: " << static_cast<int32_t>(children_.size()) - 1;
+#endif
+  
   CheckPullOnItemVisibleAreaChange(index, isVisible, currentRatio);
   if (rowShouldSticky_) {
     CheckStickyOnItemVisibleAreaChange(index, isVisible, currentRatio);
@@ -246,6 +281,13 @@ void ListView::OnItemVisibleAreaChange(int32_t index, bool isVisible, float curr
 void ListView::HandleOnChildrenUpdated() {
   auto childrenCount = children_.size();
   if (childrenCount > 0) {
+    // Index must be recalculated.
+    for (uint32_t i = 0; i < childrenCount; i++) {
+      auto itemView = std::static_pointer_cast<ListItemView>(children_[i]);
+      itemView->GetLocalRootArkUINode().SetNodeDelegate(this);
+      itemView->GetLocalRootArkUINode().SetItemIndex((int32_t)i);
+    }
+    
     if (children_[0]->GetViewType() == PULL_HEADER_VIEW_TYPE) {
       headerView_ = std::static_pointer_cast<PullHeaderView>(children_[0]);
       hasPullHeader_ = true;
@@ -253,6 +295,7 @@ void ListView::HandleOnChildrenUpdated() {
     }
     if (children_[childrenCount - 1]->GetViewType() == PULL_FOOTER_VIEW_TYPE) {
       footerView_ = std::static_pointer_cast<PullFooterView>(children_[childrenCount - 1]);
+      footerView_->Show(false);
     }
   }
   
@@ -476,13 +519,9 @@ void ListView::CheckInitOffset() {
   if (!initOffsetUsed_) {
     initOffsetUsed_ = true;
     
-    if (headerView_) {
-      listNode_.ScrollToIndex(1, true, true); // TODO(hot):
-    }
-    
     if (initialOffset_ > 0) {
       float y = 0;
-      if (headerView_ != nullptr){
+      if (headerView_ != nullptr) {
         y = headerView_->GetHeight();
       }
       y += initialOffset_;

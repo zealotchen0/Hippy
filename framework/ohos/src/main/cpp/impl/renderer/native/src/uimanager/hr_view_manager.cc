@@ -25,6 +25,7 @@
 #include "oh_napi/ark_ts.h"
 #include "oh_napi/oh_napi_object.h"
 #include "oh_napi/oh_napi_object_builder.h"
+#include "oh_napi/oh_napi_utils.h"
 #include "renderer/api/hippy_view_provider.h"
 #include "renderer/components/custom_ts_view.h"
 #include "renderer/components/custom_view.h"
@@ -54,15 +55,15 @@ HRViewManager::HRViewManager(uint32_t instance_id, uint32_t root_id, std::shared
   ts_render_provider_ref_ = ts_render_provider_ref;
 }
 
-void HRViewManager::AttachToNativeXComponent(OH_NativeXComponent *nativeXComponent, uint32_t node_id) {
+void HRViewManager::BindNativeRoot(ArkUI_NodeContentHandle contentHandle, uint32_t node_id) {
   bool isRoot = (node_id == 0);
   uint32_t current_id = isRoot ? root_id_ : node_id;
-  OH_NativeXComponent *savedComponent = nullptr;
-  auto it = nativeXComponentMap_.find(current_id);
-  if (it != nativeXComponentMap_.end()) {
-    savedComponent = it->second;
+  ArkUI_NodeContentHandle savedHandle = nullptr;
+  auto it = nodeContentMap_.find(current_id);
+  if (it != nodeContentMap_.end()) {
+    savedHandle = it->second;
   }
-  if (nativeXComponent == savedComponent) {
+  if (contentHandle == savedHandle) {
     return;
   }
   
@@ -71,23 +72,27 @@ void HRViewManager::AttachToNativeXComponent(OH_NativeXComponent *nativeXCompone
     return;
   }
   auto view = viewIt->second;
-  MaybeDetachRootNode(savedComponent, isRoot, view);
-  nativeXComponentMap_[current_id] = nativeXComponent;
-  MaybeAttachRootNode(nativeXComponent, isRoot, view);
+  
+  nodeContentMap_[current_id] = contentHandle;
+  OH_ArkUI_NodeContent_RegisterCallback(contentHandle, nullptr);
+  OH_ArkUI_NodeContent_AddNode(contentHandle, view->GetLocalRootArkUINode().GetArkUINodeHandle());
 }
 
-void HRViewManager::MaybeAttachRootNode(OH_NativeXComponent *nativeXComponent, bool isRoot, std::shared_ptr<BaseView> &view) {
-  if (nativeXComponent != nullptr) {
-    FOOTSTONE_DLOG(INFO) << "Attaching view to nativeXComponent with id: " << view->GetTag();
-    if (isRoot) {
-      OH_NativeXComponent_AttachNativeRootNode(nativeXComponent, view->GetLocalRootArkUINode().GetArkUINodeHandle());
-    } else {
-      // Nothing to do
-    }
+void HRViewManager::UnbindNativeRoot(uint32_t node_id) {
+  bool isRoot = (node_id == 0);
+  uint32_t current_id = isRoot ? root_id_ : node_id;
+  auto it = nodeContentMap_.find(current_id);
+  if (it == nodeContentMap_.end()) {
+    return;
   }
-}
-
-void HRViewManager::MaybeDetachRootNode(OH_NativeXComponent *nativeXComponent, bool isRoot, std::shared_ptr<BaseView> &view) {
+  ArkUI_NodeContentHandle savedHandle = it->second;
+  auto viewIt = view_registry_.find(current_id);
+  if (viewIt == view_registry_.end()) {
+    return;
+  }
+  auto view = viewIt->second;
+  OH_ArkUI_NodeContent_RemoveNode(savedHandle, view->GetLocalRootArkUINode().GetArkUINodeHandle());
+  nodeContentMap_.erase(current_id);
 }
 
 void HRViewManager::AddMutations(std::shared_ptr<HRMutation> &m) {
@@ -154,6 +159,7 @@ std::shared_ptr<BaseView> HRViewManager::CreateRenderView(uint32_t tag, std::str
   if (view) {
     view->SetTag(tag);
     view->SetViewType(real_view_name);
+    view->SetTsRenderProvider(ts_env_, ts_render_provider_ref_);
     view_registry_[tag] = view;
     return view;
   } else {
@@ -314,6 +320,13 @@ void HRViewManager::CallViewMethod(uint32_t tag, const std::string &method, cons
   auto it = view_registry_.find(tag);
   std::shared_ptr<BaseView> renderView = it != view_registry_.end() ? it->second : nullptr;
   if (renderView) {
+    // custom ts view
+    if (IsCustomTsRenderView(renderView->GetViewType())) {
+      CallCustomTsRenderViewMethod(tag, method, params, callback);
+      return;
+    }
+    
+    // build-in view
     renderView->Call(method, params, callback);
   }
 }
@@ -347,6 +360,16 @@ void HRViewManager::NotifyEndBatchCallbacks() {
   }
 }
 
+void HRViewManager::DoCallbackForCallCustomTsView(uint32_t node_id, uint32_t callback_id, const HippyValue &result) {
+  if (callback_id) {
+    auto callback = callCustomTsCallbackMap_[callback_id];
+    if (callback) {
+      callback(result);
+    }
+    callCustomTsCallbackMap_.erase(callback_id);
+  }
+}
+
 bool HRViewManager::GetViewParent(uint32_t node_id, uint32_t &parent_id, std::string &parent_view_type) {
   auto viewIt = view_registry_.find(node_id);
   if (viewIt == view_registry_.end()) {
@@ -375,6 +398,15 @@ bool HRViewManager::GetViewChildren(uint32_t node_id, std::vector<uint32_t> &chi
     children_view_types.push_back(child->GetViewType());
   }
   return children_ids.size() > 0;
+}
+
+void HRViewManager::SetViewEventListener(uint32_t node_id, napi_ref callback_ref) {
+  auto viewIt = view_registry_.find(node_id);
+  if (viewIt == view_registry_.end()) {
+    return;
+  }
+  auto view = viewIt->second;
+  view->SetTsEventCallback(callback_ref);
 }
 
 bool HRViewManager::IsCustomTsRenderView(std::string &view_name) {
@@ -423,6 +455,7 @@ std::shared_ptr<BaseView> HRViewManager::CreateCustomTsRenderView(uint32_t tag, 
   view->Init();
   view->SetTag(tag);
   view->SetViewType(view_name);
+  view->SetTsRenderProvider(ts_env_, ts_render_provider_ref_);
   view_registry_[tag] = view;
   return view;
 }
@@ -493,6 +526,37 @@ void HRViewManager::SetCustomTsRenderViewFrame(uint32_t tag, const HRRect &frame
   delegateObject.Call("setRenderViewFrameForCApi", args);
 }
 
+void HRViewManager::CallCustomTsRenderViewMethod(uint32_t tag, const std::string &method, const std::vector<HippyValue> params,
+    std::function<void(const HippyValue &result)> callback) {
+  ArkTS arkTs(ts_env_);
+  
+  auto paramArray = std::vector<napi_value>();
+  for (size_t i = 0; i < params.size(); i++) {
+    paramArray.push_back(OhNapiUtils::HippyValue2NapiValue(ts_env_, params[i]));
+  }
+  
+  uint32_t callbackId = 0;
+  if (callback) {
+    ++callCustomTsCallbackId_;
+    callbackId = callCustomTsCallbackId_;
+    callCustomTsCallbackMap_[callbackId] = callback;
+  }
+  
+  auto params_builder = arkTs.CreateObjectBuilder();
+  params_builder.AddProperty("rootTag", ctx_->GetRootId());
+  params_builder.AddProperty("tag", tag);
+  params_builder.AddProperty("method", method);
+  params_builder.AddProperty("params", arkTs.CreateArray(paramArray));
+  params_builder.AddProperty("callbackId", callbackId);
+  
+  std::vector<napi_value> args = {
+    params_builder.Build()
+  };
+  
+  auto delegateObject = arkTs.GetObject(ts_render_provider_ref_);
+  delegateObject.Call("callRenderViewMethodForCApi", args);
+}
+
 std::shared_ptr<BaseView> HRViewManager::CreateCustomRenderView(uint32_t tag, std::string &view_name, bool is_parent_text) {
   auto creator_map = HippyViewProvider::GetCustomViewCreatorMap();
   auto it = creator_map.find(view_name);
@@ -502,9 +566,21 @@ std::shared_ptr<BaseView> HRViewManager::CreateCustomRenderView(uint32_t tag, st
       view->Init();
       view->SetTag(tag);
       view->SetViewType(view_name);
+      view->SetTsRenderProvider(ts_env_, ts_render_provider_ref_);
       view_registry_[tag] = view;
       return view;
     }
+  }
+  return nullptr;
+}
+
+std::shared_ptr<BaseView> HRViewManager::GetViewFromRegistry(uint32_t node_id) {
+  if (node_id > 0) {
+    auto viewIt = view_registry_.find(node_id);
+    if (viewIt == view_registry_.end()) {
+      return nullptr;
+    }
+    return viewIt->second;
   }
   return nullptr;
 }

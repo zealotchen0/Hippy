@@ -20,6 +20,7 @@
 import TextMeasurer from "@ohos.measure"
 import {
   CallResultCallback,
+  EventListenerCallback,
   HippyLibrary, HippyRenderViewInfo } from '../hippy_library/HippyLibrary'
 import { HippyException } from '../support/common/HippyException'
 import { HippyExecutor } from '../support/common/HippyExecutor'
@@ -30,7 +31,10 @@ import { LogUtils } from '../support/utils/LogUtils'
 import { VfsManager } from '../vfs/VfsManager'
 import {
   buildHippyRenderViewForCApi,
+  CallRenderViewMethodParamsForCApi,
   CreateRenderViewParamsForCApi,
+  OnChildInsertedParamsForCApi,
+  OnChildRemovedParamsForCApi,
   SetRenderViewFrameParamsForCApi,
   UpdateEventListenerParamsForCApi,
   UpdatePropsParamsForCApi } from './NativeRenderBuilderForCApi'
@@ -658,6 +662,44 @@ key1               value1
     viewManager.setRenderViewFrameForCApi(params.tag, new HRRect(params.left, params.top, params.width, params.height), null)
   }
 
+  // for c-api
+  callRenderViewMethodForCApi(params: CallRenderViewMethodParamsForCApi): void {
+    let viewManager = this.renderManager.getViewManager(params.rootTag)
+    if (!viewManager) {
+      return
+    }
+
+    viewManager.callRenderViewMethodForCApi(params.tag, params.method, params.params, params.callbackId == 0 ? null : (result: HippyAny) => {
+      this.libHippy?.NativeRenderProvider_DoCallbackForCallCustomTsView(this.instanceId, params.rootTag, params.tag, params.callbackId, result)
+    })
+  }
+
+  // for c-api
+  onChildInsertedForCApi(params: OnChildInsertedParamsForCApi): void {
+    let viewManager = this.renderManager.getViewManager(params.rootTag)
+    if (!viewManager) {
+      return
+    }
+    viewManager.onChildInsertedForCApi(params.tag, params.childTag, params.childViewName, params.childIndex)
+  }
+
+  // for c-api
+  onChildRemovedForCApi(params: OnChildRemovedParamsForCApi): void {
+    let viewManager = this.renderManager.getViewManager(params.rootTag)
+    if (!viewManager) {
+      return
+    }
+    viewManager.onChildRemovedForCApi(params.tag, params.childTag, params.childViewName, params.childIndex)
+  }
+
+  getRenderView(rootId: number, nodeId: number): HippyRenderBaseView | null {
+    let viewManager = this.renderManager.getViewManager(rootId)
+    if (!viewManager) {
+      return null
+    }
+    return viewManager.getRenderView(nodeId)
+  }
+
   getViewParent(rootId: number, nodeId: number): HippyRenderViewInfo | null {
     return this.libHippy?.NativeRenderProvider_GetViewParent(this.instanceId, rootId, nodeId)
   }
@@ -667,8 +709,13 @@ key1               value1
   }
 
   callViewMethod(rootId: number, nodeId: number, method: string, params: HippyArray, callback: CallResultCallback | null): void {
-    return this.libHippy?.NativeRenderProvider_CallViewMethod(this.instanceId, rootId, nodeId, method, params, callback)
+    this.libHippy?.NativeRenderProvider_CallViewMethod(this.instanceId, rootId, nodeId, method, params, callback)
   }
+
+  setViewEventListener(rootId: number, nodeId: number, callback: EventListenerCallback | null): void {
+    this.libHippy?.NativeRenderProvider_SetViewEventListener(this.instanceId, rootId, nodeId, callback)
+  }
+
 
 }
 

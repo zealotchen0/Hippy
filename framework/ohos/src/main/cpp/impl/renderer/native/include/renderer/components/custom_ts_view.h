@@ -43,6 +43,9 @@ public:
   void OnChildRemoved(std::shared_ptr<BaseView> const &childView, int32_t index) override;
   
 private:
+  void OnCustomTsViewChildInserted(uint32_t tag, std::shared_ptr<BaseView> const &childView, int32_t index);
+  void OnCustomTsViewChildRemoved(uint32_t tag, std::shared_ptr<BaseView> const &childView, int32_t index);
+  
   StackNode containerNode_;
   CustomTsNode tsNode_;
   StackNode subContainerNode_;

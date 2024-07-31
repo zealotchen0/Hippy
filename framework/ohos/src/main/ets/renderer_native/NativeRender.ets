@@ -18,11 +18,14 @@
  * limitations under the License.
  */
 import { HippyRootView } from '.';
-import { CallResultCallback, HippyRenderViewInfo } from '../hippy_library/HippyLibrary';
+import { CallResultCallback,
+  EventListenerCallback,
+  HippyRenderViewInfo } from '../hippy_library/HippyLibrary';
 import { HippyException } from '../support/common/HippyException';
 import { HippyExecutor } from '../support/common/HippyExecutor';
 import { HippyArray, HippyRecord } from '../support/common/HippyTypes';
 import { VfsManager } from '../vfs/VfsManager';
+import HippyRenderBaseView from './components/base/HippyRenderBaseView';
 import { ImageDecoderAdapter } from './components/image/ImageDecoderAdapter';
 import { ImageLoaderAdapter } from './components/image/ImageLoaderAdapter';
 import { FontAdapter } from './components/richtext/FontAdapter';
@@ -67,8 +70,11 @@ export interface NativeRender {
 
   removeEndBatchCallback(rootId: number, cb: HippyEndBatchCallback): void
 
+  getRenderView(rootId: number, nodeId: number): HippyRenderBaseView | null
+
   getViewParent(rootId: number, nodeId: number): HippyRenderViewInfo | null
   getViewChildren(rootId: number, nodeId: number): Array<HippyRenderViewInfo> | null
   callViewMethod(rootId: number, nodeId: number, method: string, params: HippyArray, callback: CallResultCallback | null): void
+  setViewEventListener(rootId: number, nodeId: number, callback: EventListenerCallback | null): void
 
 }
