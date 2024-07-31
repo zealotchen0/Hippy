@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 import { ComponentContent, display, window } from '@kit.ArkUI';
-import { LogUtils } from '../../support/utils/LogUtils';
 
 class Params {
   text: string = "";
@@ -78,15 +77,15 @@ export class DevFloatButton {
     x: 0,
     y: 0,
   };
-  private statusHeight: number = 0 //状态栏高度
-  private bottomAvoidAreaHeight: number = 0 //手机底部规避区域高度
-  private startLeft: number = 0 //开始移动那一刻悬浮按钮距离窗口左边距离
-  private startTop: number = 0 //开始移动那一刻悬浮按钮距离窗口顶部距离
-  private startX: number = 0 //开始移动触摸点x坐标，相对窗口左上角
-  private startY: number = 0 //开始移动触摸点y坐标，相对窗口左上角
-  private radius: number = 18 //悬浮按钮半径，单位vp
-  private winWidth: number = 0 //窗口宽度
-  private winHeight: number = 0 //窗口高度
+  private statusHeight: number = 0
+  private bottomAvoidAreaHeight: number = 0
+  private startLeft: number = 0
+  private startTop: number = 0
+  private startX: number = 0
+  private startY: number = 0
+  private radius: number = 18
+  private winWidth: number = 0
+  private winHeight: number = 0
 
   constructor(context: Context, onClickHandle: (event: ClickEvent) => void) {
     this.mWidth = this.getDensityPixels(context) as number;
@@ -119,18 +118,12 @@ export class DevFloatButton {
 
   private updateCurrentBtnPosition(params: Params, event: TouchEvent) {
     let touch = event.touches[0];
-    //计算悬浮球与左边距离（x坐标）， 当前悬浮球距离左边=开始位置(x轴)+（当前触摸点x坐标-开始移动触摸点x坐标）
     let curLeft = this.startLeft + (touch.windowX - this.startX);
-    //限制悬浮球不能移除屏幕左边
     curLeft = Math.max(0, curLeft)
-    //限制悬浮球不能移除屏幕右边
     this.btnPosition.x = Math.min(this.winWidth - 2 * this.radius, curLeft);
 
-    //计算悬浮球与顶部距离（y坐标）， 当前悬浮球距离顶部=开始位置(y轴)+（当前触摸点y坐标-开始移动触摸点y坐标）
     let curTop = this.startTop + (touch.windowY - this.startY);
-    //限制悬浮球不能移除屏幕上边
     curTop = Math.max(0, curTop);
-    //限制悬浮球不能移除屏幕下边
     this.btnPosition.y = Math.min(this.winHeight - 2 * this.radius - this.bottomAvoidAreaHeight -
     this.statusHeight, curTop);
     this.floatButtonArray.forEach((btn: ComponentContent<Params>) => {
@@ -155,7 +148,6 @@ export class DevFloatButton {
       }
     },
       (event: TouchEvent) => {
-        //手指按下记录初始触摸点坐标、悬浮按钮位置
         if (event.type === TouchType.Down) {
           this.startX = event.touches[0].windowX;
           this.startY = event.touches[0].windowY;
