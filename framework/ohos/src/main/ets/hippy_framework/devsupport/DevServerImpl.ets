@@ -25,8 +25,30 @@ import { DevServerConfig } from './DevServerConfig';
 import { DevServerHelper } from './DevServerHelper';
 import { DevServerInterface } from './DevServerInterface';
 import { HippyException } from '../../support/common/HippyException';
-import { UIContext } from '@kit.ArkUI';
+import { ComponentContent, UIContext, window } from '@kit.ArkUI';
 import { LogUtils } from '../../support/utils/LogUtils';
+
+
+class Params {
+  text: string = "";
+  onClickHandle: (event: ClickEvent) => void;
+  constructor(text: string, onClickHandle: (event: ClickEvent) => void) {
+    this.text = text;
+    this.onClickHandle = onClickHandle;
+  }
+}
+
+@Builder
+function buildErrorPrompt(params: Params) {
+  Flex() {
+    Text(params.text).fontSize(10).margin({ left: 20, top: 20 })
+  }
+  .width("88%")
+  .height("50%")
+  .align(Alignment.Center)
+  .backgroundColor(Color.White)
+  .onClick(params.onClickHandle)
+}
 
 export class DevServerImpl implements DevServerInterface, OnReloadListener {
   private static TAG = "DevServerImpl";
@@ -35,6 +57,7 @@ export class DevServerImpl implements DevServerInterface, OnReloadListener {
   private mDevButtonMaps: Map<number, DevFloatButton> = new Map();
   private mServerCallBack: DevServerCallBack | null = null
   private mFetchHelper: DevServerHelper
+  private uiContext: UIContext | null = null
 
   constructor(configs: HippyGlobalConfigs, serverHost: string, bundleName: string,
               remoteServerUrl: string, debugMode: boolean) {
@@ -119,7 +142,28 @@ export class DevServerImpl implements DevServerInterface, OnReloadListener {
   }
 
   handleException(throwable: HippyException): void {
+    if (this.uiContext) {
+      this.popupErrorPrompt(this.uiContext, throwable);
+    } else {
+      window.getLastWindow(getContext(this), (err, windowClass) => {
+        if (!err.code) {
+          this.uiContext = windowClass.getUIContext();
+          this.popupErrorPrompt(this.uiContext, throwable);
+        }
+      });
+    }
+  }
 
+  popupErrorPrompt(uiContext: UIContext, throwable: HippyException) {
+    const action = uiContext.getPromptAction();
+    let contentNode = new ComponentContent(uiContext, wrapBuilder(buildErrorPrompt),
+      new Params(throwable.message, (event: ClickEvent) => {
+        action.closeCustomDialog(contentNode);
+      }));
+    action.openCustomDialog(contentNode, {
+      autoCancel: true,
+      alignment: DialogAlignment.Center,
+    });
   }
 
   getDevButton(rootId: number): Object | null {
