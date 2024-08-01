@@ -303,6 +303,7 @@ export class HippyBridgeManagerImpl implements HippyBridgeManager, BridgeCallbac
   }
 
   loadInstance(name: string, id: number, params: HippyMap) {
+    LogUtils.e('perf zealot', 'loadInstance start')
     const timeMonitor = this.mContext.getMonitor()
     timeMonitor.startPoint(MonitorGroupType.LOAD_INSTANCE, TimeMonitor.MONITOR_POINT_LOAD_INSTANCE)
 

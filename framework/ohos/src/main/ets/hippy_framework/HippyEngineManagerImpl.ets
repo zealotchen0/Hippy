@@ -172,6 +172,7 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy, DevS
 
   public restartEngine(initCallback: HippyEngineInitCallback) {
     // performance
+    LogUtils.e('perf zealot', 'init engine')
     this.mMonitor.startPoint(MonitorGroupType.ENGINE_INITIALIZE, TimeMonitor.MONITOR_POINT_INIT_NATIVE_ENGINE);
     this.domMgr = new DomManager(this.libHippy)
     // init HippyEngineContext
@@ -208,6 +209,7 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy, DevS
       nativeRenderer?.initRendererParams(px2vp(DimensionsUtil.STATUS_BAR_HEIGHT))
 
       this.initBridgeCallback(result, reason, initCallback)
+      LogUtils.e('perf zealot', 'init engine end')
     });
   }
 
@@ -242,6 +244,7 @@ export class HippyEngineManagerImpl implements HippyEngine, FrameworkProxy, DevS
   }
 
   loadModule(loadParams: ModuleLoadParams, loadModuleCallback: HippyModuleLoadCallback): HippyRootView | null {
+    LogUtils.e('perf zealot', 'load module start')
     const jsDriver = this.mEngineContext?.getJsDriver();
     if (!jsDriver || !this.getVfsManager() || !this.resourceManager) {
       return null;

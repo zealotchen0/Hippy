@@ -153,6 +153,7 @@ void LayerOptimizedRenderManager::MoveRenderNode(std::weak_ptr<RootNode> root_no
 }
 
 void LayerOptimizedRenderManager::EndBatch(std::weak_ptr<RootNode> root_node) {
+  FOOTSTONE_LOG(ERROR) << "perf zealot: dom endbatch end";
   render_manager_->EndBatch(root_node);
 }
 

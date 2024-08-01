@@ -776,6 +776,7 @@ void NativeRenderManager::MoveRenderNode_C(std::weak_ptr<RootNode> root_node, st
 void NativeRenderManager::EndBatch(std::weak_ptr<RootNode> root_node) {
   if (enable_ark_c_api_) {
     EndBatch_C(root_node);
+    FOOTSTONE_LOG(ERROR) << "perf zealot: render endbatch end";
   } else {
     EndBatch_TS(root_node);
   }
