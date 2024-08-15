@@ -17,8 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { HippyAny, HippyArray, HippyMap,
-  HippyValue } from '../../support/common/HippyTypes';
+import { HippyAny, HippyArray, HippyMap, HippyValue } from '../../support/common/HippyTypes';
 import { HippyThirdPartyAdapter } from '../adapter/thirdparty/HippyThirdPartyAdapter';
 import { NativeCallback } from '../connector/NativeCallback';
 import { HippyBundleLoader } from './bundleloader/HippyBundleLoader';
@@ -36,13 +35,13 @@ export interface HippyBridgeManager {
 
   destroyInstance(id: number): void;
 
-  execCallback(params: Map<string, HippyAny>): void;
+  execPromiseCallback(params: Map<string, HippyAny>): void;
 
   destroyBridge(isReload: boolean): void;
 
   destroy(): void;
 
-  callJavaScriptModule(moduleName: string, methodName: string, params: Map<string,  HippyAny>): void;
+  callJavaScriptModule(moduleName: string, methodName: string, params: HippyAny): void;
 
   getThirdPartyAdapter(): HippyThirdPartyAdapter | null;
 }

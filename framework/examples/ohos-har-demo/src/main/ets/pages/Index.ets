@@ -51,7 +51,7 @@ struct Index {
   private rootViewWrapper: HippyRootViewWrapper = new HippyRootViewWrapper()
 
   aboutToAppear(): void {
-    let params = new EngineInitParams(this.libHippy!, this.abilityContext!)
+    let params = new EngineInitParams(this.libHippy!, this.abilityContext!, this.getUIContext())
     params.providers = new Array(new ExampleAPIProvider())
     params.coreJSAssetsPath = "vue2/vendor.ohos.js"
     params.enableArkCApi = true

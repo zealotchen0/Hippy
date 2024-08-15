@@ -99,7 +99,7 @@ struct PageConfiguration {
   }
 
   initEngine(info:HippyInfo):HippyEngine {
-    let params = new EngineInitParams(this.libHippy!, this.abilityContext!)
+    let params = new EngineInitParams(this.libHippy!, this.abilityContext!, this.getUIContext())
     params.debugServerHost = info.debugServerHost as string
     params.debugMode = info.isDebugMode as boolean
     // params.enableLog = true

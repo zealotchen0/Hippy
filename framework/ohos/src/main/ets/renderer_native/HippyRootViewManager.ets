@@ -17,19 +17,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { HippyAny, HippyMap,
-  HippyModuleCallback } from '../../../support/common/HippyTypes';
-import { HippyEngineContext } from '../../HippyEngineContext';
+import { HippyRootView } from './HippyRootView'
 
-export class HippyJavaScriptModuleBase {
-  public static readonly MODULE_NAME: string
-  protected mHippyContext: HippyEngineContext
+export class HippyRootViewManager {
+  private static sRootViewMap = new Map<number, HippyRootView>()
 
-  constructor(ctx: HippyEngineContext) {
-    this.mHippyContext = ctx
+  static addRootView(rootId: number, view: HippyRootView) {
+    HippyRootViewManager.sRootViewMap.set(rootId, view)
   }
 
-  callJs(moduleName: string, method: string, params: HippyAny, callback: HippyModuleCallback | null): void {
-    this.mHippyContext.getBridgeManager()?.callJavaScriptModule(moduleName, method, params);
+  static removeRootView(rootId: number) {
+    HippyRootViewManager.sRootViewMap.delete(rootId)
+  }
+
+  static getRootView(rootId: number) {
+    return HippyRootViewManager.sRootViewMap.get(rootId)
   }
 }

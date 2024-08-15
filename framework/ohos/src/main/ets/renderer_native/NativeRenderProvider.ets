@@ -33,6 +33,7 @@ import {
   CreateRenderViewParamsForCApi,
   OnChildInsertedParamsForCApi,
   OnChildRemovedParamsForCApi,
+  RemoveRenderViewParamsForCApi,
   SetRenderViewFrameParamsForCApi,
   UpdateEventListenerParamsForCApi,
   UpdatePropsParamsForCApi} from './NativeRenderBuilderForCApi';
@@ -48,11 +49,11 @@ export class NativeRenderProvider {
   private renderImpl: NativeRenderImpl
   private instanceId: number = 0
 
-  constructor(libHippy: HippyLibrary,
+  constructor(libHippy: HippyLibrary, enableArkCApi: boolean,
       customRenderViewCreatorMap: Map<string, HRRenderViewCreator> | null,
       customMeasureRenderViews: Array<string> | null) {
     this.libHippy = libHippy
-    this.renderImpl = new NativeRenderImpl(libHippy, customRenderViewCreatorMap, customMeasureRenderViews)
+    this.renderImpl = new NativeRenderImpl(libHippy, enableArkCApi, customRenderViewCreatorMap, customMeasureRenderViews)
   }
 
   setInstanceId(instanceId: number) {
@@ -272,8 +273,23 @@ export class NativeRenderProvider {
   }
 
   // for c-api
+  onFirstPaint(): void {
+    return this.renderImpl.onFirstPaint();
+  }
+
+  // for c-api
+  onFirstContentfulPaint(): void {
+    return this.renderImpl.onFirstContentfulPaint();
+  }
+
+  // for c-api
   createRenderViewForCApi(params: CreateRenderViewParamsForCApi): FrameNode | null {
     return this.renderImpl.createRenderViewForCApi(params)
+  }
+
+  // for c-api
+  removeRenderViewForCApi(params: RemoveRenderViewParamsForCApi): void {
+    return this.renderImpl.removeRenderViewForCApi(params)
   }
 
   // for c-api

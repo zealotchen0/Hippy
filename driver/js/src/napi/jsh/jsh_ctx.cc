@@ -61,11 +61,11 @@ void CheckPendingExeception(JSVM_Env env_, JSVM_Status status) {
 
       char stackstr[256];
       OH_JSVM_GetValueStringUtf8(env_, stack, stackstr, 256, nullptr);
-      OH_LOG_INFO(LOG_APP, "xxx hippy JSVM error stack: %{public}s", stackstr);
+      FOOTSTONE_LOG(ERROR) << "JSVM PENDING EXCEPTION, error stack: " << stackstr;
 
       char messagestr[256];
       OH_JSVM_GetValueStringUtf8(env_, message, messagestr, 256, nullptr);
-      OH_LOG_INFO(LOG_APP, "xxx hippy JSVM error message: %{public}s", messagestr);
+      FOOTSTONE_LOG(ERROR) << "JSVM PENDING EXCEPTION, error message: " << messagestr;
     }
   }
 }
@@ -303,14 +303,43 @@ std::shared_ptr<CtxValue> JSHCtx::InternalRunScript(
     string_view* cache) {
   JSHHandleScope handleScope(env_);
   
-  // TODO(hot-js): use code cache
-  
   auto jsh_source_value = std::static_pointer_cast<JSHCtxValue>(source_value);
-  
   JSVM_Script script = nullptr;
-  auto status = OH_JSVM_CompileScript(env_, jsh_source_value->GetValue(), nullptr, 0, true, nullptr, &script);
-  CheckPendingExeception(env_, status);
-  FOOTSTONE_DCHECK(status == JSVM_OK);
+  JSVM_Status status = JSVM_OK;
+  
+  if (is_use_code_cache && cache && !StringViewUtils::IsEmpty(*cache)) {
+    string_view::Encoding encoding = cache->encoding();
+    if (encoding == string_view::Encoding::Utf8) {
+      const string_view::u8string& str = cache->utf8_value();
+      bool cacheRejected = false;
+      status = OH_JSVM_CompileScript(env_, jsh_source_value->GetValue(), str.c_str(), (size_t)str.length(), true, &cacheRejected, &script);
+      CheckPendingExeception(env_, status);
+      FOOTSTONE_DCHECK(status == JSVM_OK);
+    } else {
+      FOOTSTONE_UNREACHABLE();
+    }
+  } else {
+    if (is_use_code_cache && cache) {
+      status = OH_JSVM_CompileScript(env_, jsh_source_value->GetValue(), nullptr, 0, true, nullptr, &script);
+      CheckPendingExeception(env_, status);
+      FOOTSTONE_DCHECK(status == JSVM_OK);
+      if (!script) {
+        return nullptr;
+      }
+      
+      const uint8_t *data = nullptr;
+      size_t length = 0;
+      status = OH_JSVM_CreateCodeCache(env_, script, &data, &length);
+      FOOTSTONE_DCHECK(status == JSVM_OK);
+      *cache = string_view(data, length);
+      delete[] data;
+    } else {
+      status = OH_JSVM_CompileScript(env_, jsh_source_value->GetValue(), nullptr, 0, true, nullptr, &script);
+      CheckPendingExeception(env_, status);
+      FOOTSTONE_DCHECK(status == JSVM_OK);
+    }
+  }
+  
   if (!script) {
     return nullptr;
   }

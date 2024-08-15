@@ -62,10 +62,24 @@ void NativeRenderProvider::CreateNode(uint32_t root_id, const std::vector<std::s
   });
 }
 
+void NativeRenderProvider::PreCreateNode(uint32_t root_id, const std::vector<std::shared_ptr<HRCreateMutation>> &mutations) {
+  OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(ts_env_);
+  taskRunner->RunSyncTask([render_impl = render_impl_, root_id = root_id, mutations = mutations]() {
+    render_impl->PreCreateNode(root_id, mutations);
+  });
+}
+
 void NativeRenderProvider::UpdateNode(uint32_t root_id, const std::vector<std::shared_ptr<HRUpdateMutation>> &mutations) {
   OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(ts_env_);
   taskRunner->RunAsyncTask([render_impl = render_impl_, root_id = root_id, mutations = mutations]() {
     render_impl->UpdateNode(root_id, mutations);
+  });
+}
+
+void NativeRenderProvider::PreUpdateNode(uint32_t root_id, const std::vector<std::shared_ptr<HRUpdateMutation>> &mutations) {
+  OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(ts_env_);
+  taskRunner->RunSyncTask([render_impl = render_impl_, root_id = root_id, mutations = mutations]() {
+    render_impl->PreUpdateNode(root_id, mutations);
   });
 }
 
@@ -139,6 +153,13 @@ void NativeRenderProvider::SpanPosition(uint32_t root_id, uint32_t node_id, floa
   });
 }
 
+void NativeRenderProvider::TextEllipsized(uint32_t root_id, uint32_t node_id) {
+  OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(ts_env_);
+  taskRunner->RunAsyncTask([render_impl = render_impl_, root_id, node_id]() {
+    render_impl->TextEllipsized(root_id, node_id);
+  });
+}
+
 void NativeRenderProvider::OnSize(uint32_t root_id, float width, float height) {
   NativeRenderProvider_UpdateRootSize(instance_id_, root_id, width, height);
 }
@@ -162,10 +183,12 @@ void NativeRenderProvider::DispatchEvent(uint32_t root_id, uint32_t node_id, con
     && !render_impl_->CheckRegisteredEvent(root_id, node_id, lower_case_event_name)) {
     return;
   }
-  
-  FOOTSTONE_DLOG(INFO) << "NativeRenderProvider dispatchEvent: id " << node_id << ", eventName " << event_name
-    << ", eventType " << static_cast<int32_t>(event_type) << ", params " << params;
-  
+
+  if (event_name != "frameUpdate") {
+    FOOTSTONE_DLOG(INFO) << "NativeRenderProvider dispatchEvent: id " << node_id << ", eventName " << event_name
+      << ", eventType " << static_cast<int32_t>(event_type) << ", params " << params;
+  }
+
   NativeRenderProvider_OnReceivedEvent(instance_id_, root_id, node_id, lower_case_event_name, params, capture, bubble);
 }
 
@@ -188,6 +211,18 @@ void NativeRenderProvider::CallViewMethod(uint32_t root_id, uint32_t node_id, co
 
 void NativeRenderProvider::SetViewEventListener(uint32_t root_id, uint32_t node_id, napi_ref callback_ref) {
   render_impl_->SetViewEventListener(root_id, node_id, callback_ref);
+}
+
+HRRect NativeRenderProvider::GetViewFrameInRoot(uint32_t root_id, uint32_t node_id) {
+  return render_impl_->GetViewFrameInRoot(root_id, node_id);
+}
+
+void NativeRenderProvider::AddBizViewInRoot(uint32_t root_id, uint32_t biz_view_id, ArkUI_NodeHandle node_handle, const HRPosition &position) {
+  render_impl_->AddBizViewInRoot(root_id, biz_view_id, node_handle, position);
+}
+
+void NativeRenderProvider::RemoveBizViewInRoot(uint32_t root_id, uint32_t biz_view_id) {
+  render_impl_->RemoveBizViewInRoot(root_id, biz_view_id);
 }
 
 } // namespace native

@@ -17,19 +17,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { HippyAny, HippyMap,
-  HippyModuleCallback } from '../../../support/common/HippyTypes';
-import { HippyEngineContext } from '../../HippyEngineContext';
 
-export class HippyJavaScriptModuleBase {
-  public static readonly MODULE_NAME: string
-  protected mHippyContext: HippyEngineContext
-
-  constructor(ctx: HippyEngineContext) {
-    this.mHippyContext = ctx
-  }
-
-  callJs(moduleName: string, method: string, params: HippyAny, callback: HippyModuleCallback | null): void {
-    this.mHippyContext.getBridgeManager()?.callJavaScriptModule(moduleName, method, params);
-  }
-}
+export type WrappedHippyBizViewBuilder = WrappedBuilder<[Object]>

@@ -28,6 +28,8 @@ import { HippyJsException } from './common/HippyJsException';
 import { DevSupportManager } from './devsupport/DevSupportManager';
 import { HippyLibrary } from '../hippy_library/HippyLibrary';
 import { DevtoolsManager } from './devsupport/DevtoolsManager';
+import { NativeRender } from '../renderer_native/NativeRender';
+import { HippyRootView } from '../renderer_native/HippyRootView';
 
 export interface HippyEngineContext {
 
@@ -35,9 +37,11 @@ export interface HippyEngineContext {
 
   getNativeParams(): Map<string, Object>
 
+  getNativeRender(): NativeRender | null
+
   getVfsManager(): VfsManager
 
-  getJsDriver(): JsDriver
+  getJsDriver(): JsDriver | null
 
   getMonitor(): TimeMonitor
 
@@ -45,17 +49,15 @@ export interface HippyEngineContext {
 
   getModuleManager(): HippyModuleManager
 
-  getBridgeManager(): HippyBridgeManager
+  getBridgeManager(): HippyBridgeManager | null
 
   getDevSupportManager(): DevSupportManager | null
 
   destroyBridge(isReload: boolean): void
 
-  // void addEngineLifecycleEventListener(HippyEngineLifecycleEventListener listener);
-  //
-  // void removeEngineLifecycleEventListener(HippyEngineLifecycleEventListener listener);
-  //
   handleException(error: HippyJsException): void
+
+  getRootView(rootId: number): HippyRootView | null
 
   // int getEngineId();
 
@@ -70,4 +72,8 @@ export interface HippyEngineContext {
   onBridgeDestroyed(isReload: boolean): void;
 
   onLoadModuleCompleted(statusCode: number, msg: string): void;
+
+  setComponentName(component: string): void
+
+  getComponentName(): string;
 }
