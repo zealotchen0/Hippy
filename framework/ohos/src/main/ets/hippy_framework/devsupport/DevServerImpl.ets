@@ -123,7 +123,7 @@ export class DevServerImpl implements DevServerInterface, OnReloadListener {
     }
     const onClickHandle = (event: ClickEvent) => {
       LogUtils.d(DevServerImpl.TAG, "onClickHandle::event" + JSON.stringify(event));
-      // this.onReload();
+      this.onReload();
     }
     let devButton: DevFloatButton = new DevFloatButton(context, onClickHandle);
 

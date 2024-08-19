@@ -111,7 +111,7 @@ export class DevFloatButton {
         //设置初始位置
         this.btnPosition.x = this.winWidth * 0
         this.btnPosition.y = this.winHeight * 0.1
-        this.create(onClickHandle);
+        // this.create(onClickHandle);
       }
     });
   }
