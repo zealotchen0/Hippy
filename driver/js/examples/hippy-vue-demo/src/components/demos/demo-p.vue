@@ -101,6 +101,7 @@
       <label>numberOfLines={{ textMode.numberOfLines }} | ellipsizeMode={{ textMode.ellipsizeMode }}</label>
       <div class="p-demo-content">
         <p
+          @ellipsized="()=> console.log('zealot ellipsized')"
           :numberOfLines="textMode.numberOfLines"
           :ellipsizeMode="textMode.ellipsizeMode"
           :style="{ backgroundColor: '#40b883', marginBottom: 10, paddingHorizontal: 10, paddingVertical: 5 }"
