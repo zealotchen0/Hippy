@@ -27,21 +27,28 @@ import { Device } from '../global';
 import { getRootViewId, getRootContainer } from '../utils/node';
 import { deepCopy, isDev, trace, warn } from '../utils';
 import { Platform } from '../types';
+import { addNodeOps } from './node-op-cache';
 
 const componentName = ['%c[native]%c', 'color: red', 'color: auto'];
 
-interface BatchType {
-  [key: string]: symbol;
+// interface BatchType {
+//   [key: string]: symbol;
+// }
+
+// export const NODE_OPERATION_TYPES: BatchType = {
+//   createNode: Symbol('createNode'),
+//   updateNode: Symbol('updateNode'),
+//   deleteNode: Symbol('deleteNode'),
+// };
+
+export enum NodeOperateType {
+  CREATE,
+  UPDATE,
+  DELETE,
 }
 
-const NODE_OPERATION_TYPES: BatchType = {
-  createNode: Symbol('createNode'),
-  updateNode: Symbol('updateNode'),
-  deleteNode: Symbol('deleteNode'),
-};
-
-interface BatchChunk {
-  type: symbol,
+export interface BatchChunk {
+  type: NodeOperateType,
   nodes: HippyTypes.NativeNode[]
 }
 
@@ -75,13 +82,14 @@ function chunkNodes(batchNodes: BatchChunk[]) {
  */
 function batchUpdate(rootViewId: number): void {
   const chunks = chunkNodes(batchNodes);
+  addNodeOps(chunks);
   chunks.forEach((chunk) => {
     switch (chunk.type) {
-      case NODE_OPERATION_TYPES.createNode:
+      case NodeOperateType.CREATE:
         trace(...componentName, 'createNode', chunk.nodes);
         UIManagerModule.createNode(rootViewId, chunk.nodes);
         break;
-      case NODE_OPERATION_TYPES.updateNode:
+      case NodeOperateType.UPDATE:
         trace(...componentName, 'updateNode', chunk.nodes);
         if (__PLATFORM__ === Platform.ios || Device.platform.OS === Platform.ios) {
           chunk.nodes.forEach(node => (
@@ -91,7 +99,7 @@ function batchUpdate(rootViewId: number): void {
           UIManagerModule.updateNode(rootViewId, chunk.nodes);
         }
         break;
-      case NODE_OPERATION_TYPES.deleteNode:
+      case NodeOperateType.DELETE:
         trace(...componentName, 'deleteNode', chunk.nodes);
         if (__PLATFORM__ === Platform.ios || Device.platform.OS === Platform.ios) {
           chunk.nodes.forEach(node => (
@@ -261,7 +269,7 @@ function insertChild(parentNode: ViewNode, childNode: ViewNode, atIndex = -1) {
       },
     );
     batchNodes.push({
-      type: NODE_OPERATION_TYPES.createNode,
+      type: NodeOperateType.CREATE,
       nodes: translated,
     });
   }
@@ -280,7 +288,7 @@ function removeChild(parentNode: ViewNode, childNode: ViewNode | null, index: nu
     index: childNode.index,
   }];
   batchNodes.push({
-    type: NODE_OPERATION_TYPES.deleteNode,
+    type: NodeOperateType.DELETE,
     nodes: deleteNodeIds,
   });
 }
@@ -293,7 +301,7 @@ function updateChild(parentNode: Element) {
   const translated = renderToNative(rootViewId, parentNode);
   if (translated) {
     batchNodes.push({
-      type: NODE_OPERATION_TYPES.updateNode,
+      type: NodeOperateType.UPDATE,
       nodes: [translated],
     });
   }
@@ -306,7 +314,7 @@ function updateWithChildren(parentNode: ViewNode) {
   const rootViewId = getRootViewId();
   const translated = renderToNativeWithChildren(rootViewId, parentNode);
   batchNodes.push({
-    type: NODE_OPERATION_TYPES.updateNode,
+    type: NodeOperateType.UPDATE,
     nodes: translated,
   });
 }

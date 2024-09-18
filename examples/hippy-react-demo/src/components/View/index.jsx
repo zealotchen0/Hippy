@@ -4,6 +4,7 @@ import {
   Text,
   View,
   StyleSheet,
+  getNodeOps,
 } from '@hippy/react';
 
 import imageUrl from './defaultSource.jpg';
@@ -42,13 +43,26 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function ViewExpo() {
-  const renderTitle = title => (
+export default class ViewExpo extends React.Component {
+  renderTitle = title => (
     <View style={styles.itemTitle}>
       <Text>{title}</Text>
     </View>
   );
-  return (
+
+  componentDidMount() {
+    console.log('~~~~~~~~~~~~~~~~~ componentDidMount TextExpo ~~~~~~~~~~~~~~~~~');
+    const chunks = getNodeOps();
+    console.log(JSON.stringify(chunks));
+  }
+
+  render() {
+    const renderTitle = title => (
+      <View style={styles.itemTitle}>
+        <Text>{title}</Text>
+      </View>
+    );
+    return (
     <ScrollView style={{ paddingHorizontal: 10 }}>
       {renderTitle('backgroundColor')}
       <View style={[styles.rectangle, { backgroundColor: '#4c9afa' }]} />
@@ -101,5 +115,6 @@ export default function ViewExpo() {
         <View style={[styles.smallRectangle, { backgroundColor: 'green' }]} />
       </View>
     </ScrollView>
-  );
+    );
+  }
 }

@@ -33,6 +33,7 @@ export * from './event';
 export * from './components';
 export * from './dom';
 export * from './types';
+export * from './renderer/node-op-cache';
 
 global.WebSocket = WebSocket as HippyTypes.WebSocket;
 
