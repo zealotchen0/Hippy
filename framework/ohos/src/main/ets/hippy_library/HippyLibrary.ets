@@ -44,7 +44,7 @@ export interface HippyLibrary {
   Devtools_OnAttachToRoot(devtoolsId: number, rootId: number): void;
 
   DomManager_SetRenderManager(instanceId: number, renderId: number): void;
-  DomManager_CreateDomManager(): number;
+  DomManager_CreateDomManager(domManagerNum: number): number;
   DomManager_DestroyDomManager(domManagerId: number): void;
   DomManager_CreateRoot(rootId: number, density: number): void;
   DomManager_DestroyRoot(rootId: number): void;
@@ -70,14 +70,15 @@ export interface HippyLibrary {
   JsDriver_RunScriptFromUri(
     instanceId: number,
     uri: string,
+    isRawfile: boolean,
     assetManager: resmgr.ResourceManager,
+    resModuleName: string,
     canUseCodeCache: boolean,
     codeCacheDir: string,
     vfsId: number,
     callback: NativeCallback
   ): boolean;
   JsDriver_SetRootNode(instanceId: number, rootId: number): void;
-  JsDriver_SetDomManager(instanceId: number, domManagerId: number): void;
   JsDriver_OnNativeInitEnd(instanceId: number, startTime: number, endTime: number): void;
   JsDriver_OnFirstFrameEnd(instanceId: number, time: number): void;
   JsDriver_OnResourceLoadEnd(
@@ -91,10 +92,10 @@ export interface HippyLibrary {
 
   NativeRenderer_CreateNativeRenderManager(enableArkCApi: boolean, renderProvider: NativeRenderProvider,
     customRenderViews: Array<string> | null, customMeasureRenderViews: Array<string> | null, mappingRenderViews: Array<string> | null,
-    bundlePath: string, density: number): number;
+    bundlePath: string, density: number, isRawfile: boolean, resModuleName: string): number;
   NativeRenderer_DestroyNativeRenderManager(instanceId: number): void;
+  NativeRenderer_SetBundlePath(instanceId: number, bundlePath: string): void;
   NativeRenderer_InitRendererParams(statusBarHeight: number): void;
-  NativeRenderer_SetDomManager(instanceId: number, domManagerId: number): void;
   NativeRenderer_RegisterFontPaths(instanceId: number, fontFamilyAndPaths: Array<string>): void;
 
   NativeRenderProvider_UpdateRootSize(instanceId: number, rootId: number, width: number, height: number): void;

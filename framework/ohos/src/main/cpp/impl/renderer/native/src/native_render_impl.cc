@@ -27,11 +27,16 @@ namespace hippy {
 inline namespace render {
 inline namespace native {
 
-NativeRenderImpl::NativeRenderImpl(uint32_t instance_id, const std::string &bundle_path) : instance_id_(instance_id), bundle_path_(bundle_path) {}
+NativeRenderImpl::NativeRenderImpl(uint32_t instance_id, const std::string &bundle_path, bool is_rawfile, const std::string &res_module_name)
+ : instance_id_(instance_id), bundle_path_(bundle_path), is_rawfile_(is_rawfile), res_module_name_(res_module_name) {}
 
 void NativeRenderImpl::InitRenderManager() {
   auto native_render = std::static_pointer_cast<NativeRender>(shared_from_this());
-  hr_manager_ = std::make_shared<HRManager>(instance_id_, native_render);
+  hr_manager_ = std::make_shared<HRManager>(instance_id_, native_render, is_rawfile_, res_module_name_);
+}
+
+void NativeRenderImpl::SetBundlePath(const std::string &bundle_path) {
+  bundle_path_ = bundle_path;
 }
 
 void NativeRenderImpl::BindNativeRoot(ArkUI_NodeContentHandle contentHandle, uint32_t root_id, uint32_t node_id) {
@@ -252,8 +257,11 @@ void NativeRenderImpl::TextEllipsized(uint32_t root_id, uint32_t node_id) {
   if (!view_manager) {
     return;
   }
-
-  view_manager->SendTextEllipsizedEvent(node_id);
+  
+  std::shared_ptr<HRTextEllipsizedEventMutation> m = std::make_shared<HRTextEllipsizedEventMutation>();
+  m->tag_ = node_id;
+  auto tm = std::static_pointer_cast<HRMutation>(m);
+  view_manager->AddMutations(tm);
 }
 
 std::string NativeRenderImpl::GetBundlePath() {

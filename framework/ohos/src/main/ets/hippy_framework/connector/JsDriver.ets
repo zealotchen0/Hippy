@@ -137,7 +137,9 @@ export class JsDriver {
 
   runScriptFromUri(
     uri: string,
+    isRawFile: boolean,
     assetManager: resmgr.ResourceManager,
+    resModuleName: string,
     canUseCodeCache: boolean,
     codeCacheDir: string,
     vfsId: number,
@@ -146,7 +148,9 @@ export class JsDriver {
     return this.libHippy?.JsDriver_RunScriptFromUri(
       this.instanceId,
       uri,
+      isRawFile,
       assetManager,
+      resModuleName,
       canUseCodeCache,
       codeCacheDir,
       vfsId,
@@ -158,12 +162,6 @@ export class JsDriver {
     rootId: number
   ) {
     this.libHippy?.JsDriver_SetRootNode(this.instanceId, rootId)
-  }
-
-  attachToDom(
-    domManagerId: number
-  ) {
-    this.libHippy?.JsDriver_SetDomManager(this.instanceId, domManagerId)
   }
 
   onNativeInitEnd(

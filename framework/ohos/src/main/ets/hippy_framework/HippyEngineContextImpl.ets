@@ -125,11 +125,12 @@ export class HippyEngineContextImpl implements HippyEngineContext {
 
     // Render注册
     let enableArkCApi = globalConfigs.enableArkCApi()
+    let isRawfile = globalConfigs.isLoadFromRawfile()
+    let resModuleName = globalConfigs.getResModuleName()
     this.nativeRenderProvider = new NativeRenderProvider(this.libHippy, enableArkCApi, customRenderViewCreatorMap, customMeasureRenderViews)
     this.nativeRenderer = new NativeRenderer(this.libHippy, enableArkCApi, this.nativeRenderProvider,
-      customRenderViews, customMeasureRenderViews, mappingRenderViews, bundlePath)
+      customRenderViews, customMeasureRenderViews, mappingRenderViews, bundlePath, isRawfile, resModuleName)
     this.nativeRenderer.registerCustomFontPaths(customFontPathMap)
-    this.nativeRenderer.attachToDom(this.mDomManager.instanceId)
     // DomManager挂载
     this.mDomManager.attachToRenderer(this.nativeRenderer.instanceId)
     // ModuleManager注册
@@ -203,7 +204,6 @@ export class HippyEngineContextImpl implements HippyEngineContext {
     if (!this.mJsDriver) {
       return
     }
-    this.mJsDriver.attachToDom(this.mDomManager.instanceId)
     if (this.mDevtoolsManager != null && this.nativeRenderer != null) {
       this.mDevtoolsManager.bind(this.mJsDriver, this.mDomManager, this.nativeRenderer);
     }

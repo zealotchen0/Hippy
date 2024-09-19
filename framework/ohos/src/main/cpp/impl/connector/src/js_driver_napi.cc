@@ -306,11 +306,13 @@ static napi_value RunScriptFromUri(napi_env env, napi_callback_info info) {
   auto args = arkTs.GetCallbackArgs(info);
   uint32_t scope_id = static_cast<uint32_t>(arkTs.GetInteger(args[0]));
   std::string uri_str = arkTs.GetString(args[1]);
-  auto asset_manager = args[2];
-  bool can_use_code_cache = arkTs.GetBoolean(args[3]);
-  std::string code_cache_dir_str = arkTs.GetString(args[4]);
-  auto vfs_id = static_cast<uint32_t>(arkTs.GetInteger(args[5]));
-  auto callback_ref = arkTs.CreateReference(args[6]);
+  bool is_rawfile = arkTs.GetBoolean(args[2]);
+  auto asset_manager = args[3];
+  auto res_module_name = arkTs.GetString(args[4]);
+  bool can_use_code_cache = arkTs.GetBoolean(args[5]);
+  std::string code_cache_dir_str = arkTs.GetString(args[6]);
+  auto vfs_id = static_cast<uint32_t>(arkTs.GetInteger(args[7]));
+  auto callback_ref = arkTs.CreateReference(args[8]);
 
   auto time_begin = std::chrono::time_point_cast<std::chrono::microseconds>(
       std::chrono::system_clock::now())
@@ -351,7 +353,7 @@ static napi_value RunScriptFromUri(napi_env env, napi_callback_info info) {
   FOOTSTONE_CHECK(engine);
   if (asset_manager) {
     auto asset_handler = std::make_shared<hippy::AssetHandler>();
-    asset_handler->Init(env, asset_manager);
+    asset_handler->Init(env, is_rawfile, asset_manager, res_module_name);
     loader->RegisterUriHandler(kAssetSchema, asset_handler);
   }
 #ifdef ENABLE_INSPECTOR
@@ -401,20 +403,6 @@ static napi_value SetRootNode(napi_env env, napi_callback_info info) {
   auto flag = persistent_map.Find(root_id, root_node);
   FOOTSTONE_CHECK(flag);
   scope->SetRootNode(root_node);
-  return arkTs.GetUndefined();
-}
-
-static napi_value SetDomManager(napi_env env, napi_callback_info info) {
-  ArkTS arkTs(env);
-  auto args = arkTs.GetCallbackArgs(info);
-  uint32_t scope_id = static_cast<uint32_t>(arkTs.GetInteger(args[0]));
-  uint32_t dom_manager_id = static_cast<uint32_t>(arkTs.GetInteger(args[1]));
-  std::any dom_manager;
-  auto flag = hippy::global_data_holder.Find(dom_manager_id, dom_manager);
-  FOOTSTONE_CHECK(flag);
-  auto dom_manager_object = std::any_cast<std::shared_ptr<DomManager>>(dom_manager);
-  auto scope = GetScope(scope_id);
-  scope->SetDomManager(dom_manager_object);
   return arkTs.GetUndefined();
 }
 
@@ -515,7 +503,6 @@ REGISTER_OH_NAPI("JsDriver", "JsDriver_LoadInstance", LoadInstance)
 REGISTER_OH_NAPI("JsDriver", "JsDriver_UnloadInstance", UnloadInstance)
 REGISTER_OH_NAPI("JsDriver", "JsDriver_RunScriptFromUri", RunScriptFromUri)
 REGISTER_OH_NAPI("JsDriver", "JsDriver_SetRootNode", SetRootNode)
-REGISTER_OH_NAPI("JsDriver", "JsDriver_SetDomManager", SetDomManager)
 REGISTER_OH_NAPI("JsDriver", "JsDriver_OnNativeInitEnd", OnNativeInitEnd)
 REGISTER_OH_NAPI("JsDriver", "JsDriver_OnFirstFrameEnd", OnFirstFrameEnd)
 REGISTER_OH_NAPI("JsDriver", "JsDriver_OnResourceLoadEnd", OnResourceLoadEnd)

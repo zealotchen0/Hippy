@@ -39,6 +39,7 @@ target_link_libraries(hippy_impl PUBLIC
   libnative_drawing.so
   libjsvm.so
   libnative_display_soloist.so
+  libohfileuri.so
   uv
   footstone
   oh_napi
@@ -49,4 +50,4 @@ target_link_libraries(hippy_impl PUBLIC
   devtools_integration
 )
 
-target_compile_options(hippy_impl PUBLIC ${hippy_compile_options} -std=c++17)
+target_compile_options(hippy_impl PUBLIC ${hippy_compile_options} -std=gnu++17)

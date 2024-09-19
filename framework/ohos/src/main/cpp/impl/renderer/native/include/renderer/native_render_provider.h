@@ -35,7 +35,7 @@ inline namespace native {
 
 class NativeRenderProvider : public std::enable_shared_from_this<NativeRenderProvider>{
 public:
-  NativeRenderProvider(uint32_t instance_id, const std::string &bundle_path);
+  NativeRenderProvider(uint32_t instance_id, const std::string &bundle_path, bool is_rawfile, const std::string &res_module_name);
   ~NativeRenderProvider() = default;
 
   uint32_t GetInstanceId() { return instance_id_; }
@@ -43,6 +43,7 @@ public:
   std::shared_ptr<NativeRenderImpl> &GetNativeRenderImpl() { return render_impl_; }
 
   void SetTsEnv(napi_env ts_env) { ts_env_ = ts_env; }
+  void SetBundlePath(const std::string &bundle_path);
 
   void BindNativeRoot(ArkUI_NodeContentHandle contentHandle, uint32_t root_id, uint32_t node_id);
   void UnbindNativeRoot(uint32_t root_id, uint32_t node_id);

@@ -105,6 +105,7 @@ bool RichTextView::SetProp(const std::string &propKey, const HippyValue &propVal
     float value = HRValueUtils::GetFloat(propValue);
     if (!lineHeight_.has_value() || value != lineHeight_) {
       GetLocalRootArkUINode().SetTextLineHeight(value);
+      GetLocalRootArkUINode().SetTextHalfLeading(true);
       lineHeight_ = value;
     }
     return true;
@@ -162,11 +163,13 @@ bool RichTextView::SetProp(const std::string &propKey, const HippyValue &propVal
     return true;
   } else if (propKey == HRNodeProps::ELLIPSIZE_MODE) {
     std::string value = HRValueUtils::GetString(propValue);
-    ArkUI_EllipsisMode ellipsisMode = ARKUI_ELLIPSIS_MODE_END;
-    ArkUI_TextOverflow textOverflow = ARKUI_TEXT_OVERFLOW_NONE;
-    if (HRTextConvertUtils::EllipsisModeToArk(value, ellipsisMode, textOverflow)) {
+    if (!ellipsizeModeValue_.has_value() || value != ellipsizeModeValue_) {
+      ArkUI_EllipsisMode ellipsisMode = ARKUI_ELLIPSIS_MODE_END;
+      ArkUI_TextOverflow textOverflow = ARKUI_TEXT_OVERFLOW_ELLIPSIS;
+      HRTextConvertUtils::EllipsisModeToArk(value, ellipsisMode, textOverflow);
       GetLocalRootArkUINode().SetTextOverflow(textOverflow);
       GetLocalRootArkUINode().SetTextEllipsisMode(ellipsisMode);
+      ellipsizeModeValue_ = value;
     }
     return true;
   } else if (propKey == HRNodeProps::BREAK_STRATEGY) {
@@ -176,6 +179,10 @@ bool RichTextView::SetProp(const std::string &propKey, const HippyValue &propVal
     return true;
   } else if (propKey == "ellipsized") {
     isListenEllipsized_ = HRValueUtils::GetBool(propValue, false);
+    if (isListenEllipsized_ && toSendEllipsizedEvent_) {
+      HREventUtils::SendComponentEvent(ctx_, tag_, "ellipsized", nullptr);
+      toSendEllipsizedEvent_ = false;
+    }
     return true;
   }
   
@@ -187,6 +194,12 @@ void RichTextView::OnSetPropsEnd() {
     float defaultValue = HRNodeProps::FONT_SIZE_SP;
     GetLocalRootArkUINode().SetFontSize(defaultValue);
     fontSize_ = defaultValue;
+  }
+  if (!ellipsizeModeValue_.has_value()) {
+    std::string defaultValue = "tail";
+    ellipsizeModeValue_ = defaultValue;
+    GetLocalRootArkUINode().SetTextOverflow(ARKUI_TEXT_OVERFLOW_ELLIPSIS);
+    GetLocalRootArkUINode().SetTextEllipsisMode(ARKUI_ELLIPSIS_MODE_END);
   }
   if (toSetTextDecoration_) {
     toSetTextDecoration_ = false;
@@ -216,9 +229,11 @@ void RichTextView::OnChildRemoved(std::shared_ptr<BaseView> const &childView, in
 
 void RichTextView::SendTextEllipsizedEvent() {
   if (!isListenEllipsized_) {
+    toSendEllipsizedEvent_ = true;
     return;
   }
   HREventUtils::SendComponentEvent(ctx_, tag_, "ellipsized", nullptr);
+  toSendEllipsizedEvent_ = false;
 }
 
 } // namespace native

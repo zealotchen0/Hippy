@@ -34,12 +34,14 @@ inline namespace native {
 
 class NativeRenderImpl : public NativeRender {
 public:
-  NativeRenderImpl(uint32_t instance_id, const std::string &bundle_path);
+  NativeRenderImpl(uint32_t instance_id, const std::string &bundle_path, bool is_rawfile, const std::string &res_module_name);
   ~NativeRenderImpl() = default;
 
   void InitRenderManager();
 
   uint32_t GetInstanceId() { return instance_id_; }
+  
+  void SetBundlePath(const std::string &bundle_path);
 
   void BindNativeRoot(ArkUI_NodeContentHandle contentHandle, uint32_t root_id, uint32_t node_id);
   void UnbindNativeRoot(uint32_t root_id, uint32_t node_id);
@@ -90,6 +92,8 @@ public:
 private:
   uint32_t instance_id_;
   std::string bundle_path_;
+  bool is_rawfile_ = false;
+  std::string res_module_name_;
   std::shared_ptr<HRManager> hr_manager_;
 };
 

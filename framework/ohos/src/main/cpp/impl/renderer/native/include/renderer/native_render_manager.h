@@ -67,7 +67,8 @@ class NativeRenderManager : public RenderManager, public std::enable_shared_from
 
   void SetRenderDelegate(napi_env ts_env, bool enable_ark_c_api, napi_ref ts_render_provider_ref,
                          std::set<std::string> &custom_views, std::set<std::string> &custom_measure_views, std::map<std::string, std::string> &mapping_views,
-                         std::string &bundle_path);
+                         std::string &bundle_path, bool is_rawfile, const std::string &res_module_name);
+  void SetBundlePath(const std::string &bundle_path);
   void InitDensity(double density);
   void AddCustomFontPath(const std::string &fontFamilyName, const std::string &fontPath);
 
@@ -94,9 +95,6 @@ class NativeRenderManager : public RenderManager, public std::enable_shared_from
 
   void ReceivedEvent(std::weak_ptr<RootNode> root_node, uint32_t dom_id, const std::string& event_name,
                      const std::shared_ptr<HippyValue>& params, bool capture, bool bubble);
-
-  void SetDomManager(std::weak_ptr<DomManager> dom_manager) { dom_manager_ = dom_manager; }
-  std::shared_ptr<DomManager> GetDomManager() const { return dom_manager_.lock(); }
 
   static footstone::utils::PersistentObjectMap<uint32_t, std::shared_ptr<NativeRenderManager>>& PersistentMap() {
     return persistent_map_;
@@ -147,18 +145,6 @@ private:
   bool IsCustomMeasureNode(const std::string &name);
   bool IsCustomMeasureCNode(const std::string &name);
 
-  struct ListenerOp {
-    bool add;
-    std::weak_ptr<DomNode> dom_node;
-    std::string name;
-
-    ListenerOp(bool add, std::weak_ptr<DomNode> dom_node, const std::string& name) {
-      this->add = add;
-      this->dom_node = dom_node;
-      this->name = name;
-    }
-  };
-
   void HandleListenerOps(std::weak_ptr<RootNode> root_node, std::map<uint32_t, std::vector<ListenerOp>>& ops, const std::string& method_name);
 
   void CreateRenderNode_TS(std::weak_ptr<RootNode> root_node, std::vector<std::shared_ptr<DomNode>>&& nodes);
@@ -198,9 +184,7 @@ private:
   std::unordered_map<std::string, std::string> custom_font_path_map_;
 
   std::shared_ptr<footstone::value::Serializer> serializer_;
-  std::map<uint32_t, std::vector<ListenerOp>> event_listener_ops_;
-
-  std::weak_ptr<DomManager> dom_manager_;
+  
   static std::atomic<uint32_t> unique_native_render_manager_id_;
   static footstone::utils::PersistentObjectMap<uint32_t, std::shared_ptr<NativeRenderManager>> persistent_map_;
 

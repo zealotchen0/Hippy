@@ -184,7 +184,7 @@ NativeRenderManager::~NativeRenderManager() {
 
 void NativeRenderManager::SetRenderDelegate(napi_env ts_env, bool enable_ark_c_api, napi_ref ts_render_provider_ref,
     std::set<std::string> &custom_views, std::set<std::string> &custom_measure_views, std::map<std::string, std::string> &mapping_views,
-    std::string &bundle_path) {
+    std::string &bundle_path, bool is_rawfile, const std::string &res_module_name) {
   persistent_map_.Insert(id_, shared_from_this());
   ts_env_ = ts_env;
   ts_render_provider_ref_ = ts_render_provider_ref;
@@ -193,13 +193,19 @@ void NativeRenderManager::SetRenderDelegate(napi_env ts_env, bool enable_ark_c_a
 
   enable_ark_c_api_ = enable_ark_c_api;
   if (enable_ark_c_api) {
-    c_render_provider_ = std::make_shared<NativeRenderProvider>(id_, bundle_path);
+    c_render_provider_ = std::make_shared<NativeRenderProvider>(id_, bundle_path, is_rawfile, res_module_name);
     c_render_provider_->SetTsEnv(ts_env);
     NativeRenderProviderManager::AddRenderProvider(id_, c_render_provider_);
     c_render_provider_->RegisterCustomTsRenderViews(ts_env, ts_render_provider_ref, custom_views, mapping_views);
   }
 
   NativeRenderManager::GetStyleFilter();
+}
+
+void NativeRenderManager::SetBundlePath(const std::string &bundle_path) {
+  if (enable_ark_c_api_) {
+    c_render_provider_->SetBundlePath(bundle_path);
+  }
 }
 
 void NativeRenderManager::InitDensity(double density) {
@@ -825,14 +831,16 @@ void NativeRenderManager::BeforeLayout(std::weak_ptr<RootNode> root_node){}
 
 void NativeRenderManager::AfterLayout(std::weak_ptr<RootNode> root_node) {
   // 更新布局信息前处理事件监听
-  HandleListenerOps(root_node, event_listener_ops_, "updateEventListener");
+  auto &ops = root_node.lock()->EventListenerOps();
+  HandleListenerOps(root_node, ops, "updateEventListener");
 }
 
 void NativeRenderManager::AddEventListener(std::weak_ptr<RootNode> root_node,
                                            std::weak_ptr<DomNode> dom_node, const std::string& name) {
   auto node = dom_node.lock();
   if (node) {
-    event_listener_ops_[node->GetId()].emplace_back(ListenerOp(true, dom_node, name));
+    auto &ops = root_node.lock()->EventListenerOps();
+    ops[node->GetId()].emplace_back(ListenerOp(true, dom_node, name));
   }
 }
 
@@ -840,7 +848,8 @@ void NativeRenderManager::RemoveEventListener(std::weak_ptr<RootNode> root_node,
                                               std::weak_ptr<DomNode> dom_node, const std::string& name) {
   auto node = dom_node.lock();
   if (node) {
-    event_listener_ops_[node->GetId()].emplace_back(ListenerOp(false, dom_node, name));
+    auto &ops = root_node.lock()->EventListenerOps();
+    ops[node->GetId()].emplace_back(ListenerOp(false, dom_node, name));
   }
 }
 
@@ -925,15 +934,16 @@ void NativeRenderManager::CallFunction_C(std::weak_ptr<RootNode> root_node, std:
 void NativeRenderManager::ReceivedEvent(std::weak_ptr<RootNode> root_node, uint32_t dom_id,
                                         const std::string& event_name, const std::shared_ptr<HippyValue>& params,
                                         bool capture, bool bubble) {
-  auto manager = dom_manager_.lock();
-  FOOTSTONE_DCHECK(manager != nullptr);
-  if (manager == nullptr) return;
-
   auto root = root_node.lock();
   FOOTSTONE_DCHECK(root != nullptr);
   if (root == nullptr) return;
-
-  std::vector<std::function<void()>> ops = {[weak_dom_manager = dom_manager_, weak_root_node = root_node, dom_id,
+  
+  auto dom_manager = root->GetDomManager().lock();
+  FOOTSTONE_DCHECK(dom_manager != nullptr);
+  if (dom_manager == nullptr) return;
+  
+  std::weak_ptr<DomManager> weak_dom_manager = dom_manager;
+  std::vector<std::function<void()>> ops = {[weak_dom_manager, weak_root_node = root_node, dom_id,
                                              params = std::move(params), use_capture = capture, use_bubble = bubble,
                                              event_name = std::move(event_name)] {
     auto manager = weak_dom_manager.lock();
@@ -948,7 +958,7 @@ void NativeRenderManager::ReceivedEvent(std::weak_ptr<RootNode> root_node, uint3
     auto event = std::make_shared<DomEvent>(event_name, node, use_capture, use_bubble, params);
     node->HandleEvent(event);
   }};
-  manager->PostTask(Scene(std::move(ops)));
+  dom_manager->PostTask(Scene(std::move(ops)));
 }
 
 float NativeRenderManager::DpToPx(float dp) const { return dp * density_; }
@@ -998,7 +1008,7 @@ std::string HippyValueToString(const HippyValue &value) {
     value.ToUint32(ui);
     sv = std::to_string(ui);
   } else {
-    FOOTSTONE_LOG(ERROR) << "Measure Text : unknow value type";
+    FOOTSTONE_LOG(ERROR) << "Measure Text, unknown value type: " << (int32_t)value.GetType();
   }
   return sv;
 }
@@ -1024,12 +1034,6 @@ void CollectAllProps(std::map<std::string, std::string> &propMap, std::shared_pt
 void NativeRenderManager::DoMeasureText(const std::weak_ptr<RootNode> root_node, const std::weak_ptr<hippy::dom::DomNode> dom_node,
                    const float width, const int32_t width_mode,
                    const float height, const int32_t height_mode, int64_t &result) {
-  auto dom_manager = dom_manager_.lock();
-  FOOTSTONE_DCHECK(dom_manager != nullptr);
-  if (dom_manager == nullptr) {
-    return;
-  }
-
   auto root = root_node.lock();
   FOOTSTONE_DCHECK(root != nullptr);
   if (root == nullptr) {
@@ -1050,7 +1054,21 @@ void NativeRenderManager::DoMeasureText(const std::weak_ptr<RootNode> root_node,
   OhMeasureText measureInst(custom_font_path_map_);
   OhMeasureResult measureResult;
 
-  measureInst.StartMeasure(textPropMap);
+  std::set<std::string> fontFamilyNames;
+  auto text_prop_it = textPropMap.find("fontFamily");
+  if (text_prop_it != textPropMap.end()) {
+    fontFamilyNames.insert(text_prop_it->second);
+  }
+  for(uint32_t i = 0; i < node->GetChildCount(); i++) {
+    auto child = node->GetChildAt(i);
+    auto style_map = child->GetStyleMap();
+    auto it = style_map->find("fontFamily");
+    if (it != style_map->end()) {
+      fontFamilyNames.insert(HippyValueToString(*(it->second)));
+    }
+  }
+  
+  measureInst.StartMeasure(textPropMap, fontFamilyNames);
 
   if (node->GetChildCount() == 0) {
     measureInst.AddText(textPropMap);

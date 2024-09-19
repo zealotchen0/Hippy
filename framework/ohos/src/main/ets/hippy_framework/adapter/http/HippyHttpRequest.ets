@@ -180,14 +180,14 @@ export class HippyHttpRequest {
       } else {
         let result = new Url.URLParams();
         Object.keys(jsonObject).forEach((k) => {
-          let v: string = jsonObject[k] as string;
-          result.append(k,v);
+          let v = encodeURIComponent(jsonObject[k] as string | number | boolean);
+          result.append(k, v);
         });
         return result.toString();
       }
     } catch (e) {
       LogUtils.e(HIPPY_HTTP_REQUEST_TAG, 'http body parse error: ' + this.mBody);
-      return '';
+      return this.mBody;
     }
   }
 
