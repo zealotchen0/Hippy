@@ -29,7 +29,6 @@
 #include <string>
 #include <functional>
 #include <variant>
-#include "footstone/hippy_value.h"
 #include "footstone/string_view.h"
 
 using string_view = footstone::string_view;
@@ -116,7 +115,7 @@ class ArkTS {
   napi_value GetArrayElement(napi_value array, uint32_t index);
 
   uint32_t GetArrayLength(napi_value array);
-    
+
   std::vector<std::pair<napi_value, napi_value>> GetObjectProperties(napi_value object);
 
   std::string GetString(napi_value value);
@@ -130,9 +129,9 @@ class ArkTS {
   napi_env GetEnv();
 
   void ThrowError(const char *message);
-    
+
   void PrintValue(napi_value value);
-    
+
  private:
   napi_env env_;
 

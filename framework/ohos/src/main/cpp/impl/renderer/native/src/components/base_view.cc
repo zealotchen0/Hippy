@@ -25,7 +25,6 @@
 #include "oh_napi/ark_ts.h"
 #include "oh_napi/oh_napi_object.h"
 #include "oh_napi/oh_napi_object_builder.h"
-#include "oh_napi/oh_napi_task_runner.h"
 #include "oh_napi/oh_napi_utils.h"
 #include "renderer/dom_node/hr_node_props.h"
 #include "renderer/native_render_params.h"

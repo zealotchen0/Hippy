@@ -328,7 +328,7 @@ bool ArkTS::IsPromise(napi_value value) {
 }
 
 void ArkTS::PrintValue(napi_value value) {
-      napi_valuetype type;
+  napi_valuetype type;
   auto type_status = napi_typeof(env_, value, &type);
   this->MaybeThrowFromStatus(type_status, "Failed to get value type");
   switch(type) {

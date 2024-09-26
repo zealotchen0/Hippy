@@ -25,7 +25,6 @@
 #include "oh_napi/oh_napi_task_runner.h"
 #include "oh_napi/oh_napi_invocation.h"
 #include "oh_napi/oh_napi_register.h"
-#include "oh_napi/oh_napi_utils.h"
 #include "oh_napi/oh_measure_text.h"
 #include "footstone/deserializer.h"
 #include "footstone/hippy_value.h"
@@ -57,7 +56,7 @@ void CallRenderDelegateSetIdMethod(napi_env env, napi_ref render_provider_ref,
   auto delegateObject = arkTs.GetObject(render_provider_ref);
   delegateObject.Call(method.c_str(), args);
 }
-
+    
 void CallRenderDelegateMethod(napi_env env, napi_ref render_provider_ref,
   const std::string& method, uint32_t root_id, const std::pair<uint8_t*, size_t>& buffer) {
   OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(env);

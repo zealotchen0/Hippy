@@ -24,8 +24,6 @@
 #include <js_native_api_types.h>
 #include "footstone/string_view.h"
 #include "footstone/task_runner.h"
-#include "oh_napi/ark_ts.h"
-#include "renderer/components/base_view.h"
 
 namespace hippy {
 inline namespace framework {

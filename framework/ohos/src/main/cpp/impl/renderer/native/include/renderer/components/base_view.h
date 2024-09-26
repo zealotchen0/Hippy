@@ -27,7 +27,6 @@
 #include <string>
 #include <sys/types.h>
 #include "footstone/serializer.h"
-#include "oh_napi/ark_ts.h"
 #include "renderer/arkui/arkui_node.h"
 #include "renderer/native_render_context.h"
 #include "footstone/hippy_value.h"
@@ -62,7 +61,6 @@ public:
   virtual void OnSetPropsEnd();
   virtual void Call(const std::string &method, const std::vector<HippyValue> params,
                     std::function<void(const HippyValue &result)> callback);
-
   void AddSubRenderView(std::shared_ptr<BaseView> &subView, int32_t index);
   void RemoveSubView(std::shared_ptr<BaseView> &subView);
   void RemoveFromParentView();

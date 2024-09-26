@@ -29,6 +29,6 @@ using HippyValue = footstone::HippyValue;
 
 class OhNapiUtils {
 public:
-    static HippyValue NapiValue2HippyValue(napi_env env, napi_value value);
-    static napi_value HippyValue2NapiValue(napi_env env, const HippyValue &value);
+  static HippyValue NapiValue2HippyValue(napi_env env, napi_value value);
+  static napi_value HippyValue2NapiValue(napi_env env, const HippyValue &value);
 };
