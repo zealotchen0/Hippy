@@ -228,6 +228,29 @@ void NativeRenderManager::CreateRenderNode(std::weak_ptr<RootNode> root_node,
   }
 }
 
+void CollectAllHippyValueProps(footstone::value::HippyValue::HippyValueObjectType &props, std::shared_ptr<DomNode> &node, bool reset = true) {
+  if (reset) {
+    props.clear();
+  }
+  // 样式属性
+  auto style = node->GetStyleMap();
+  auto iter = style->begin();
+  auto style_filter = NativeRenderManager::GetStyleFilter();
+  while (iter != style->end()) {
+    if (style_filter->Enable(iter->first)) {
+      props[iter->first] = *(iter->second);
+    }
+    iter++;
+  }
+  // 用户自定义属性
+  auto dom_ext = *node->GetExtStyle();
+  iter = dom_ext.begin();
+  while (iter != dom_ext.end()) {
+    props[iter->first] = *(iter->second);
+    iter++;
+  }
+}
+
 void NativeRenderManager::CreateRenderNode_TS(std::weak_ptr<RootNode> root_node, std::vector<std::shared_ptr<DomNode>> &&nodes) {
   auto root = root_node.lock();
   if (!root) {
@@ -308,23 +331,7 @@ void NativeRenderManager::CreateRenderNode_TS(std::weak_ptr<RootNode> root_node,
     }
 
     footstone::value::HippyValue::HippyValueObjectType props;
-    // 样式属性
-    auto style = nodes[i]->GetStyleMap();
-    auto iter = style->begin();
-    auto style_filter = NativeRenderManager::GetStyleFilter();
-    while (iter != style->end()) {
-      if (style_filter->Enable(iter->first)) {
-        props[iter->first] = *(iter->second);
-      }
-      iter++;
-    }
-    // 用户自定义属性
-    auto dom_ext = *nodes[i]->GetExtStyle();
-    iter = dom_ext.begin();
-    while (iter != dom_ext.end()) {
-      props[iter->first] = *(iter->second);
-      iter++;
-    }
+    CollectAllHippyValueProps(props, nodes[i]);
 
     dom_node[kProps] = props;
     dom_node_array[i] = dom_node;
@@ -409,28 +416,22 @@ void NativeRenderManager::CreateRenderNode_C(std::weak_ptr<RootNode> root_node, 
     }
 
     footstone::value::HippyValue::HippyValueObjectType props;
-    // 样式属性
-    auto style = nodes[i]->GetStyleMap();
-    auto iter = style->begin();
-    auto style_filter = NativeRenderManager::GetStyleFilter();
-    while (iter != style->end()) {
-      if (style_filter->Enable(iter->first)) {
-        props[iter->first] = *(iter->second);
-      }
-      iter++;
-    }
-    // 用户自定义属性
-    auto dom_ext = *nodes[i]->GetExtStyle();
-    iter = dom_ext.begin();
-    while (iter != dom_ext.end()) {
-      props[iter->first] = *(iter->second);
-      iter++;
-    }
-
+    CollectAllHippyValueProps(props, nodes[i]);
     m->props_ = props;
+    
     auto parentNode = nodes[i]->GetParent();
     if (parentNode && parentNode->GetViewName() == "Text") {
       m->is_parent_text_ = true;
+      
+      auto grandParentNode = parentNode->GetParent();
+      if (grandParentNode && grandParentNode->GetViewName() == "Text") {
+        footstone::value::HippyValue::HippyValueObjectType mergedProps;
+        CollectAllHippyValueProps(mergedProps, parentNode);
+        for (auto it = props.begin(); it != props.end(); it++) {
+          mergedProps[it->first] = it->second;
+        }
+        m->props_ = mergedProps;
+      }
     }
     mutations[i] = m;
 
@@ -998,8 +999,10 @@ std::string HippyValueToString(const HippyValue &value) {
   return sv;
 }
 
-void CollectAllProps(std::map<std::string, std::string> &propMap, std::shared_ptr<DomNode> node) {
-  propMap.clear();
+void CollectAllProps(std::map<std::string, std::string> &propMap, std::shared_ptr<DomNode> node, bool reset = true) {
+  if (reset) {
+    propMap.clear();
+  }
   // 样式属性
   auto style = node->GetStyleMap();
   auto iter = style->begin();
@@ -1051,6 +1054,14 @@ void NativeRenderManager::DoMeasureText(const std::weak_ptr<RootNode> root_node,
     if (it != style_map->end()) {
       fontFamilyNames.insert(HippyValueToString(*(it->second)));
     }
+    for(uint32_t j = 0; j < child->GetChildCount(); j++) {
+      auto grand_child = child->GetChildAt(j);
+      auto grand_style_map = grand_child->GetStyleMap();
+      auto grand_it = grand_style_map->find("fontFamily");
+      if (grand_it != grand_style_map->end()) {
+        fontFamilyNames.insert(HippyValueToString(*(grand_it->second)));
+      }
+    }
   }
   
   measureInst.StartMeasure(textPropMap, fontFamilyNames);
@@ -1060,15 +1071,35 @@ void NativeRenderManager::DoMeasureText(const std::weak_ptr<RootNode> root_node,
   } else {
     for(uint32_t i = 0; i < node->GetChildCount(); i++) {
       auto child = node->GetChildAt(i);
-      CollectAllProps(spanPropMap, child);
-      if (child->GetViewName() == "Text") {
-        measureInst.AddText(spanPropMap);
-      } else if (child->GetViewName() == "Image") {
-        if (spanPropMap.find("width") != spanPropMap.end() && spanPropMap.find("height") != spanPropMap.end()) {
-          measureInst.AddImage(spanPropMap);
-          imageSpanNode.push_back(child);
-        } else {
-          FOOTSTONE_LOG(ERROR) << "Measure Text : ImageSpan without size";
+      auto grand_child_count = child->GetChildCount();
+      if (grand_child_count == 0) {
+        CollectAllProps(spanPropMap, child);
+        if (child->GetViewName() == "Text") {
+          measureInst.AddText(spanPropMap);
+        } else if (child->GetViewName() == "Image") {
+          if (spanPropMap.find("width") != spanPropMap.end() && spanPropMap.find("height") != spanPropMap.end()) {
+            measureInst.AddImage(spanPropMap);
+            imageSpanNode.push_back(child);
+          } else {
+            FOOTSTONE_LOG(ERROR) << "Measure Text : ImageSpan without size";
+          }
+        }
+      } else {
+        CollectAllProps(spanPropMap, child);
+        for(uint32_t j = 0; j < grand_child_count; j++) {
+          auto grand_child = child->GetChildAt(j);
+          std::map<std::string, std::string> grandSpanPropMap = spanPropMap;
+          CollectAllProps(grandSpanPropMap, grand_child, false);
+          if (grand_child->GetViewName() == "Text") {
+            measureInst.AddText(grandSpanPropMap);
+          } else if (grand_child->GetViewName() == "Image") {
+            if (grandSpanPropMap.find("width") != grandSpanPropMap.end() && grandSpanPropMap.find("height") != grandSpanPropMap.end()) {
+              measureInst.AddImage(grandSpanPropMap);
+              imageSpanNode.push_back(grand_child);
+            } else {
+              FOOTSTONE_LOG(ERROR) << "Measure Text : ImageSpan without size";
+            }
+          }
         }
       }
     }
