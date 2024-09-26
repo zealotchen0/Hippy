@@ -27,6 +27,7 @@
 #include <string>
 #include <sys/types.h>
 #include "footstone/serializer.h"
+#include "oh_napi/ark_ts.h"
 #include "renderer/arkui/arkui_node.h"
 #include "renderer/native_render_context.h"
 #include "footstone/hippy_value.h"
@@ -167,6 +168,10 @@ protected:
   bool flagInterceptPullUp_ = false;
 
   HippyValueObjectType events_;
+    
+private:
+  void CallGetComponentSnapshotMethod(napi_env env, napi_ref render_provider_ref, uint32_t component_id, std::shared_ptr<SnapshotResult> snapshotResult);
+  HippyValue CallGetLocationOnScreenMethod(napi_env env, napi_ref render_provider_ref, uint32_t component_id);  
 };
 
 }  // namespace native

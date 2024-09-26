@@ -41,6 +41,10 @@ inline namespace render {
 inline namespace native {
 
 std::shared_ptr<footstone::value::Serializer> BaseView::serializer_ = nullptr;
+std::mutex napiAsyncCallMutex;
+std::condition_variable napiAsyncCallCondition;
+enum class NapiAsyncCallStatus { Waiting, Success };
+NapiAsyncCallStatus napiAsyncCallStatus = NapiAsyncCallStatus::Waiting;
 
 BaseView::BaseView(std::shared_ptr<NativeRenderContext> &ctx) : ctx_(ctx), tag_(0) {
 #if HIPPY_OHOS_MEM_CHECK
@@ -687,14 +691,23 @@ void BaseView::Call(const std::string &method, const std::vector<HippyValue> par
     result["height"] = HippyValue(viewSize.height);
     callback(HippyValue(result));
   } else if (method == "getScreenShot") {
-    callback(params.back());
+    SnapshotResult result;
+    auto snapshotResult = std::make_shared<SnapshotResult>(result);
+    CallGetComponentSnapshotMethod(ts_env_, ts_render_provider_ref_, GetTag(), snapshotResult);
+    HippyValueObjectType resultMap{
+        {"screenShot", HippyValue(snapshotResult->screenShot)},
+        {"width", HippyValue(static_cast<int32_t>(snapshotResult->width))},
+        {"height", HippyValue(static_cast<int32_t>(snapshotResult->height))},
+        {"screenScale", HippyValue(snapshotResult->screenScale)}};
+    callback(HippyValue(resultMap));
   } else if (method == "addFrameCallback") {
-
+    // empty
   } else if (method == "removeFrameCallback") {
     auto resultMap = HippyValue();
     callback(resultMap);
   } else if (method == "getLocationOnScreen") {
-    callback(params.back());
+    auto resultMap = CallGetLocationOnScreenMethod(ts_env_, ts_render_provider_ref_, GetTag());
+    callback(resultMap);
   } else {
     FOOTSTONE_DLOG(INFO) << "Unsupported method called: " << method;
   }
@@ -842,6 +855,95 @@ void BaseView::OnViewComponentEvent(const std::string &event_name, const HippyVa
 
   auto callback = arkTs.GetReferenceValue(ts_event_callback_ref_);
   arkTs.Call(callback, args);
+}
+
+HippyValue BaseView::CallGetLocationOnScreenMethod(napi_env env, napi_ref render_provider_ref, uint32_t component_id) {
+  HippyValue futHippyValue;
+  ArkTS arkTs(env);
+  std::vector<napi_value> args = {arkTs.CreateUint32(component_id)};
+  auto delegateObject = arkTs.GetObject(render_provider_ref);
+  auto napiValue = delegateObject.Call("getLocationOnScreen", args);
+
+  HippyValueObjectType map;
+  OhNapiObject napiObj = arkTs.GetObject(napiValue);
+  std::vector<std::pair<napi_value, napi_value>> pairs = napiObj.GetKeyValuePairs();
+  for (auto it = pairs.begin(); it != pairs.end(); it++) {
+      auto &pair = *it;
+      auto &pairItem1 = pair.first;
+      auto objKey = arkTs.GetString(pairItem1);
+      if (objKey.length() > 0) {
+        auto &pairItem2 = pair.second;
+        auto objValue = OhNapiUtils::NapiValue2HippyValue(env, pairItem2);
+        map[objKey] = objValue;
+      }
+  }
+  futHippyValue = HippyValue(map);
+  return futHippyValue;
+}
+
+void BaseView::CallGetComponentSnapshotMethod(napi_env env, napi_ref render_provider_ref, 
+uint32_t componentId, std::shared_ptr<SnapshotResult> snapshotResult) {
+  auto scopeCallback = [&](napi_env copyEnv, HippyValue &value) {
+    HippyValueObjectType resultMap;
+    if (value.ToObject(resultMap)) {
+      auto screenShotIter = resultMap.find("screenShot");
+      auto heightIter = resultMap.find("height");
+      auto widthIter = resultMap.find("width");
+      auto screenScaleIter = resultMap.find("screenScale");
+
+      if (screenShotIter != resultMap.end())
+        screenShotIter->second.ToString(snapshotResult->screenShot);
+      if (heightIter != resultMap.end())
+        heightIter->second.ToDouble(snapshotResult->height);
+      if (widthIter != resultMap.end())
+        widthIter->second.ToDouble(snapshotResult->width);
+      if (screenScaleIter != resultMap.end())
+        screenScaleIter->second.ToDouble(snapshotResult->screenScale);
+
+      std::lock_guard<std::mutex> lock(napiAsyncCallMutex);
+      napiAsyncCallStatus = NapiAsyncCallStatus::Success;
+    }
+    napiAsyncCallCondition.notify_all();
+  };
+
+  auto jsCallback = [](napi_env env, napi_callback_info info) -> napi_value {
+    size_t argc = 0;
+    napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr);
+    if (argc == 0) return nullptr;
+    napi_value args[argc];
+    void *data;
+    napi_get_cb_info(env, info, &argc, args, nullptr, &data);
+    ArkTS arkTs(env);
+    HippyValueObjectType jsMap;
+    OhNapiObject napiObj = arkTs.GetObject(args[0]);
+    for (const auto &pair : napiObj.GetKeyValuePairs()) {
+      auto key = arkTs.GetString(pair.first);
+      if (!key.empty()) {
+        auto value = OhNapiUtils::NapiValue2HippyValue(env, pair.second);
+        jsMap[key] = value;
+      }
+    }
+    HippyValue resultMap(jsMap);
+    auto scopeCallback = reinterpret_cast<ScopeNapiAsynCall *>(data);
+    if (scopeCallback && scopeCallback->dataScope) {
+      (*scopeCallback->dataScope)(env, resultMap);
+    }
+    return nullptr;
+  };
+
+
+  ScopeNapiAsynCall *scopePtr = new ScopeNapiAsynCall();
+  scopePtr->dataScope = new std::function<void(napi_env, footstone::HippyValue &)>(scopeCallback);
+  napi_value callback;
+  OhNapiUtils::CreateArkTs2Callback(env, callback, jsCallback, scopePtr);
+  ArkTS arkTs(env);
+  std::vector<napi_value> args = {arkTs.CreateUint32(componentId), callback};
+  auto delegateObject = arkTs.GetObject(render_provider_ref);
+  delegateObject.Call("getComponentSnapshot", args);
+
+  std::unique_lock<std::mutex> lock(napiAsyncCallMutex);
+  napiAsyncCallCondition.wait(lock, [=]{ return napiAsyncCallStatus == NapiAsyncCallStatus::Success; });
+  napiAsyncCallStatus = NapiAsyncCallStatus::Waiting;
 }
 
 } // namespace native

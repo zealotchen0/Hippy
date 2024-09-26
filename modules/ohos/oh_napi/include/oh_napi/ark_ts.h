@@ -140,11 +140,12 @@ class ArkTS {
   napi_env GetEnv();
 
   void ThrowError(const char *message);
+    
+  void PrintValue(napi_value value);
+    
+  void CreateArkTs2Callback(napi_value &callback, NapiCallback napiCallback, ScopeNapiAsynCall *scopeCallback);
 
-  void CreateArkTs2Callback(napi_value &callback, NapiCallback callbackC,
-                              ScopeNapiAsynCall *scopeCallback);
-
-  private:
+ private:
   napi_env env_;
 
   void MaybeThrowFromStatus(napi_status status, const char *message);
