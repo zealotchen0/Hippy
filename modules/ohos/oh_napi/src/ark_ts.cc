@@ -254,12 +254,6 @@ uint32_t ArkTS::GetArrayLength(napi_value array) {
   return length;
 }
 
-void ArkTS::CreateArkTs2Callback(napi_value &callback, 
-                                NapiCallback napiCallback,
-                                ScopeNapiAsynCall *scopeCallback) {
-  napi_create_function(env_, nullptr, 0, napiCallback, scopeCallback, &callback);
-}
-
 std::vector<std::pair<napi_value, napi_value>> ArkTS::GetObjectProperties(napi_value object) {
   napi_value propertyNames;
   auto status = napi_get_property_names(env_, object, &propertyNames);

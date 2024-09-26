@@ -33,16 +33,6 @@
 #include "footstone/string_view.h"
 
 using string_view = footstone::string_view;
-using NapiCallback = napi_value (*)(napi_env, napi_callback_info);
-struct SnapshotResult {
-  std::string screenShot = "";
-  std::double_t width = 0;
-  std::double_t height = 0;
-  std::double_t screenScale = 0;
-};
-struct ScopeNapiAsynCall {
-  std::function<void(napi_env, footstone::HippyValue &)> *dataScope;
-};
 
 class OhNapiObjectBuilder;
 class OhNapiObject;
@@ -143,8 +133,6 @@ class ArkTS {
     
   void PrintValue(napi_value value);
     
-  void CreateArkTs2Callback(napi_value &callback, NapiCallback napiCallback, ScopeNapiAsynCall *scopeCallback);
-
  private:
   napi_env env_;
 

@@ -170,8 +170,7 @@ protected:
   HippyValueObjectType events_;
     
 private:
-  void CallGetComponentSnapshotMethod(napi_env env, napi_ref render_provider_ref, uint32_t component_id, std::shared_ptr<SnapshotResult> snapshotResult);
-  HippyValue CallGetLocationOnScreenMethod(napi_env env, napi_ref render_provider_ref, uint32_t component_id);  
+  HippyValueObjectType CallNativeRenderProviderMethod(napi_env env, napi_ref render_provider_ref, uint32_t component_id, const std::string &method);  
 };
 
 }  // namespace native

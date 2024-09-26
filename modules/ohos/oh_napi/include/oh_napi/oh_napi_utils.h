@@ -26,10 +26,9 @@
 #include "oh_napi/ark_ts.h"
 
 using HippyValue = footstone::HippyValue;
-using NapiCallback = napi_value (*)(napi_env, napi_callback_info);
+
 class OhNapiUtils {
 public:
-    static void CreateArkTs2Callback(napi_env env, napi_value &value, NapiCallback napiCallback, ScopeNapiAsynCall *scopeCallback);
     static HippyValue NapiValue2HippyValue(napi_env env, napi_value value);
     static napi_value HippyValue2NapiValue(napi_env env, const HippyValue &value);
 };
