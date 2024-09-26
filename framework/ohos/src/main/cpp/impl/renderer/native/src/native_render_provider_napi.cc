@@ -46,7 +46,6 @@ inline namespace framework {
 inline namespace renderer {
 inline namespace native {
 
-
 void CallRenderDelegateSetIdMethod(napi_env env, napi_ref render_provider_ref,
   const std::string& method, uint32_t id) {
   ArkTS arkTs(env);
@@ -56,7 +55,7 @@ void CallRenderDelegateSetIdMethod(napi_env env, napi_ref render_provider_ref,
   auto delegateObject = arkTs.GetObject(render_provider_ref);
   delegateObject.Call(method.c_str(), args);
 }
-    
+
 void CallRenderDelegateMethod(napi_env env, napi_ref render_provider_ref,
   const std::string& method, uint32_t root_id, const std::pair<uint8_t*, size_t>& buffer) {
   OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(env);
@@ -70,7 +69,7 @@ void CallRenderDelegateMethod(napi_env env, napi_ref render_provider_ref,
     delegateObject.Call(method.c_str(), args);
   });
 }
-
+    
 void CallRenderDelegateMethod(napi_env env, napi_ref render_provider_ref,
   const std::string& method, uint32_t root_id) {
   OhNapiTaskRunner *taskRunner = OhNapiTaskRunner::Instance(env);
