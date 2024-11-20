@@ -47,6 +47,7 @@ export enum NodeProps {
   METHOD = 'method',
   USER_AGENT = 'userAgent',
   INITIAL_LIST_SIZE = 'initialListSize',
+  OVER_SCAN_COUNT = 'overScanCount',
   INITIAL_CONTENT_OFFSET = 'initialContentOffset',
   BOUNCES = 'bounces',
   CONTENT_CONTAINER_STYLE = 'contentContainerStyle',

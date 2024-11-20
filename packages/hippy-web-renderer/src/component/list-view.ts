@@ -88,6 +88,15 @@ export class ListView extends HippyWebView<HTMLDivElement> {
   public set initialListSize(value: number) {
     this.props[NodeProps.INITIAL_LIST_SIZE] = value;
   }
+
+  public get overScanCount() {
+    return this.props[NodeProps.OVER_SCAN_COUNT] ?? 2;
+  }
+
+  public set overScanCount(value: number) {
+    this.props[NodeProps.OVER_SCAN_COUNT] = value;
+  }
+
   public get initialContentOffset() {
     return this.props[NodeProps.INITIAL_CONTENT_OFFSET];
   }
@@ -265,7 +274,7 @@ export class ListView extends HippyWebView<HTMLDivElement> {
           onRowsRendered: this.handleOnRowsRendered.bind(this),
           onScroll: this.handleScroll.bind(this),
           initialScrollTop: this.initialContentOffset ?? 0,
-          overScanCount: 2,
+          overScanCount: this.overScanCount,
         });
       }
       this.needCheckAllDataHeight();
@@ -570,7 +579,7 @@ export class ListViewItem extends HippyWebView<HTMLDivElement> {
   public handleReLayout(entries: ResizeObserverEntry[]) {
     const [entry] = entries;
     const { height } = entry.contentRect;
-    if ((Math.round(height) === this.height) && Math.round(height) === this.dom?.clientHeight) {
+    if ((Math.round(height) === this.height) || Math.round(height) === this.dom?.clientHeight) {
       // no need to relayout ListViewItem when height is not changed
       return;
     }
