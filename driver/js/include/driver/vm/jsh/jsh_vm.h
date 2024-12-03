@@ -28,7 +28,8 @@
 #include <ark_runtime/jsvm.h>
 
 #if defined(ENABLE_INSPECTOR) && !defined(JSH_WITHOUT_INSPECTOR)
-#include "driver/vm/jsh/inspector/jsh_inspector_client_impl.h"
+// #include "driver/vm/jsh/inspector/jsh_inspector_client_impl.h"
+#include "devtools/devtools_data_source.h"
 #endif
 
 namespace hippy {
@@ -50,7 +51,7 @@ class JSHVM : public VM {
  public:
   using string_view = footstone::string_view;
 #if defined(ENABLE_INSPECTOR) && defined(JS_JSH) && !defined(JSH_WITHOUT_INSPECTOR)
-  using JSHInspectorClientImpl = hippy::inspector::JSHInspectorClientImpl;
+//   using JSHInspectorClientImpl = hippy::inspector::JSHInspectorClientImpl;
 #endif
   struct DeserializerResult {
     bool flag;
@@ -68,12 +69,12 @@ class JSHVM : public VM {
   inline std::string& GetBuffer() { return serializer_reused_buffer_; }
 
 #if defined(ENABLE_INSPECTOR) && defined(JS_JSH) && !defined(JSH_WITHOUT_INSPECTOR)
-  inline void SetInspectorClient(std::shared_ptr<JSHInspectorClientImpl> inspector_client) {
-    inspector_client_ = inspector_client;
-  }
-  inline std::shared_ptr<JSHInspectorClientImpl> GetInspectorClient() {
-    return inspector_client_;
-  }
+//   inline void SetInspectorClient(std::shared_ptr<JSHInspectorClientImpl> inspector_client) {
+//     inspector_client_ = inspector_client;
+//   }
+//   inline std::shared_ptr<JSHInspectorClientImpl> GetInspectorClient() {
+//     return inspector_client_;
+//   }
 #endif
   virtual std::shared_ptr<Ctx> CreateContext() override;
   virtual std::shared_ptr<CtxValue> ParseJson(const std::shared_ptr<Ctx>& ctx, const string_view& json) override;
@@ -84,6 +85,7 @@ class JSHVM : public VM {
   static string_view ToStringView(JSVM_Env env, JSVM_Value string_value);
 
   static void PlatformDestroy();
+  void OpenInspector(const std::shared_ptr<Ctx>& ctx);
   
   JSVM_VM vm_ = nullptr;
   JSVM_VMScope vm_scope_ = nullptr;
@@ -92,7 +94,7 @@ class JSHVM : public VM {
   bool enable_v8_serialization_ = false;
 
 #if defined(ENABLE_INSPECTOR) && !defined(JSH_WITHOUT_INSPECTOR)
-  std::shared_ptr<JSHInspectorClientImpl> inspector_client_;
+//   std::shared_ptr<JSHInspectorClientImpl> inspector_client_;
 #endif
 };
 

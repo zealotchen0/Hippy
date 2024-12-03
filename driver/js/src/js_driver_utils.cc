@@ -154,12 +154,12 @@ void AsyncInitializeEngine(const std::shared_ptr<Engine>& engine,
     jsh_vm->AddUncaughtExceptionMessageListener(wrapper);
     jsh_vm->SaveUncaughtExceptionCallback(std::move(wrapper));
 #if defined(ENABLE_INSPECTOR) && !defined(V8_WITHOUT_INSPECTOR)
-    if (jsh_vm->IsDebug()) {
-      if (!jsh_vm->GetInspectorClient()) {
-        jsh_vm->SetInspectorClient(std::make_shared<JSHInspectorClientImpl>());
-      }
-      jsh_vm->GetInspectorClient()->SetJsRunner(engine->GetJsTaskRunner());
-    }
+//     if (jsh_vm->IsDebug()) {
+//       if (!jsh_vm->GetInspectorClient()) {
+//         jsh_vm->SetInspectorClient(std::make_shared<JSHInspectorClientImpl>());
+//       }
+//       jsh_vm->GetInspectorClient()->SetJsRunner(engine->GetJsTaskRunner());
+//     }
 #endif
 #endif
   };
@@ -255,6 +255,24 @@ void InitDevTools(const std::shared_ptr<Scope>& scope,
       }
     });
 #endif
+        
+#if defined(JS_JSH) && !defined(JS_JSH_WITHOUT_INSPECTOR)
+    auto jsh_vm = std::static_pointer_cast<JSHVM>(vm);
+    std::weak_ptr<JSHVM> weak_jsh_vm = jsh_vm;
+    std::weak_ptr<Scope> weak_scope = scope;
+        
+    scope->GetDevtoolsDataSource()->SetVmRequestHandler([weak_jsh_vm, weak_scope](const std::string& data) {
+      auto jsh_vm = weak_jsh_vm.lock();
+      if (!jsh_vm) {
+        FOOTSTONE_DLOG(FATAL) << "RunApp send_jsh_func_ vm invalid or not debugger";
+        return;
+      }
+      auto scope = weak_scope.lock();
+      if (!scope) {
+        return;
+      }
+    });
+#endif
   }
 }
 #endif
@@ -272,6 +290,10 @@ void CreateScopeAndAsyncInitialize(const std::shared_ptr<Engine>& engine,
     InitDevTools(scope, engine->GetVM(), param->devtools_data_source);
 #endif
     scope->CreateContext();
+#if defined(JS_JSH) && defined(ENABLE_INSPECTOR) && !defined(JSH_WITHOUT_INSPECTOR)
+    auto jsh_vm = std::static_pointer_cast<JSHVM>(engine->GetVM());
+    jsh_vm->OpenInspector(std::static_pointer_cast<JSHCtx>(scope->GetContext()));
+#endif
     RegisterGlobalObjectAndGlobalConfig(scope, global_config);
     scope->SyncInitialize();
     RegisterCallHostObject(scope, call_host_callback);
@@ -286,6 +308,13 @@ void CreateScopeAndAsyncInitialize(const std::shared_ptr<Engine>& engine,
         scope->SetInspectorContext(inspector_context);
       }
     }
+#endif
+        
+#if defined(JS_JSH) && defined(ENABLE_INSPECTOR) && !defined(JSH_WITHOUT_INSPECTOR)
+    auto vm = std::static_pointer_cast<JSHVM>(engine->GetVM());
+//     if (vm->IsDebug()) {
+//       vm->OpenInspector(std::static_pointer_cast<JSHCtx>(scope->GetContext()));
+//     }
 #endif
     scope_initialized_callback(scope);
   });

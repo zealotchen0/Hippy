@@ -65,8 +65,8 @@ JSHVM::JSHVM(const std::shared_ptr<JSHVMInitParam>& param) : VM(param) {
       FOOTSTONE_CHECK(status == JSVM_OK);
       platform_initted = true;
 #ifdef ENABLE_INSPECTOR
-      auto trace = reinterpret_cast<v8::platform::tracing::TracingController*>(platform->GetTracingController());
-      devtools::DevtoolsDataSource::OnGlobalTracingControlGenerate(trace);
+//       auto trace = reinterpret_cast<v8::platform::tracing::TracingController*>(platform->GetTracingController());
+//       devtools::DevtoolsDataSource::OnGlobalTracingControlGenerate(trace);
 #endif
     }
   }
@@ -109,7 +109,7 @@ JSHVM::~JSHVM() {
   FOOTSTONE_LOG(INFO) << "~JSHVM";
 
 #if defined(ENABLE_INSPECTOR) && !defined(JSH_WITHOUT_INSPECTOR)
-  inspector_client_ = nullptr;
+//   inspector_client_ = nullptr;
 #endif
   
   OH_JSVM_CloseVMScope(vm_, vm_scope_);
@@ -120,6 +120,17 @@ JSHVM::~JSHVM() {
 
 void JSHVM::PlatformDestroy() {
   platform_initted = false;
+}
+
+void JSHVM::OpenInspector(const std::shared_ptr<Ctx>& ctx) {
+    auto jsh_ctx = std::static_pointer_cast<JSHCtx>(ctx);
+//     auto ret = OH_JSVM_OpenInspector(jsh_ctx->env_, "localhost", 38989);
+//     auto ret = OH_JSVM_OpenInspectorWithName(jsh_ctx->env_, 90361, "localhost");
+//     FOOTSTONE_CHECK(ret == JSVM_OK);
+    OH_JSVM_OpenInspector(jsh_ctx->env_, "localhost", 12345);
+    // 等待建立socket连接。
+    OH_JSVM_WaitForDebugger(jsh_ctx->env_, false);
+//     FOOTSTONE_CHECK(ret2 == JSVM_OK);
 }
 
 std::shared_ptr<Ctx> JSHVM::CreateContext() {
