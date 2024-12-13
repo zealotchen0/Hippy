@@ -310,12 +310,6 @@ RegisterAnimation(const std::weak_ptr<Scope>& weak_scope) {
       exception = scope->GetContext()->CreateException("dom_manager null error");
       return nullptr;
     }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
-      exception = scope->GetContext()->CreateException("root_node null error");
-      return nullptr;
-    }
     auto result = ParseAnimation(scope->GetContext(), argument_count, arguments, exception);
     if (exception) {
       return nullptr;
@@ -324,7 +318,7 @@ RegisterAnimation(const std::weak_ptr<Scope>& weak_scope) {
         std::make_shared<CubicBezierAnimation>(result->mode, result->delay, result->start_value,
                                                result->to_value, result->type, result->duration,
                                                result->func, result->cnt, result->animation_id);
-    auto animation_manager = root_node->GetAnimationManager();
+    auto animation_manager = scope->GetAnimationManager().lock();
     animation->SetAnimationManager(animation_manager);
     animation_manager->AddAnimation(animation);
     return animation;
@@ -368,11 +362,6 @@ RegisterAnimation(const std::weak_ptr<Scope>& weak_scope) {
     if (!dom_manager) {
       return nullptr;
     }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
-      return nullptr;
-    }
     animation->Start();
     return nullptr;
   };
@@ -395,11 +384,6 @@ RegisterAnimation(const std::weak_ptr<Scope>& weak_scope) {
     auto weak_dom_manager = scope->GetDomManager();
     auto dom_manager = weak_dom_manager.lock();
     if (!dom_manager) {
-      return nullptr;
-    }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
       return nullptr;
     }
     animation->Destroy();
@@ -426,11 +410,6 @@ RegisterAnimation(const std::weak_ptr<Scope>& weak_scope) {
     if (!dom_manager) {
       return nullptr;
     }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
-      return nullptr;
-    }
     animation->Pause();
     return nullptr;
   };
@@ -453,11 +432,6 @@ RegisterAnimation(const std::weak_ptr<Scope>& weak_scope) {
     auto weak_dom_manager = scope->GetDomManager();
     auto dom_manager = weak_dom_manager.lock();
     if (!dom_manager) {
-      return nullptr;
-    }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
       return nullptr;
     }
     animation->Resume();
@@ -491,11 +465,6 @@ RegisterAnimation(const std::weak_ptr<Scope>& weak_scope) {
     if (!dom_manager) {
       return nullptr;
     }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
-      return nullptr;
-    }
     return nullptr;
   };
   class_template.functions.emplace_back(std::move(update_func_def));
@@ -517,11 +486,6 @@ RegisterAnimation(const std::weak_ptr<Scope>& weak_scope) {
     auto weak_dom_manager = scope->GetDomManager();
     auto dom_manager = weak_dom_manager.lock();
     if (!dom_manager) {
-      return nullptr;
-    }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
       return nullptr;
     }
     auto context = scope->GetContext();
@@ -579,11 +543,6 @@ RegisterAnimation(const std::weak_ptr<Scope>& weak_scope) {
     if (!dom_manager) {
       return nullptr;
     }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
-      return nullptr;
-    }
     auto context = scope->GetContext();
     if (argument_count != kRemoveEventListenerArgc) {
       exception = context->CreateException("argc error");
@@ -625,13 +584,7 @@ RegisterAnimationSet(const std::weak_ptr<Scope>& weak_scope) {
       exception = scope->GetContext()->CreateException("dom_manager null error");
       return nullptr;
     }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
-      exception = scope->GetContext()->CreateException("root_node null error");
-      return nullptr;
-    }
-    auto animation_manager = root_node->GetAnimationManager();
+    auto animation_manager = scope->GetAnimationManager().lock();
     if (!animation_manager) {
       exception = scope->GetContext()->CreateException("animation_manager null error");
       return nullptr;
@@ -640,7 +593,7 @@ RegisterAnimationSet(const std::weak_ptr<Scope>& weak_scope) {
     if (exception) {
       return nullptr;
     }
-    set->SetAnimationManager(root_node->GetAnimationManager());
+    set->SetAnimationManager(animation_manager);
     set->Init();
     animation_manager->AddAnimation(set);
     return set;
@@ -684,11 +637,6 @@ RegisterAnimationSet(const std::weak_ptr<Scope>& weak_scope) {
     if (!dom_manager) {
       return nullptr;
     }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
-      return nullptr;
-    }
     animation_set->Start();
     return nullptr;
   };
@@ -711,11 +659,6 @@ RegisterAnimationSet(const std::weak_ptr<Scope>& weak_scope) {
     auto weak_dom_manager = scope->GetDomManager();
     auto dom_manager = weak_dom_manager.lock();
     if (!dom_manager) {
-      return nullptr;
-    }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
       return nullptr;
     }
     animation_set->Destroy();
@@ -742,11 +685,6 @@ RegisterAnimationSet(const std::weak_ptr<Scope>& weak_scope) {
     if (!dom_manager) {
       return nullptr;
     }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
-      return nullptr;
-    }
     animation_set->Pause();
     return nullptr;
   };
@@ -771,11 +709,6 @@ RegisterAnimationSet(const std::weak_ptr<Scope>& weak_scope) {
     if (!dom_manager) {
       return nullptr;
     }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
-      return nullptr;
-    }
     animation_set->Resume();
     return nullptr;
   };
@@ -798,11 +731,6 @@ RegisterAnimationSet(const std::weak_ptr<Scope>& weak_scope) {
     auto weak_dom_manager = scope->GetDomManager();
     auto dom_manager = weak_dom_manager.lock();
     if (!dom_manager) {
-      return nullptr;
-    }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
       return nullptr;
     }
     auto context = scope->GetContext();
@@ -858,11 +786,6 @@ RegisterAnimationSet(const std::weak_ptr<Scope>& weak_scope) {
     auto weak_dom_manager = scope->GetDomManager();
     auto dom_manager = weak_dom_manager.lock();
     if (!dom_manager) {
-      return nullptr;
-    }
-    auto weak_root_node = scope->GetRootNode(0000000000);
-    auto root_node = weak_root_node.lock();
-    if (!root_node) {
       return nullptr;
     }
     auto context = scope->GetContext();
