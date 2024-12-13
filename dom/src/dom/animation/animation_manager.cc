@@ -60,6 +60,9 @@ void AnimationManager::OnDomNodeDelete(const std::vector<std::shared_ptr<DomInfo
 
 void AnimationManager::EmplaceNodeProp(const std::shared_ptr<DomNode>& node, const std::string& prop, uint32_t animation_id) {
   auto node_id = node->GetId();
+  auto root_node = node->GetRootNode().lock();
+  auto root_node_id = root_node->GetId();
+  animation_root_node_map_.insert({animation_id, root_node_id});
   auto it = animation_nodes_map_.find(animation_id);
   if (it != animation_nodes_map_.end()) {
     it->second.insert(node_id);
@@ -185,11 +188,7 @@ void AnimationManager::CancelDelayedAnimation(uint32_t id) {
     return;
   }
   delayed_animation_task_map_.erase(it);
-  auto root_node = root_node_.lock();
-  if (!root_node) {
-    return;
-  }
-  auto dom_manager = root_node->GetDomManager().lock();
+  auto dom_manager = GetDomManager().lock();
   if (dom_manager) {
     return;
   }
@@ -214,19 +213,17 @@ void AnimationManager::AddActiveAnimation(const std::shared_ptr<Animation>& anim
     if (!render_manager) {
       return;
     }
-    auto root_node = root_node_.lock();
-    if (!root_node) {
-      return;
-    }
-    auto weak_dom_manager = root_node->GetDomManager();
+    auto weak_dom_manager = GetDomManager();
     auto dom_manager = weak_dom_manager.lock();
     if (!dom_manager) {
       return;
     }
     listener_id_ = hippy::dom::FetchListenerId();
     auto weak_animation_manager = weak_from_this();
+    auto it = animation_root_node_map_.find(animation->GetId());
+    auto root_node_id = it->second;
     dom_manager->AddEventListener(root_node,
-                                  root_node->GetId(),
+                                  root_node_id,
                                   kVSyncKey,
                                   listener_id_,
                                   false,
@@ -341,11 +338,7 @@ void AnimationManager::UpdateCubicBezierAnimation(double current,
 }
 
 std::shared_ptr<RenderManager> AnimationManager::GetRenderManager() {
-  auto root_node = root_node_.lock();
-  if (!root_node) {
-    return nullptr;
-  }
-  auto dom_manager = root_node->GetDomManager().lock();
+  auto dom_manager = GetDomManager().lock();
   if (!dom_manager) {
     return nullptr;
   }

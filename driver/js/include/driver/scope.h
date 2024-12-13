@@ -167,7 +167,7 @@ class Scope : public std::enable_shared_from_this<Scope> {
   inline void SetTurbo(std::any turbo) { turbo_ = turbo; }
   inline std::weak_ptr<Engine> GetEngine() { return engine_; }
   inline std::unique_ptr<RegisterMap>& GetRegisterMap() { return extra_function_map_; }
-    
+
   inline bool RegisterExtraCallback(const std::string& key, RegisterFunction func) {
     if (!func) {
       return false;
@@ -175,7 +175,7 @@ class Scope : public std::enable_shared_from_this<Scope> {
     (*extra_function_map_)[key] = std::move(func);
     return true;
   }
-  
+
   inline bool GetExtraCallback(const std::string& key, RegisterFunction& outFunc) const {
     auto it = extra_function_map_->find(key);
     if (it != extra_function_map_->end()) {
@@ -302,10 +302,20 @@ class Scope : public std::enable_shared_from_this<Scope> {
     dom_manager_ = dom_manager;
   }
 
+  inline void SetAnimationManager(std::shared_ptr<AnimationManager> animation_manager) {
+    animation_manager_ = animation_manager;
+  }
+
+  inline std::weak_ptr<AnimationManager> GetAnimationManager() { return animation_manager_; }
+
   inline std::weak_ptr<DomManager> GetDomManager() { return dom_manager_; }
 
   inline std::weak_ptr<RootNode> GetRootNode(uint32_t root_id) {
     return root_node_map_[root_id];
+  }
+
+  inline std::unordered_map<uint32_t, std::weak_ptr<RootNode>> GetRootNodeMap() {
+    return root_node_map_;
   }
 
   inline void SetRootNode(uint32_t root_id, std::weak_ptr<RootNode> root_node) {
@@ -485,6 +495,7 @@ class Scope : public std::enable_shared_from_this<Scope> {
   std::unique_ptr<ScopeWrapper> wrapper_;
   std::weak_ptr<UriLoader> loader_;
   std::weak_ptr<DomManager> dom_manager_;
+  std::weak_ptr<AnimationManager> animation_manager_;
   std::unordered_map<uint32_t, std::weak_ptr<RootNode>> root_node_map_;
   std::unordered_map<std::string, std::shared_ptr<ModuleBase>> module_object_map_;
   std::unordered_map<string_view , std::shared_ptr<CtxValue>> javascript_class_map_;

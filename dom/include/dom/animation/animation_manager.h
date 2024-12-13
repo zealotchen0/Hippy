@@ -52,20 +52,27 @@ class AnimationManager
   AnimationManager(AnimationManager&) = delete;
   AnimationManager& operator=(AnimationManager&) = delete;
 
-  inline std::weak_ptr<RootNode> GetRootNode() {
-    return root_node_;
-  }
-
-  inline void SetRootNode(std::weak_ptr<RootNode> root_node) {
-    root_node_ = root_node;
-  }
-
   void RemoveVSyncEventListener();
 
   void OnDomNodeCreate(const std::vector<std::shared_ptr<DomInfo>>& nodes) override;
   void OnDomNodeUpdate(const std::vector<std::shared_ptr<DomInfo>>& nodes) override;
   void OnDomNodeMove(const std::vector<std::shared_ptr<DomInfo>>& nodes) override;
   void OnDomNodeDelete(const std::vector<std::shared_ptr<DomInfo>>& nodes) override;
+
+  inline std::unordered_map<uint32_t, std::weak_ptr<RootNode>> GetRootNodeMap() {
+    return root_node_map_;
+  }
+
+  inline void SetRootNodeMap(std::unordered_map<uint32_t, std::weak_ptr<RootNode>> root_node_map) {
+    root_node_map_ = root_node_map;
+  }
+
+  inline void SetDomManager(std::shared_ptr<DomManager> dom_manager) {
+    dom_manager_ = dom_manager;
+  }
+
+  inline std::weak_ptr<DomManager> GetDomManager() { return dom_manager_; }
+  std::weak_ptr<DomManager> dom_manager_;
 
   inline void AddAnimation(std::shared_ptr<Animation> animation) {
     if (animation) {
@@ -122,7 +129,6 @@ class AnimationManager
                                   std::unordered_map<uint32_t, std::shared_ptr<DomNode>>& update_node_map);
   std::shared_ptr<RenderManager> GetRenderManager();
 
-  std::weak_ptr<RootNode> root_node_;
   std::unordered_map<uint32_t, std::shared_ptr<Animation>> animation_map_;
   /**
    * the key of delayed_animation_task_map_ is the animation id and the value is the task_id.
@@ -134,6 +140,11 @@ class AnimationManager
    * the key of this map is animation id and the value is the set of domNodes.
    */
   std::unordered_map<uint32_t, std::set<uint32_t>> animation_nodes_map_;
+  /**
+   * One animation can be used for multiple nodes,
+   * the key of this map is animation id and the value is the root node id.
+   */
+  std::unordered_map<uint32_t, uint32_t> animation_root_node_map_;
 
   /**
    *   One dom node contains multiple animations,
@@ -142,6 +153,8 @@ class AnimationManager
    */
   std::unordered_map<uint32_t, std::unordered_map<uint32_t, std::string>> node_animation_props_map_;
   uint64_t listener_id_;
+
+  std::unordered_map<uint32_t, std::weak_ptr<RootNode>> root_node_map_;
 };
 }  // namespace dom
 }  // namespace hippy
