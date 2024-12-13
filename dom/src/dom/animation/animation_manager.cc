@@ -234,7 +234,15 @@ void AnimationManager::AddActiveAnimation(const std::shared_ptr<Animation>& anim
     listener_id_ = hippy::dom::FetchListenerId();
     auto weak_animation_manager = weak_from_this();
     auto it = animation_root_node_map_.find(animation->GetId());
+    if (it == animation_root_node_map_.end()) {
+      return;
+    }
     auto root_node_id = it->second;
+    auto root_iterator = root_node_map_.find(root_node_id);
+    if (root_iterator == root_node_map_.end()) {
+      return;
+    }
+    auto root_node = root_iterator->second.lock();
     dom_manager->AddEventListener(root_node,
                                   root_node_id,
                                   kVSyncKey,
@@ -261,8 +269,17 @@ void AnimationManager::AddActiveAnimation(const std::shared_ptr<Animation>& anim
 }
 
 void AnimationManager::RemoveActiveAnimation(uint32_t id) {
+  auto animation_it = animation_root_node_map_.find(id);
+  if (animation_it == animation_root_node_map_.end()) {
+    return;
+  }
+  auto root_node_id = animation_it->second;
+  auto root_iterator = root_node_map_.find(root_node_id);
+  if (root_iterator == root_node_map_.end()) {
+    return;
+  }
+  auto root_node = root_iterator->second.lock();
   auto size = active_animations_.size();
-  auto root_node = root_node_.lock();
   for (auto it = active_animations_.begin(); it != active_animations_.end(); ++it) {
     if ((*it)->GetId() == id) {
       auto node_it = animation_nodes_map_.find(id);
@@ -308,7 +325,16 @@ void AnimationManager::DeleteAnimationMap(const std::shared_ptr<DomNode>& dom_no
 void AnimationManager::UpdateCubicBezierAnimation(double current,
                                                   uint32_t related_animation_id,
                                                   std::unordered_map<uint32_t, std::shared_ptr<DomNode>>& update_node_map) {
-  auto root_node = root_node_.lock();
+  auto animation_it = animation_root_node_map_.find(related_animation_id);
+  if (animation_it == animation_root_node_map_.end()) {
+    return;
+  }
+  auto root_node_id = animation_it->second;
+  auto root_iterator = root_node_map_.find(root_node_id);
+  if (root_iterator == root_node_map_.end()) {
+    return;
+  }
+  auto root_node = root_iterator->second.lock();
   if (!root_node) {
     return;
   }
@@ -362,18 +388,20 @@ std::shared_ptr<RenderManager> AnimationManager::GetRenderManager() {
 }
 
 void AnimationManager::RemoveVSyncEventListener() {
-  auto root_node = root_node_.lock();
-  if (!root_node) {
-    return;
-  }
-  auto weak_dom_manager = root_node->GetDomManager();
-  auto dom_manager = weak_dom_manager.lock();
-  if (!dom_manager) {
-    return;
-  }
-  if (dom_manager) {
-    dom_manager->RemoveEventListener(root_node, root_node->GetId(), kVSyncKey, listener_id_);
-    dom_manager->EndBatch(root_node_);
+  for(const auto& pair : root_node_map_) {
+    auto root_node = pair.second.lock();
+    if (!root_node) {
+      return;
+    }
+    auto weak_dom_manager = root_node->GetDomManager();
+    auto dom_manager = weak_dom_manager.lock();
+    if (!dom_manager) {
+      return;
+    }
+    if (dom_manager) {
+      dom_manager->RemoveEventListener(root_node, root_node->GetId(), kVSyncKey, listener_id_);
+      dom_manager->EndBatch(root_node);
+    }
   }
 }
 
@@ -393,33 +421,35 @@ void AnimationManager::UpdateAnimation(const std::shared_ptr<Animation>& animati
 }
 
 void AnimationManager::UpdateAnimations() {
-  auto root_node = root_node_.lock();
-  if (!root_node) {
-    return;
-  }
-  auto dom_manager = root_node->GetDomManager().lock();
-  if (!dom_manager) {
-    return;
-  }
-
-  auto now = footstone::time::MonotonicallyIncreasingTime();
-  std::unordered_map<uint32_t, std::shared_ptr<DomNode>> update_node_map;
-  // xcode crash if we change for to loop
-  std::vector<std::shared_ptr<Animation>> loop_animations = active_animations_;
-  for (size_t i = 0; i < loop_animations.size(); ++i) {
-    auto it = std::find(active_animations_.begin(), active_animations_.end(), loop_animations[i]);
-    if (it != active_animations_.end()) {
-      UpdateAnimation(loop_animations[i], now, update_node_map);
+  for(const auto& pair : root_node_map_) {
+    auto root_node = pair.second.lock();
+    if (!root_node) {
+      return;
     }
+    auto dom_manager = root_node->GetDomManager().lock();
+    if (!dom_manager) {
+      return;
+    }
+
+    auto now = footstone::time::MonotonicallyIncreasingTime();
+    std::unordered_map<uint32_t, std::shared_ptr<DomNode>> update_node_map;
+    // xcode crash if we change for to loop
+    std::vector<std::shared_ptr<Animation>> loop_animations = active_animations_;
+    for (size_t i = 0; i < loop_animations.size(); ++i) {
+      auto it = std::find(active_animations_.begin(), active_animations_.end(), loop_animations[i]);
+      if (it != active_animations_.end()) {
+        UpdateAnimation(loop_animations[i], now, update_node_map);
+      }
+    }
+    loop_animations.clear();
+    std::vector<std::shared_ptr<DomNode>> update_nodes;
+    update_nodes.reserve(update_node_map.size());
+    for (const auto&[key, value]: update_node_map) {
+      update_nodes.push_back(value);
+    }
+    dom_manager->UpdateAnimation(root_node, std::move(update_nodes));
+    dom_manager->EndBatch(root_node);
   }
-  loop_animations.clear();
-  std::vector<std::shared_ptr<DomNode>> update_nodes;
-  update_nodes.reserve(update_node_map.size());
-  for (const auto& [key, value]: update_node_map) {
-    update_nodes.push_back(value);
-  }
-  dom_manager->UpdateAnimation(root_node_, std::move(update_nodes));
-  dom_manager->EndBatch(root_node_);
 }
 
 }  // namespace dom

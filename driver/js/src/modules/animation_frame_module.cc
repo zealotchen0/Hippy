@@ -61,11 +61,6 @@ void AnimationFrameModule::RequestAnimationFrame(hippy::napi::CallbackInfo &info
     return;
   }
 
-  auto root_node = scope->GetRootNode(0000000000).lock();
-  if (!root_node) {
-    return;
-  }
-
   enable_update_frame_ = true;
 
   if (has_event_listener_) {
@@ -79,8 +74,7 @@ void AnimationFrameModule::RequestAnimationFrame(hippy::napi::CallbackInfo &info
 
   auto root_node_map = scope->GetRootNodeMap();
   for (const auto& pair : root_node_map) {
-    uint32_t key = pair.first;
-    std::weak_ptr<RootNode> weak_ptr = pair.second;
+    auto root_node = pair.second.lock();
     dom_manager->AddEventListener(root_node,
                                   root_node->GetId(),
                                   kVSyncKey,
@@ -114,7 +108,6 @@ void AnimationFrameModule::CancelAnimationFrame(hippy::napi::CallbackInfo &info,
 
   auto root_node_map = scope->GetRootNodeMap();
   for (const auto& pair : root_node_map) {
-    uint32_t key = pair.first;
     std::weak_ptr<RootNode> weak_ptr = pair.second;
     auto root_node = weak_ptr.lock();
     dom_manager->RemoveEventListener(root_node, root_node->GetId(), kVSyncKey, listener_id_);

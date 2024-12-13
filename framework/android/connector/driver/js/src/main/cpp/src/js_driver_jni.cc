@@ -575,6 +575,7 @@ void SetDomManager(__unused JNIEnv* j_env,
   auto animation_manager = std::make_shared<AnimationManager>();
   scope->SetAnimationManager(animation_manager);
   animation_manager->SetDomManager(dom_manager_object);
+  animation_manager->SetRootNodeMap(scope->GetRootNodeMap());
 }
 
 static jint JNI_OnLoad(__unused JavaVM* j_vm, __unused void* reserved) {
