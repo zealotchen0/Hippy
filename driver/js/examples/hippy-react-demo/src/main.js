@@ -1,4 +1,4 @@
-import { Hippy } from '@hippy/react';
+import { Hippy, NetworkModule } from '@hippy/react';
 import App from './app';
 
 global.Hippy.on('uncaughtException', (err) => {
@@ -45,3 +45,20 @@ new Hippy({
   // set log output, default is false
   silent: false,
 }).start();
+
+NetworkModule.getCookies('https://hippyjs.org').then((cookies) => {
+  console.log(`${cookies}123444`);
+})
+  .catch((error) => {
+    console.log(`${error}123444error`);
+  })
+  .finally(() => {
+    console.log('123444finally');
+  });
+
+
+// setTimeout(() => {
+//   NetworkModule.getCookies('https://hippyjs.org').then((cookies) => {
+//     console.log(`${cookies}1234445`);
+//   });
+// }, 1000);

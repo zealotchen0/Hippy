@@ -221,6 +221,67 @@ class Ctx {
   virtual std::shared_ptr<ClassDefinition> GetClassDefinition(const string_view& name) = 0;
   virtual void SetWeak(std::shared_ptr<CtxValue> value,
                        const std::unique_ptr<WeakCallbackWrapper>& wrapper) = 0;
+  void PrintValue(std::shared_ptr<CtxValue> value) {
+    if (value == nullptr) {
+      FOOTSTONE_LOG(INFO) << "CtxValue - nullptr";
+      return;
+    }
+    if (IsObject(value)) {
+      std::unordered_map<std::shared_ptr<CtxValue>, std::shared_ptr<CtxValue>> map;
+      if (GetEntriesFromObject(value, map)) {
+        FOOTSTONE_LOG(INFO) << "CtxValue - object(size=" << map.size() << "):";
+        for (auto it : map) {
+          FOOTSTONE_LOG(INFO) << "CtxValue - object key:";
+          PrintValue(it.first);
+          FOOTSTONE_LOG(INFO) << "CtxValue - object value:";
+          PrintValue(it.second);
+        }
+      } else {
+        FOOTSTONE_LOG(INFO) << "CtxValue - object(size=0)";
+      }
+    } else if (IsMap(value)) {
+      std::unordered_map<std::shared_ptr<CtxValue>, std::shared_ptr<CtxValue>> map;
+      if (GetEntriesFromMap(value, map)) {
+        FOOTSTONE_LOG(INFO) << "CtxValue - map(size=" << map.size() << "):";
+        for (auto it : map) {
+          FOOTSTONE_LOG(INFO) << "CtxValue - map key:";
+          PrintValue(it.first);
+          FOOTSTONE_LOG(INFO) << "CtxValue - map value:";
+          PrintValue(it.second);
+        }
+      } else {
+        FOOTSTONE_LOG(INFO) << "CtxValue - map(size=0)";
+      }
+    } else if (IsArray(value)) {
+      auto len = GetArrayLength(value);
+      FOOTSTONE_LOG(INFO) << "CtxValue - array(size=" << len << "):";
+      for (int i = 0; i < (int)len; i++) {
+        FOOTSTONE_LOG(INFO) << "CtxValue - array element:";
+        auto t = CopyArrayElement(value, (uint32_t)i);
+        PrintValue(t);
+      }
+    } else if (IsString(value)) {
+      string_view str;
+      GetValueString(value, &str);
+      FOOTSTONE_LOG(INFO) << "CtxValue - string: " << str;
+    } else if (IsNumber(value)) {
+      double d = 0;
+      GetValueNumber(value, &d);
+      FOOTSTONE_LOG(INFO) << "CtxValue - number: " << d;
+    } else if (IsBoolean(value)) {
+      bool b = false;
+      GetValueBoolean(value, &b);
+      FOOTSTONE_LOG(INFO) << "CtxValue - bool: " << b;
+    } else if (IsFunction(value)) {
+      FOOTSTONE_LOG(INFO) << "CtxValue - function";
+    } else if (IsByteBuffer(value)) {
+      FOOTSTONE_LOG(INFO) << "CtxValue - byte buffer";
+    } else if (IsNull(value)) {
+      FOOTSTONE_LOG(INFO) << "CtxValue - null";
+    } else if (IsUndefined(value)) {
+      FOOTSTONE_LOG(INFO) << "CtxValue - undefined";
+    }
+  }
 };
 
 }
