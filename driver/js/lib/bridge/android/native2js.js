@@ -44,6 +44,8 @@ global.hippyBridge = (_action, _callObj) => {
 
   switch (action) {
     case 'callBack': {
+      const obj = JSON.stringify(_callObj);
+      global.ConsoleModule.log(`promise:${_action}${obj}`);
       if (callObj.moduleName === 'AnimationFrameModule' && callObj.moduleFunc === 'requestAnimationFrame') {
         if (callObj.result !== 0) {
           resp = 'native2js error: native failed to call AnimationFrameModule requestAnimationFrame()';
