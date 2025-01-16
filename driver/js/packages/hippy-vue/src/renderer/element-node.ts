@@ -34,6 +34,7 @@ import {
   isDev,
   whitespaceFilter,
 } from '../util';
+import { meta } from '../util/node';
 import { EventMethod, EventHandlerType } from '../util/event';
 import Native from '../runtime/native';
 import { updateChild, updateWithChildren, updateEvent } from '../native';
@@ -365,6 +366,8 @@ export class ElementNode extends ViewNode {
   }
 
   public get meta() {
+    const test = meta('test');
+    console.log(test);
     if (this._meta) {
       return this._meta;
     }

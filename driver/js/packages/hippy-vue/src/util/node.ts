@@ -141,7 +141,13 @@ function isHippyTextNode(targetNode) {
   return targetNode.meta?.component && targetNode.meta.component.name === 'Text';
 }
 
+function meta(a: string) {
+  console.log('test meta');
+  return `${a}test meta`;
+}
+
 export {
+  meta,
   RelativeToRefType,
   findNotToSkipNode,
   recursivelyUnCacheNode,
