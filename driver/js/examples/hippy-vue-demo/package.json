@@ -24,6 +24,7 @@
     "@hippy/vue-native-components": "v3.3-latest",
     "@hippy/vue-router": "v3.3-latest",
     "@hippy/web-renderer": "latest",
+    "cherry-markdown": "^0.8.58",
     "core-js": "^3.11.0",
     "vue": "^2.6.10",
     "vue-router": "^3.1.3"

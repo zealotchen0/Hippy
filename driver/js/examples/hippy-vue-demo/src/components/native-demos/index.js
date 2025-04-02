@@ -7,6 +7,7 @@ import demoSwiper from './demo-swiper.vue';
 import demoPullHeaderFooter from './demo-pull-header-footer.vue';
 import demoWaterfall from './demo-waterfall.vue';
 import demoNestedScroll from './demo-nested-scroll.vue';
+import demoCherryMarkdown from './demo-cherry-markdown.vue';
 
 const demos = {};
 
@@ -43,6 +44,10 @@ if (Vue.Native) {
     demoSetNativeProps: {
       name: 'setNativeProps',
       component: demoSetNativeProps,
+    },
+    demoCherryMarkdown: {
+      name: 'Cherry Markdown 编辑器',
+      component: demoCherryMarkdown,
     },
   });
 }
