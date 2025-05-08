@@ -75,13 +75,17 @@ function registerUlRefresh(Vue: any) {
 
   Vue.component('UlRefresh', {
     inheritAttrs: false,
-    template: `
-      <hi-refresh-wrapper-item :style="{position: 'absolute', left: 0, right: 0}">
-        <div>
-          <slot />
-        </div>
-      </hi-refresh-wrapper-item>
-    `,
+    render(h: any) {
+      return h('hi-refresh-wrapper-item', {
+        style: {
+          position: 'absolute',
+          left: 0,
+          right: 0,
+        },
+      }, [
+        h('div', this.$slots.default),
+      ]);
+    },
   });
 }
 

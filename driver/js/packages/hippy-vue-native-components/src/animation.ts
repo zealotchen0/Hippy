@@ -314,11 +314,19 @@ function registerAnimation(Vue: any) {
         });
       },
     },
-    template: `
-      <component :is="tag" :useAnimation="true" :style="style" v-bind="props">
-        <slot />
-      </component>
-    `,
+    render(h: any) {
+      return h(
+        this.tag,
+        {
+          attrs: {
+            useAnimation: true,
+            ...this.props,
+          },
+          style: this.style,
+        },
+        this.$slots.default,
+      );
+    },
   });
 }
 
