@@ -4,6 +4,9 @@ import HippyVueNativeComponents from '@hippy/vue-native-components';
 import App from './app.vue';
 import routes from './routes';
 import { setApp } from './util';
+import HippyVueHtml from 'hippy-vue-html';
+
+
 
 // 是否输出终端调试信息
 // Vue.config.silent = true;
@@ -19,6 +22,7 @@ Vue.config.trimWhitespace = true;
 // Hippy 终端组件扩展中间件，可以使用 modal、view-pager、tab-host、ul-refresh 等原生组件。
 Vue.use(HippyVueNativeComponents);
 Vue.use(VueRouter);
+Vue.use(HippyVueHtml);
 
 const router = new VueRouter(routes);
 

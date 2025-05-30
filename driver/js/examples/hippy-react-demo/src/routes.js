@@ -33,6 +33,14 @@ export default [
     },
   },
   {
+    path: '/Markdown',
+    name: '<Markdown> 组件',
+    component: PAGE_LIST.Markdown,
+    meta: {
+      type: Type.COMPONENT,
+    },
+  },
+  {
     path: '/View',
     name: '<View> 组件',
     component: PAGE_LIST.View,

@@ -3,6 +3,7 @@
     id="div-demo"
     @scroll="onOuterScroll"
   >
+    <hippy-vue-html :html="text" :styles="styles"></hippy-vue-html>
     <div>
       <div v-if="Vue.Native.Platform !== 'ios'">
         <label>水波纹效果: </label>
@@ -132,6 +133,7 @@
 import Vue from 'vue';
 import defaultImage from '../../assets/defaultSource.jpg';
 import DemoRippleDiv from './demo-ripple-div.vue';
+import CherryEngine from '@cherry-markdown/cherry-markdown-dev/dist/cherry-markdown.engine.core';
 
 export default {
   components: {
@@ -144,6 +146,17 @@ export default {
      */
     return {
       Vue,
+      // text: '<h1 data-lines="1" data-sign="172bc684780992025404c965b183f359b31547101a2bf30c0e584b4e6cfbee6f" id="%E4%BE%8B%E5%AD%90-github-%E5%9C%B0%E5%9D%80-full-model-basic-h5-%E5%A4%9A%E5%AE%9E%E4%BE%8B-%E6%97%A0-toolbar-cherry-markdown-%E7%AE%80%E6%98%8E%E6%89%8B%E5%86%8C-ji%C7%8En-mng-sh%C7%92u-c-"><a href="#%E4%BE%8B%E5%AD%90-github-%E5%9C%B0%E5%9D%80-full-model-basic-h5-%E5%A4%9A%E5%AE%9E%E4%BE%8B-%E6%97%A0-toolbar-cherry-markdown-%E7%AE%80%E6%98%8E%E6%89%8B%E5%86%8C-ji%C7%8En-mng-sh%C7%92u-c-" class="anchor"></a>例子&gt; <a target="_blank" href="https://github.com/Tencent/cherry-markdown">Github 地址</a>- <a target="_blank" href="index.html">full model</a>- <a target="_blank" href="basic.html">basic</a>- <a target="_blank" href="h5.html">H5</a>- <a target="_blank" href="multiple.html">多实例</a>- <a target="_blank" href="notoolbar.html">无 toolbar</a># Cherry Markdown  <ruby> 简明手册 <rt> jiǎn míng shǒu cè </rt></ruby></h1>\n',
+      text: new CherryEngine().makeHtml("> [Github 地址](https://github.com/Tencent/cherry-markdown){target=_blank}- [full model](index.html){target=_blank}- [basic](basic.html){target=_blank}- [H5](h5.html){target=_blank}"),
+          styles: {
+            p: {
+              color: '#666666'
+            },
+            img: {
+              height: 400,
+              width: 400,
+            }
+		      },
       offsetY: 0,
       demo1Style: {
         display: 'flex',

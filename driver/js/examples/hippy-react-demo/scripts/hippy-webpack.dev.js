@@ -67,6 +67,13 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.json$/,
+        type: 'javascript/auto',
+        resolve: {
+          fullySpecified: false,
+        },
+      },
+      {
         test: /\.(jsx?)$/,
         exclude: /@hippy\/hippy-react-devtools-plugin/,
         use: [
