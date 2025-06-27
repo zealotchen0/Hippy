@@ -203,7 +203,7 @@ export default class ModalExpo extends React.Component {
 
   show() {
     const start = new Date().getTime();
-    for (let i = 0; i < 1000;i++) {
+    for (let i = 0; i < 5000;i++) {
       const randomString = generateRandomLongNumber(19);
       const rowkey = cidToRowkey(randomString);
     }
