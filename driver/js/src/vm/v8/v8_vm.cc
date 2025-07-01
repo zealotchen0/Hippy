@@ -65,6 +65,8 @@ void InitializePlatform() {
 #endif
     FOOTSTONE_DLOG(INFO) << "Initialize";
     v8::V8::Initialize();
+    const char* flags = "--jitless";
+    v8::V8::SetFlagsFromString(flags, strlen(flags));
   }
 }
 
