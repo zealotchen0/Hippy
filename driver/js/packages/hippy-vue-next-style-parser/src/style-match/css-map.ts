@@ -178,6 +178,15 @@ export function fromSsrAstNodes(
 let globalCssMap: SelectorsMap;
 
 /**
+ * clear global css map
+ */
+export function clearGlobalCssMap(): void {
+  if (globalCssMap) {
+    globalCssMap.ruleSets = [];
+  }
+}
+
+/**
  * judge css map is empty, undefined or no ruleset is empty
  *
  * @param cssMap
